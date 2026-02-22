@@ -27,6 +27,7 @@ export interface ModalUtama {
   bahan_baku: BahanBaku[];
   biaya_operasional: BiayaOperasional[];
   sisa_modal: number;
+  saldo_kas: number;
   riwayat: Riwayat[];
   createdAt: string;
   updatedAt: string;

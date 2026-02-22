@@ -45,19 +45,23 @@ export const createBahanBaku = async (req, res) => {
       const ModalUtama = (await import("../../models/modalutama.js")).default;
       let modalUtama = await ModalUtama.findOne();
       
+      // Hitung total harga bahan yang baru (harga * jumlah)
+      const totalHargaBahan = (Array.isArray(bahan) ? bahan : []).reduce((s, it) => s + ((it.harga || 0) * (it.jumlah || 1)), 0);
+
       if (!modalUtama) {
-        // Jika ModalUtama tidak ada, buat yang baru
+        // Jika ModalUtama tidak ada, buat yang baru (saldo_kas tetap 0)
         modalUtama = new ModalUtama({
           total_modal: 0,
+          saldo_kas: 0,
           bahan_baku: [{
             nama_produk,
             bahan
           }]
         });
+        // tidak mencoba mengurangi kas karena tidak ada saldo
       } else {
         // Cek apakah produk sudah ada di bahan_baku
         const existingProduk = modalUtama.bahan_baku.findIndex(p => p.nama_produk === nama_produk);
-        
         if (existingProduk >= 0) {
           // Update produk yang sudah ada
           modalUtama.bahan_baku[existingProduk] = {
@@ -70,6 +74,19 @@ export const createBahanBaku = async (req, res) => {
             nama_produk,
             bahan
           });
+        }
+
+        // Jika ada saldo kas, kurangi sesuai total harga bahan (jika cukup)
+        if (modalUtama.saldo_kas >= totalHargaBahan && totalHargaBahan > 0) {
+          modalUtama.saldo_kas -= totalHargaBahan;
+          modalUtama.riwayat.push({
+            keterangan: `Tambah bahan baku via manager: ${nama_produk}`,
+            tipe: "pengeluaran",
+            jumlah: totalHargaBahan,
+            saldo_setelah: modalUtama.saldo_kas,
+          });
+        } else if (totalHargaBahan > 0) {
+          console.warn(`Saldo kas tidak cukup atau tidak ada; tidak mengurangi kas untuk produk ${nama_produk}`);
         }
       }
       
@@ -139,13 +156,45 @@ export const updateBahanBaku = async (req, res) => {
       if (modalUtama && modalUtama.bahan_baku) {
         // Cari produk dengan nama lama
         const existingIndex = modalUtama.bahan_baku.findIndex(p => p.nama_produk === namaBakuLama);
-        
+
+        // hitung total harga baru dari bahan (harga * jumlah)
+        const newTotalHarga = (Array.isArray(bahan) ? bahan : []).reduce((s, it) => s + ((it.harga || 0) * (it.jumlah || 1)), 0);
+
         if (existingIndex >= 0) {
+          // Hitung total harga lama dari entry yang ada
+          const oldEntry = modalUtama.bahan_baku[existingIndex];
+          const oldTotalHarga = (Array.isArray(oldEntry.bahan) ? oldEntry.bahan : []).reduce((s, it) => s + ((it.harga || 0) * (it.jumlah || 1)), 0);
+
           // Update produk yang sudah ada
           modalUtama.bahan_baku[existingIndex] = {
             nama_produk,
             bahan
           };
+
+          const delta = newTotalHarga - oldTotalHarga;
+          if (delta > 0) {
+            // perlu kurangi kas
+            if (modalUtama.saldo_kas >= delta) {
+              modalUtama.saldo_kas -= delta;
+              modalUtama.riwayat.push({
+                keterangan: `Tambah bahan (edit) via manager: ${nama_produk}`,
+                tipe: "pengeluaran",
+                jumlah: delta,
+                saldo_setelah: modalUtama.saldo_kas,
+              });
+            } else {
+              console.warn(`Saldo kas tidak cukup untuk menutupi selisih ${delta} saat edit ${nama_produk}`);
+            }
+          } else if (delta < 0) {
+            // pengurangan biaya -> masuk kas
+            modalUtama.saldo_kas += Math.abs(delta);
+            modalUtama.riwayat.push({
+              keterangan: `Pengembalian dana (edit) via manager: ${nama_produk}`,
+              tipe: "pemasukan",
+              jumlah: Math.abs(delta),
+              saldo_setelah: modalUtama.saldo_kas,
+            });
+          }
         } else {
           // Jika tidak ketemu nama lama, cari dengan nama baru (buat duplikat)
           const newNameIndex = modalUtama.bahan_baku.findIndex(p => p.nama_produk === nama_produk);
@@ -155,6 +204,19 @@ export const updateBahanBaku = async (req, res) => {
               nama_produk,
               bahan
             });
+
+            // kurangi kas sesuai harga baru jika tersedia
+            if (modalUtama.saldo_kas >= newTotalHarga && newTotalHarga > 0) {
+              modalUtama.saldo_kas -= newTotalHarga;
+              modalUtama.riwayat.push({
+                keterangan: `Tambah produk baru via manager: ${nama_produk}`,
+                tipe: "pengeluaran",
+                jumlah: newTotalHarga,
+                saldo_setelah: modalUtama.saldo_kas,
+              });
+            } else if (newTotalHarga > 0) {
+              console.warn(`Saldo kas tidak cukup; tidak mengurangi kas untuk produk baru ${nama_produk}`);
+            }
           } else {
             // Update nama baru jika sudah ada
             modalUtama.bahan_baku[newNameIndex] = {
@@ -163,7 +225,7 @@ export const updateBahanBaku = async (req, res) => {
             };
           }
         }
-        
+
         await modalUtama.save();
       }
     } catch (err) {
@@ -210,7 +272,19 @@ export const deleteBahanBaku = async (req, res) => {
         const filterIndex = modalUtama.bahan_baku.findIndex(p => p.nama_produk === bahanBaku.nama);
         
         if (filterIndex >= 0) {
+          // hitung total harga produk yang dihapus untuk possible refund ke kas
+          const removed = modalUtama.bahan_baku[filterIndex];
+          const removedTotal = (Array.isArray(removed.bahan) ? removed.bahan : []).reduce((s, it) => s + ((it.harga || 0) * (it.jumlah || 1)), 0);
           modalUtama.bahan_baku.splice(filterIndex, 1);
+          if (removedTotal > 0) {
+            modalUtama.saldo_kas += removedTotal;
+            modalUtama.riwayat.push({
+              keterangan: `Hapus produk bahan baku via manager: ${bahanBaku.nama}`,
+              tipe: "pemasukan",
+              jumlah: removedTotal,
+              saldo_setelah: modalUtama.saldo_kas,
+            });
+          }
           await modalUtama.save();
         }
       }

@@ -62,9 +62,13 @@ const InputBiaya: React.FC = () => {
         headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ kategoriId: kategori, jumlah, tanggal, keterangan }) 
       });
-      if (!res.ok) throw new Error("HTTP error");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        SweetAlert.close();
+        return SweetAlert.error((data && data.message) ? data.message : "Gagal menyimpan pengeluaran");
+      }
       SweetAlert.close();
-      SweetAlert.success("Pengeluaran tersimpan");
+      SweetAlert.success((data && data.message) ? data.message : "Pengeluaran tersimpan");
       setJumlah(0); 
       setKeterangan("");
       fetchHistory();

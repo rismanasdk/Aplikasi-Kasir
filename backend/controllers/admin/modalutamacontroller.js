@@ -28,10 +28,18 @@ export const createModalUtama = async (req, res) => {
 
     const modal = new ModalUtama({
       total_modal,
-      sisa_modal: total_modal,
+      // when owner sets modal, kas must be increased by same amount
+      saldo_kas: total_modal,
       bahan_baku: [],
       biaya_operasional: [],
-      riwayat: [],
+      riwayat: [
+        {
+          keterangan: `Setor modal awal: ${total_modal}`,
+          tipe: "pemasukan",
+          jumlah: total_modal,
+          saldo_setelah: total_modal,
+        },
+      ],
     });
 
     await modal.save();
@@ -55,16 +63,16 @@ export const tambahBahanBaku = async (req, res) => {
       return res.status(404).json({ message: "Modal utama belum dibuat." });
     }
 
-    // total baru = jumlah total harga bahan (tanpa dikali jumlah)
+    // total baru = jumlah total harga bahan (harga * jumlah)
     let totalBaru = 0;
     if (bahan && Array.isArray(bahan)) {
-      totalBaru = bahan.reduce((sum, b) => sum + (b.harga || 0), 0);
+      totalBaru = bahan.reduce((sum, b) => sum + ((b.harga || 0) * (b.jumlah || 1)), 0);
     }
 
-    // Cek apakah sisa modal cukup
-    if (modal.sisa_modal < totalBaru) {
+    // Cek apakah saldo kas cukup (biaya bahan ditanggung kas)
+    if (modal.saldo_kas < totalBaru) {
       return res.status(400).json({ 
-        message: `Modal tidak cukup. Sisa modal: ${modal.sisa_modal}, dibutuhkan: ${totalBaru}.` 
+        message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${totalBaru}.` 
       });
     }
 
@@ -79,7 +87,7 @@ export const tambahBahanBaku = async (req, res) => {
         keterangan: `Tambah bahan baru ke produk: ${nama_produk}`,
         tipe: "pengeluaran",
         jumlah: totalBaru,
-        saldo_setelah: modal.sisa_modal - totalBaru,
+        saldo_setelah: modal.saldo_kas - totalBaru,
       });
     } else {
       // produk baru
@@ -89,11 +97,11 @@ export const tambahBahanBaku = async (req, res) => {
         keterangan: `Tambah produk baru: ${nama_produk}`,
         tipe: "pengeluaran",
         jumlah: totalBaru,
-        saldo_setelah: modal.sisa_modal - totalBaru,
+        saldo_setelah: modal.saldo_kas - totalBaru,
       });
     }
 
-    modal.sisa_modal -= totalBaru;
+    modal.saldo_kas -= totalBaru;
     await modal.save();
 
     // Simpan produk lengkap ke koleksi Bahan-Baku
@@ -157,7 +165,7 @@ export const editBahanBaku = async (req, res) => {
 
     // Hitung total bahan lama
     const totalLama = (Array.isArray(produk.bahan) ? produk.bahan : []).reduce(
-      (sum, b) => sum + (b.harga || 0),
+      (sum, b) => sum + ((b.harga || 0) * (b.jumlah || 1)),
       0
     );
 
@@ -167,17 +175,17 @@ export const editBahanBaku = async (req, res) => {
 
     // Hitung ulang total bahan baru
     const totalBaru = (Array.isArray(produk.bahan) ? produk.bahan : []).reduce(
-      (sum, b) => sum + (b.harga || 0),
+      (sum, b) => sum + ((b.harga || 0) * (b.jumlah || 1)),
       0
     );
 
     // Hitung selisih
     const selisih = totalBaru - totalLama;
 
-    // Jika selisih positif (pengeluaran tambahan), cek modal cukup
-    if (selisih > 0 && modal.sisa_modal < selisih) {
+    // Jika selisih positif (pengeluaran tambahan), cek saldo kas cukup
+    if (selisih > 0 && modal.saldo_kas < selisih) {
       return res.status(400).json({ 
-        message: `Modal tidak cukup untuk perubahan ini. Sisa modal: ${modal.sisa_modal}, dibutuhkan tambahan: ${selisih}.` 
+        message: `Saldo kas tidak cukup untuk perubahan ini. Saldo kas: ${modal.saldo_kas}, dibutuhkan tambahan: ${selisih}.` 
       });
     }
 
@@ -185,10 +193,10 @@ export const editBahanBaku = async (req, res) => {
       keterangan: `Edit bahan pada produk: ${produk.nama_produk}`,
       tipe: selisih >= 0 ? "pengeluaran" : "pemasukan",
       jumlah: Math.abs(selisih),
-      saldo_setelah: modal.sisa_modal - selisih,
+      saldo_setelah: selisih >= 0 ? modal.saldo_kas - selisih : modal.saldo_kas + Math.abs(selisih),
     });
 
-    modal.sisa_modal -= selisih;
+    modal.saldo_kas -= selisih;
     await modal.save();
 
     // Sinkronisasi ke koleksi Bahan-Baku: update atau buat dokumen produk
@@ -242,7 +250,7 @@ export const hapusBahanBaku = async (req, res) => {
     }
 
     const totalProduk = produk.bahan.reduce(
-      (sum, b) => sum + (b.harga || 0),
+      (sum, b) => sum + ((b.harga || 0) * (b.jumlah || 1)),
       0
     );
 
@@ -252,10 +260,10 @@ export const hapusBahanBaku = async (req, res) => {
       keterangan: `Hapus bahan baku produk: ${produk.nama_produk}`,
       tipe: "pemasukan",
       jumlah: totalProduk,
-      saldo_setelah: modal.sisa_modal + totalProduk,
+      saldo_setelah: modal.saldo_kas + totalProduk,
     });
 
-    modal.sisa_modal += totalProduk;
+    modal.saldo_kas += totalProduk;
     await modal.save();
 
     // Hapus dokumen produk pada koleksi Bahan-Baku jika ada
@@ -294,7 +302,7 @@ export const hapusBahanDariProduk = async (req, res) => {
       return res.status(404).json({ message: "Bahan tidak ditemukan di produk ini." });
     }
 
-    const totalBahan = bahan.harga || 0;
+    const totalBahan = (bahan.harga || 0) * (bahan.jumlah || 1);
 
     bahan.deleteOne();
 
@@ -302,10 +310,10 @@ export const hapusBahanDariProduk = async (req, res) => {
       keterangan: `Hapus bahan "${bahan.nama}" dari produk: ${produk.nama_produk}`,
       tipe: "pemasukan",
       jumlah: totalBahan,
-      saldo_setelah: modal.sisa_modal + totalBahan,
+      saldo_setelah: modal.saldo_kas + totalBahan,
     });
 
-    modal.sisa_modal += totalBahan;
+    modal.saldo_kas += totalBahan;
     await modal.save();
 
     // Sinkronisasi dengan koleksi Bahan-Baku: hapus bahan yang sesuai dari dokumen produk
@@ -344,10 +352,10 @@ export const tambahBiayaOperasional = async (req, res) => {
       return res.status(404).json({ message: "Modal utama belum dibuat." });
     }
 
-    // Cek apakah sisa modal cukup
-    if (modal.sisa_modal < total) {
+    // Cek apakah saldo kas cukup
+    if (modal.saldo_kas < total) {
       return res.status(400).json({ 
-        message: `Modal tidak cukup. Sisa modal: ${modal.sisa_modal}, dibutuhkan: ${total}.` 
+        message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${total}.` 
       });
     }
 
@@ -357,10 +365,10 @@ export const tambahBiayaOperasional = async (req, res) => {
       keterangan: `Biaya operasional: ${nama}`,
       tipe: "pengeluaran",
       jumlah: total,
-      saldo_setelah: modal.sisa_modal - total,
+      saldo_setelah: modal.saldo_kas - total,
     });
 
-    modal.sisa_modal -= total;
+    modal.saldo_kas -= total;
     await modal.save();
 
     res.json({
@@ -383,13 +391,13 @@ export const tambahModalBaru = async (req, res) => {
     }
 
     modal.total_modal += jumlah;
-    modal.sisa_modal += jumlah;
+    modal.saldo_kas += jumlah;
 
     modal.riwayat.push({
       keterangan: keterangan || "Penambahan modal baru",
       tipe: "pemasukan",
       jumlah,
-      saldo_setelah: modal.sisa_modal,
+      saldo_setelah: modal.saldo_kas,
     });
 
     await modal.save();
@@ -398,6 +406,42 @@ export const tambahModalBaru = async (req, res) => {
       message: "Modal baru berhasil ditambahkan!",
       modal,
     });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// ✅ Owner ambil uang (prive)
+export const ambilPrive = async (req, res) => {
+  try {
+    const { jumlah, keterangan } = req.body;
+
+    const modal = await ModalUtama.findOne();
+    if (!modal) {
+      return res.status(404).json({ message: "Modal utama belum dibuat." });
+    }
+
+    if (!jumlah || jumlah <= 0) {
+      return res.status(400).json({ message: "Jumlah prive harus lebih dari 0." });
+    }
+
+    if (modal.saldo_kas < jumlah) {
+      return res.status(400).json({ message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${jumlah}.` });
+    }
+
+    modal.saldo_kas -= jumlah;
+    modal.total_modal -= jumlah;
+
+    modal.riwayat.push({
+      keterangan: keterangan || "Prive (penarikan owner)",
+      tipe: "prive",
+      jumlah,
+      saldo_setelah: modal.saldo_kas,
+    });
+
+    await modal.save();
+
+    res.json({ message: "Prive berhasil diproses", modal });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -14,17 +14,17 @@ export const kurangiModalUtama = async (jumlah, keterangan) => {
     return null;
   }
 
-  // Cek apakah sisa modal cukup
-  if (modal.sisa_modal < jumlah) {
-    throw new Error(`Modal tidak cukup. Sisa modal: ${modal.sisa_modal}, dibutuhkan: ${jumlah}.`);
+  // Cek apakah saldo kas cukup (operasional/bahan dibayarkan dari kas)
+  if (modal.saldo_kas < jumlah) {
+    throw new Error(`Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${jumlah}.`);
   }
 
-  modal.sisa_modal -= jumlah;
+  modal.saldo_kas -= jumlah;
   modal.riwayat.push({
     keterangan,
     tipe: "pengeluaran",
     jumlah,
-    saldo_setelah: modal.sisa_modal,
+    saldo_setelah: modal.saldo_kas,
   });
 
   await modal.save();
@@ -44,12 +44,12 @@ export const tambahModalUtama = async (jumlah, keterangan = "Pemasukan baru") =>
   }
 
   modal.total_modal += jumlah;
-  modal.sisa_modal += jumlah;
+  modal.saldo_kas += jumlah;
   modal.riwayat.push({
     keterangan,
     tipe: "pemasukan",
     jumlah,
-    saldo_setelah: modal.sisa_modal,
+    saldo_setelah: modal.saldo_kas,
   });
 
   await modal.save();

@@ -9,6 +9,7 @@ import {
   hapusBahanBaku,
   hapusBahanDariProduk
 } from "../../controllers/admin/modalutamacontroller.js";
+import { ambilPrive } from "../../controllers/admin/modalutamacontroller.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.delete("/bahan-baku/:id_produk", hapusBahanBaku);
 router.delete("/bahan-baku/:id_produk/bahan/:id_bahan", hapusBahanDariProduk);
 router.post("/biaya-operasional", tambahBiayaOperasional);
 router.post("/tambah-modal", tambahModalBaru);
+router.post("/prive", ambilPrive);
 
 export default router;

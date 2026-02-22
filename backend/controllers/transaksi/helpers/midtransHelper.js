@@ -5,6 +5,7 @@ import Barang from "../../../models/databarang.js";
 import db from "../../../config/firebaseAdmin.js";
 import { io } from "../../../server.js";
 import { addTransaksiToLaporan } from "./laporanHelper.js";
+import ModalUtama from "../../../models/modalutama.js";
 
 function mapMidtransToSettings(notification) {
   if (notification.va_numbers && notification.va_numbers.length > 0) {
@@ -100,6 +101,37 @@ export const midtransCallback = async (req, res) => {
 
     if (status === "selesai") {
       await addTransaksiToLaporan(transaksi);
+
+      // Tambah omzet ke saldo_kas di ModalUtama
+      try {
+        const modal = await ModalUtama.findOne();
+        if (!modal) {
+          const newModal = new ModalUtama({
+            total_modal: 0,
+            saldo_kas: transaksi.total_harga,
+            riwayat: [
+              {
+                keterangan: `Omzet penjualan: ${transaksi.nomor_transaksi}`,
+                tipe: "pemasukan",
+                jumlah: transaksi.total_harga,
+                saldo_setelah: transaksi.total_harga,
+              },
+            ],
+          });
+          await newModal.save();
+        } else {
+          modal.saldo_kas = (modal.saldo_kas || 0) + (transaksi.total_harga || 0);
+          modal.riwayat.push({
+            keterangan: `Omzet penjualan: ${transaksi.nomor_transaksi}`,
+            tipe: "pemasukan",
+            jumlah: transaksi.total_harga,
+            saldo_setelah: modal.saldo_kas,
+          });
+          await modal.save();
+        }
+      } catch (e) {
+        console.warn("Gagal update ModalUtama.saldo_kas dari omzet (midtrans callback):", e.message);
+      }
     }
 
     if (status === "expire" || status === "dibatalkan") {

@@ -60,13 +60,17 @@ const modalUtamaSchema = new mongoose.Schema(
       },
     ],
 
+    // Saldo kas: semua penerimaan / pengeluaran operasional & pembelian bahan
+    saldo_kas: { type: Number, required: true, default: 0 },
+
+    // Sisa modal: total modal dikurangi prive (penarikan owner). Tidak otomatis dipengaruhi oleh biaya operasional/bahan.
     sisa_modal: { type: Number, required: true, default: 0 },
 
     riwayat: [
       {
         tanggal: { type: Date, default: Date.now },
         keterangan: String,
-        tipe: { type: String, enum: ["pengeluaran", "pemasukan"] },
+        tipe: { type: String, enum: ["pengeluaran", "pemasukan", "prive"] },
         jumlah: Number,
         saldo_setelah: Number,
       },
@@ -77,18 +81,12 @@ const modalUtamaSchema = new mongoose.Schema(
 
 // 🧮 Middleware: update sisa_modal otomatis sebelum save
 modalUtamaSchema.pre("save", function (next) {
-  const totalBahan = this.bahan_baku.reduce(
-    (acc, produk) => acc + produk.total_harga_bahan,
-    0
-  );
+  // sisa_modal adalah total_modal dikurangi total prive (penarikan owner)
+  const totalPrive = (this.riwayat || [])
+    .filter((r) => r.tipe === "prive")
+    .reduce((sum, r) => sum + (r.jumlah || 0), 0);
 
-  const totalOperasional = this.biaya_operasional.reduce(
-    (acc, b) => acc + (b.total || 0),
-    0
-  );
-
-  const totalPengeluaran = totalBahan + totalOperasional;
-  this.sisa_modal = Math.round(this.total_modal - totalPengeluaran);
+  this.sisa_modal = Math.round((this.total_modal || 0) - totalPrive);
   next();
 });
 

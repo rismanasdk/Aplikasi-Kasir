@@ -1,5 +1,6 @@
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import BiayaOperasional from "../../models/biayaoperasional.js";
+import ModalUtama from "../../models/modalutama.js";
 
 // POST /api/admin/pengeluaran-biaya
 export const createPengeluaran = async (req, res) => {
@@ -14,6 +15,13 @@ export const createPengeluaran = async (req, res) => {
     const kategori = await BiayaOperasional.findById(kategoriId);
     if (!kategori) return res.status(404).json({ message: "Kategori tidak ditemukan" });
 
+    // verify ModalUtama exists and saldo_kas cukup
+    const modal = await ModalUtama.findOne();
+    if (!modal) return res.status(400).json({ message: "Modal utama belum dibuat. Tidak dapat membuat pengeluaran." });
+    if ((modal.saldo_kas || 0) < Number(jumlah)) {
+      return res.status(400).json({ message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas || 0}, dibutuhkan: ${jumlah}.` });
+    }
+
     const doc = new PengeluaranBiaya({
       kategoriId,
       jumlah: Number(jumlah),
@@ -21,7 +29,16 @@ export const createPengeluaran = async (req, res) => {
       keterangan: keterangan || null,
     });
 
+    // Save pengeluaran and deduct kas atomically-ish
     await doc.save();
+    modal.saldo_kas = (modal.saldo_kas || 0) - Number(jumlah);
+    modal.riwayat.push({
+      keterangan: keterangan || `Pengeluaran operasional (${kategori?.nama || kategoriId})`,
+      tipe: "pengeluaran",
+      jumlah: Number(jumlah),
+      saldo_setelah: modal.saldo_kas,
+    });
+    await modal.save();
     res.json({ message: "Pengeluaran berhasil dibuat", data: doc });
   } catch (err) {
     console.error(err);
