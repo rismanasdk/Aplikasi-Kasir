@@ -469,7 +469,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsChangingPassword(!isChangingPassword)}
-                className="w-full text-left text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                className="w-full text-left text-orange-600 hover:text-yellow-800 font-medium text-sm flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 transition-colors"
               >
                 <span className="flex items-center">
                   <FaLock className="mr-2" />
@@ -582,7 +582,7 @@ export default function ProfilePage() {
             whileTap={{ scale: 0.97 }}
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-70 flex items-center justify-center mt-6"
+            className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-70 flex items-center justify-center mt-6"
           >
             {isLoading ? (
               <>

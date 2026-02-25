@@ -53,6 +53,19 @@ const MenegerDashboard = () => {
         }
         
         const dashboardData = await dashboardResponse.json();
+
+        // Also fetch top products using the more detailed aggregation endpoint
+        const topUrl = `${API_URL}/api/manager/dashboard/top`;
+        const topResponse = await fetch(topUrl);
+        let topData = null;
+        if (topResponse.ok) {
+          try {
+            topData = await topResponse.json();
+          } catch (e) {
+            console.warn("Failed parsing top products response:", e);
+            topData = null;
+          }
+        }
         
         const stokUrl = `${API_URL}/api/admin/stok-barang`;
         const stokResponse = await fetch(stokUrl);
@@ -75,7 +88,10 @@ const MenegerDashboard = () => {
             stokNameMap[normalizedName] = item;
           });
           
-          const barangTerlarisWithImages = dashboardData.barang_terlaris.map((barang: BarangTerlaris) => {
+          // Prefer aggregated top products when available (more detailed from /top)
+          const sourceTop = (topData && Array.isArray(topData.barang_terlaris)) ? topData.barang_terlaris : dashboardData.barang_terlaris;
+
+          const barangTerlarisWithImages = sourceTop.map((barang: any) => {
             let gambarUrl = barang.gambar_url;
             let kodeBarang = barang.kode_barang;
             
@@ -87,15 +103,13 @@ const MenegerDashboard = () => {
               }
             } else {
               // Jika tidak ada kode_barang atau tidak ditemukan, cari berdasarkan nama
-              const normalizedName = barang.nama_barang.toLowerCase().trim();
+              const normalizedName = (barang.nama_barang || barang.nama || "").toLowerCase().trim();
               const matchingItem = stokNameMap[normalizedName];
               
               if (matchingItem) {
-                // Isi kode_barang jika kosong
                 if (!kodeBarang) {
                   kodeBarang = matchingItem.kode_barang;
                 }
-                // Isi gambar_url jika kosong
                 if (!gambarUrl && matchingItem.gambar_url) {
                   gambarUrl = matchingItem.gambar_url;
                 }
@@ -103,7 +117,8 @@ const MenegerDashboard = () => {
             }
             
             return {
-              ...barang,
+              nama_barang: barang.nama_barang || barang.nama || "Unknown",
+              jumlah: barang.jumlah || barang.jumlah_terjual || 0,
               kode_barang: kodeBarang,
               gambar_url: gambarUrl
             };

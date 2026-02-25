@@ -139,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       path: '/admin/modal-bahanbaku',
     },
     {
-      name: 'Proses Memasak',
+      name: 'Proses Memasak ',
       icon: <ChefHat size={20} />,
       path: '/admin/process-memasak',
     },

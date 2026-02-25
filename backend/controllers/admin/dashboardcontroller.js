@@ -17,7 +17,6 @@ export const getDashboardOmzet = async (req, res) => {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() + diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
-
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
@@ -201,13 +200,11 @@ export const updateBestSellerCategory = async (req, res) => {
       });
       await bestSellerKategori.save();
     }
-
+    // Ambil transaksi selesai sesuai mode (bulan ini atau kumulatif)
     let transaksiSelesai;
-
     if (bulan === 'kumulatif') {
       transaksiSelesai = await Transaksi.find({ status: "selesai" });
     } else {
-      // Default: bulan ini
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -218,44 +215,77 @@ export const updateBestSellerCategory = async (req, res) => {
       });
     }
 
-    // Hitung barang terlaris berdasarkan pendapatan
-    const barangCounter = {};
+    // Gunakan logika agregasi yang sama seperti getTopBarang supaya hasil konsisten
+    const barangMap = {};
     transaksiSelesai.forEach(trx => {
+      if (!Array.isArray(trx.barang_dibeli)) return;
       trx.barang_dibeli.forEach(item => {
-        if (!barangCounter[item.nama_barang]) {
-          barangCounter[item.nama_barang] = 0;
+        const key = item.kode_barang || item.nama_barang || item._id || String(item.nama || item.kode || '');
+
+        if (!barangMap[key]) {
+          barangMap[key] = {
+            kode_barang: item.kode_barang || key,
+            nama_barang: item.nama_barang || item.nama || 'Unknown',
+            qty: 0,
+            pendapatan: 0,
+            modal: 0,
+            harga_jual_ref: item.harga_satuan || 0
+          };
         }
-        // Hitung berdasarkan pendapatan (subtotal)
-        barangCounter[item.nama_barang] += item.subtotal;
+
+        const qty = Number(item.jumlah) || 0;
+        const hargaFinal = Number(item.harga_satuan) || 0;
+        const hpp = Number(item.harga_beli) || 0;
+
+        barangMap[key].qty += qty;
+        barangMap[key].pendapatan += hargaFinal * qty;
+        barangMap[key].modal += hpp * qty;
       });
     });
 
-    // Ambil top 5 barang terlaris berdasarkan pendapatan
-    const topBarang = Object.entries(barangCounter)
-      .map(([nama_barang, pendapatan]) => ({ nama_barang, pendapatan }))
+    const topBarang = Object.values(barangMap)
+      .map(item => ({
+        kode_barang: item.kode_barang,
+        nama_barang: item.nama_barang,
+        jumlah_terjual: item.qty,
+        harga_jual: item.harga_jual_ref,
+        pendapatan: item.pendapatan,
+        laba_kotor: item.pendapatan - item.modal
+      }))
       .sort((a, b) => b.pendapatan - a.pendapatan)
       .slice(0, 5);
 
-    // Reset kategori produk yang sebelumnya Best Seller (opsional, jika ingin dinamis)
-    if (bulan === 'bulan_ini') {
-      // Cari produk yang kategori-nya "Best Seller ⭐" dan ubah ke kategori lama jika ada
-      // Tapi ini rumit, mungkin skip dulu
+    // Update kategori produk sesuai topBarang (cari dengan kode_barang terlebih dahulu, fallback ke nama)
+    // Unset kategori "Best Seller ⭐" dari produk yang sebelumnya berstatus Best Seller
+    // tapi tidak ada di daftar topBarang saat ini.
+    const topKeys = topBarang.map(it => it.kode_barang || it.nama_barang).filter(Boolean);
+    if (topKeys.length > 0) {
+      await Barang.updateMany(
+        {
+          kategori: "Best Seller ⭐",
+          $nor: [
+            { kode_barang: { $in: topKeys } },
+            { nama_barang: { $in: topKeys } }
+          ]
+        },
+        { $set: { kategori: "" } }
+      );
     }
 
-    // Untuk setiap barang terlaris, update kategori menjadi "Best Seller"
     const updatedBarang = [];
     for (const item of topBarang) {
+      const query = item.kode_barang
+        ? { $or: [{ kode_barang: item.kode_barang }, { nama_barang: item.nama_barang }] }
+        : { nama_barang: item.nama_barang };
+
       const barang = await Barang.findOneAndUpdate(
-        { nama_barang: item.nama_barang },
+        query,
         { kategori: "Best Seller ⭐" },
         { new: true }
       );
+
       if (barang) {
-        updatedBarang.push({
-          nama_barang: item.nama_barang,
-          pendapatan: item.pendapatan,
-          kategori_baru: "Best Seller ⭐"
-        });
+        updatedBarang.push({ nama_barang: item.nama_barang, pendapatan: item.pendapatan, kategori_baru: "Best Seller ⭐" });
       }
     }
 

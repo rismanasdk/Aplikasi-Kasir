@@ -9,34 +9,14 @@ import { exportOmzetToCsv, exportOmzetToExcel, exportOmzetToPdf } from '../../ut
 import { formatRupiah } from '../../utils/formatRupiah';
 const ipbe = import.meta.env.VITE_IPBE;
 
-// Interface untuk produk dari API
-interface ProdukApi {
-  nama_produk: string;
-  jumlah_terjual: number;
-  hpp_per_porsi: number;
-  hpp_total: number;
-  pendapatan: number;
-  laba_kotor: number;
-  _id: string;
-}
-
-// Interface untuk response dari API
-interface ApiResponse {
-  success: boolean;
-  data: {
-    _id: string;
-    tanggal: string;
-    produk: ProdukApi[];
-    total_hpp: number;
-    total_pendapatan: number;
-    total_laba_kotor: number;
-    total_beban: number;
-    laba_bersih: number;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-  }[];
-}
+  // Interface untuk respons endpoint admin omzet
+  interface ApiOmzetResponse {
+    omzet: {
+      hari_ini: number;
+      minggu_ini: number;
+      bulan_ini: number;
+    };
+  }
 
 // Interface untuk data omzet
 interface OmzetData {
@@ -69,22 +49,34 @@ const OmzetPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Ambil data dari API
-      const response = await fetch(`${ipbe}/api/admin/hpp-total`);
+      // Ambil data dari API admin omzet (samakan dengan manager)
+      const response = await fetch(`${ipbe}/api/admin/dashboard/omzet`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data: ApiResponse = await response.json();
-      
-      // Validasi data
-      if (!data || !data.success || !data.data || data.data.length === 0) {
-        throw new Error('Data tidak valid atau tidak lengkap');
+      const data: ApiOmzetResponse = await response.json();
+
+      if (!data || !data.omzet) {
+        throw new Error('Data omzet tidak tersedia');
       }
-      
-      // Proses data untuk omzet
-      const processedData = processOmzetData(data.data);
+
+      // Map respons menjadi format OmzetData yang dipakai komponen
+      const processedData: OmzetData = {
+        hari_ini: data.omzet.hari_ini || 0,
+        minggu_ini: data.omzet.minggu_ini || 0,
+        bulan_ini: data.omzet.bulan_ini || 0,
+        detail_hari: [],
+        detail_minggu: [],
+        detail_bulan: []
+      };
       setOmzetData(processedData);
       
       if (showNotification) {
@@ -104,65 +96,8 @@ const OmzetPage: React.FC = () => {
     }
   }, []); // PERBAIKAN: Hapus selectedPeriod dari dependency array karena tidak digunakan dalam fungsi
 
-  // Fungsi untuk memproses data dari API menjadi format omzet
-  const processOmzetData = (data: ApiResponse['data']): OmzetData => {
-    // Kelompokkan data berdasarkan tanggal
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    
-    // Filter data untuk periode yang berbeda
-    const todayData = data.filter(item => {
-      const itemDate = new Date(item.tanggal);
-      return itemDate.toDateString() === today.toDateString();
-    });
-    
-    const weekData = data.filter(item => {
-      const itemDate = new Date(item.tanggal);
-      return itemDate >= weekAgo && itemDate <= today;
-    });
-    
-    const monthData = data.filter(item => {
-      const itemDate = new Date(item.tanggal);
-      return itemDate >= monthAgo && itemDate <= today;
-    });
-    
-    // Hitung total omzet untuk setiap periode
-    const todayOmzet = todayData.reduce((sum, item) => sum + item.total_pendapatan, 0);
-    const weekOmzet = weekData.reduce((sum, item) => sum + item.total_pendapatan, 0);
-    const monthOmzet = monthData.reduce((sum, item) => sum + item.total_pendapatan, 0);
-    
-    // Buat detail data untuk chart
-    const detailHari = weekData.map(item => ({
-      tanggal: new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      omzet: item.total_pendapatan
-    }));
-    
-    const detailMinggu = weekData.map(item => ({
-      tanggal: new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      omzet: item.total_pendapatan
-    }));
-    
-    const detailBulan = monthData.map(item => ({
-      tanggal: new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      omzet: item.total_pendapatan
-    }));
-    
-    return {
-      hari_ini: todayOmzet,
-      minggu_ini: weekOmzet,
-      bulan_ini: monthOmzet,
-      detail_hari: detailHari,
-      detail_minggu: detailMinggu,
-      detail_bulan: detailBulan
-    };
-  };
+  // Jika kelak ingin detail per-hari/minggu/bulan, bisa panggil endpoint laporan
+  // Untuk sekarang gunakan nilai agregat dari endpoint admin omzet
 
   useEffect(() => {
     fetchOmzetData();

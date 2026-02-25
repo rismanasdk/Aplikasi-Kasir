@@ -83,19 +83,69 @@ const BreakdownPembayaran: React.FC = () => {
   const [data, setData] = useState<PaymentBreakdown | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [daftarBulan, setDaftarBulan] = useState<Array<{ id: string; nama_bulan: string; bulan: number; tahun: number }>>([]);
+  const [selectedBulan, setSelectedBulan] = useState<string>('');
+  const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchDaftarBulan = async () => {
+      try {
+        setLoadingBulan(true);
+        const resp = await fetch(`${ipbe}/api/admin/laporan/bulan`);
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        const json = await resp.json();
+        setDaftarBulan(json.daftar_bulan || []);
+        if (json.daftar_bulan && json.daftar_bulan.length > 0) setSelectedBulan(json.daftar_bulan[0].id);
+      } catch (e) {
+        console.error('Gagal mengambil daftar bulan:', e);
+      } finally {
+        setLoadingBulan(false);
+      }
+    };
+
+    fetchDaftarBulan();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${ipbe}/api/admin/dashboard/breakdown-pembayaran`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+
+        // compute start/end from selectedBulan
+        let startDate = '';
+        let endDate = '';
+        if (selectedBulan) {
+          const bulanObj = daftarBulan.find(b => b.id === selectedBulan);
+          if (bulanObj) {
+            const yyyy = String(bulanObj.tahun);
+            const mm = String(bulanObj.bulan).padStart(2, '0');
+            startDate = `${yyyy}-${mm}-01`;
+            const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+            endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+          }
         }
-        
-        const result: ApiResponse = await response.json();
-        setData(result.payment_breakdown);
+
+        // fallback to current month if not selected
+        if (!startDate || !endDate) {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          startDate = `${yyyy}-${mm}-01`;
+          const lastDay = new Date(yyyy, Number(mm), 0).getDate();
+          endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+        }
+
+        const resp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`);
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        const json = await resp.json();
+
+        // json.rekap is array of { metode, total }
+        const map: PaymentBreakdown = {};
+        (json.rekap || []).forEach((it: any) => {
+          map[it.metode || it._id || 'Unknown'] = Number(it.total || 0);
+        });
+
+        setData(map);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengambil data');
       } finally {
@@ -103,8 +153,13 @@ const BreakdownPembayaran: React.FC = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    // only fetch when daftarBulan loaded
+    if (!loadingBulan) fetchData();
+  }, [selectedBulan, loadingBulan, daftarBulan]);
+
+  const handleBulanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedBulan(e.target.value);
+  };
 
   // Fungsi untuk mengelompokkan metode pembayaran yang serupa
   const groupPaymentMethods = (payments: PaymentBreakdown): PaymentBreakdown => {
@@ -158,10 +213,20 @@ const BreakdownPembayaran: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-          <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
-        </div>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
+              <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+            </div>
+            <div className="ml-auto">
+              <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
+              <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
+                {daftarBulan.map(b => (
+                  <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         
         <div className="flex justify-center items-center h-96">
           <LoadingSpinner />
@@ -173,9 +238,19 @@ const BreakdownPembayaran: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-          <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
+            <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+          </div>
+          <div className="ml-auto">
+            <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
+            <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
+              {daftarBulan.map(b => (
+                <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+              ))}
+            </select>
+          </div>
         </div>
         
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -194,9 +269,19 @@ const BreakdownPembayaran: React.FC = () => {
   if (!data) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-          <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
+            <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+          </div>
+          <div className="ml-auto">
+            <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
+            <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
+              {daftarBulan.map(b => (
+                <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+              ))}
+            </select>
+          </div>
         </div>
         
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -226,9 +311,19 @@ const BreakdownPembayaran: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-        <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+      <div className="flex items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
+          <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
+        </div>
+        <div className="ml-auto">
+          <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
+          <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
+            {daftarBulan.map(b => (
+              <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+            ))}
+          </select>
+        </div>
       </div>
       
       <div className="bg-white rounded-lg shadow-md p-6 border">

@@ -100,65 +100,13 @@ export const ambilBahanBaku = async (req, res) => {
     }
 
     if (produkData && totalPorsi > 0) {
-      // Hitung jumlah produk yang bisa dibuat
+      // Hitung jumlah produk yang bisa dibuat dari jumlah yang diambil.
+      // Simpan jumlah produk untuk dikembalikan ke client, tapi JANGAN
+      // membuat/memasukkan barang ke stok di tahap pengambilan. Pembuatan
+      // barang hanya dilakukan saat chef meng-approve (updateProductionStatus).
       jumlahProduk = Math.floor(parseInt(jumlah_diproses) / totalPorsi);
-      
       if (jumlahProduk > 0) {
-        // Generate kode barang unik
-        const timestamp = Date.now().toString().slice(-6);
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        const kodeBarang = `BRG${timestamp}${random}`;
-
-        // Hitung harga jual berdasarkan modal per porsi + margin
-        const modalPerPorsi = produkData.modal_per_porsi || 0;
-        const hargaJual = Math.round(modalPerPorsi * 1.3);
-
-        // Buat barang baru
-        const newBarang = new Barang({
-          kode_barang: kodeBarang,
-          nama_barang: produkData.nama_produk,
-          kategori: "Makanan",
-          harga_beli: modalPerPorsi,
-          harga_jual: hargaJual,
-          stok: jumlahProduk,
-          stok_awal: 0,
-          stok_minimal: 10,
-          margin: 50,
-          bahan_baku: [{
-            nama_produk: produkData.nama_produk,
-            bahan: (Array.isArray(produkData.bahan) ? produkData.bahan : []).map(b => ({
-              nama: b.nama,
-              harga: b.harga || 0
-            }))
-          }],
-          total_harga_beli: modalPerPorsi * jumlahProduk,
-          hargaFinal: hargaJual,
-          use_discount: false,
-          gambar_url: "",
-          status: "pending"
-        });
-
-        await newBarang.save();
-        
-        // Update Firebase RTDB dengan data barang baru
-        try {
-          const db = (await import("../../config/firebaseAdmin.js")).default;
-          if (db) {
-            const barangId = newBarang._id.toString();
-            await db.ref(`/barang/${barangId}`).set({
-              stok: newBarang.stok || 0,
-              nama: newBarang.nama_barang || "",
-              harga_jual: newBarang.harga_jual || 0,
-              harga_final: Math.round(newBarang.hargaFinal) || 0,
-              kategori: newBarang.kategori || "",
-              status: "aman" // status stok di Firebase
-            });
-          }
-        } catch (e) {
-          console.warn("Gagal update Firebase saat create barang:", e.message || e);
-        }
-        
-        console.log(`Barang ${produkData.nama_produk} berhasil dibuat dengan ${jumlahProduk} unit`);
+        console.log(`Produk ${produkData.nama_produk} akan menghasilkan ${jumlahProduk} unit (tidak dibuat dulu, menunggu approval).`);
       }
     }
 
@@ -248,11 +196,13 @@ export const updateProductionStatus = async (req, res) => {
           console.log("   ⚠️  ModalUtama atau bahan_baku kosong");
         }
 
-        // Tentukan jumlah produk yang dibuat: gunakan jumlah_diproses langsung (tidak perlu bagi dengan totalPorsi)
-        // totalPorsi di sini adalah untuk referensi, tapi jumlah_diproses sudah final
-        const jumlahDiproses = production.jumlah_diproses || 0;
-        let jumlahProduk = jumlahDiproses; // Langsung gunakan jumlah_diproses sebagai stok
-        console.log("   Using jumlahDiproses directly as jumlahProduk:", jumlahProduk, "(totalPorsi ref:", totalPorsi, ")");
+        // Tentukan jumlah produk yang dibuat. Frontend mengirim `jumlah_diproses`
+        // sebagai jumlah produk yang diminta chef, jadi gunakan langsung nilai ini.
+        // (Sebelumnya ada pembagian oleh totalPorsi yang menyebabkan jumlah
+        // produk yang dihasilkan terlalu kecil.)
+        const jumlahDiproses = parseInt(production.jumlah_diproses || 0, 10) || 0;
+        const jumlahProduk = jumlahDiproses;
+        console.log("   Menggunakan jumlahProduk dari jumlah_diproses:", jumlahProduk, "(totalPorsi:", totalPorsi, ")");
 
         if (jumlahProduk > 0) {
           console.log("   ✅ jumlahProduk > 0, creating/updating barang...");

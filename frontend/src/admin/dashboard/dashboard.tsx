@@ -159,13 +159,15 @@ const AdminDashboard: React.FC = () => {
           topBarangResponse,
           hppTotalResponse,
           transaksiResponse,
-          settingsResponse
+          settingsResponse,
+          omzetResponse
         ] = await Promise.all([
           fetch(`${ipbe}/api/admin/users`),
           fetch(`${ipbe}/api/admin/dashboard/top-barang?filter=bulan`),
           fetch(`${ipbe}/api/admin/hpp-total`),
           fetch(`${ipbe}/api/admin/dashboard/transaksi/terakhir`),
-          fetch(`${ipbe}/api/admin/settings`)
+          fetch(`${ipbe}/api/admin/settings`),
+          fetch(`${ipbe}/api/admin/dashboard/omzet`)
         ]);
 
         // Check for errors
@@ -183,6 +185,13 @@ const AdminDashboard: React.FC = () => {
         const hppTotalData = hppTotalDataRaw as HppTotalSummaryResponse | HppRecord[];
         const transaksiData: Transaksi[] = await transaksiResponse.json();
         const settingsData: SettingsResponse = await settingsResponse.json();
+        // omzetResponse returns { omzet: { hari_ini, minggu_ini, bulan_ini } }
+        let omzetData: { omzet?: { hari_ini?: number; minggu_ini?: number; bulan_ini?: number } } = {};
+        try {
+          omzetData = await omzetResponse.json();
+        } catch (e) {
+          console.warn('Failed to parse omzetResponse:', e);
+        }
 
         // Debug: Log hppTotalData untuk melihat struktur
         console.log('HPP Total Data:', hppTotalData);
@@ -203,26 +212,29 @@ const AdminDashboard: React.FC = () => {
           return 0;
         };
 
-        let totalRevenue = 0;
-        try {
-          // jika backend mengembalikan { success, data: [...] } atau langsung array
-          const records: HppRecord[] = Array.isArray((hppTotalData as HppTotalSummaryResponse).data)
-            ? (hppTotalData as HppTotalSummaryResponse).data as HppRecord[]
-            : (Array.isArray(hppTotalData) ? (hppTotalData as HppRecord[]) : []);
+        // Prefer aggregated omzet from admin dashboard endpoint (bulan_ini)
+        let totalRevenue = safeNumber(omzetData.omzet?.bulan_ini ?? 0);
+        if (!totalRevenue) {
+          // Fallback to previous computation using hpp-total records
+          try {
+            const records: HppRecord[] = Array.isArray((hppTotalData as HppTotalSummaryResponse).data)
+              ? (hppTotalData as HppTotalSummaryResponse).data as HppRecord[]
+              : (Array.isArray(hppTotalData) ? (hppTotalData as HppRecord[]) : []);
 
-          const today = new Date();
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
+            const today = new Date();
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-          const monthRecords = records.filter((item: HppRecord) => {
-            const d = new Date(item.tanggal);
-            return d >= monthAgo && d <= today;
-          });
+            const monthRecords = records.filter((item: HppRecord) => {
+              const d = new Date(item.tanggal);
+              return d >= monthAgo && d <= today;
+            });
 
-          totalRevenue = monthRecords.reduce((sum: number, item: HppRecord) => sum + safeNumber(item.total_pendapatan), 0);
-        } catch (e) {
-          console.warn('Failed to compute monthly revenue from hppTotalData:', e);
-          totalRevenue = 0;
+            totalRevenue = monthRecords.reduce((sum: number, item: HppRecord) => sum + safeNumber(item.total_pendapatan), 0);
+          } catch (e) {
+            console.warn('Failed to compute monthly revenue from hppTotalData:', e);
+            totalRevenue = 0;
+          }
         }
         
         // Calculate total products sold
@@ -459,12 +471,6 @@ const AdminDashboard: React.FC = () => {
               <p className={`text-2xl font-bold text-white mt-1 ${stats.totalRevenue < 0 ? 'text-red-100' : ''}`}>
                 {formatRupiah(stats.totalRevenue)}
               </p>
-              {/* { <p className="text-xs text-white mt-2 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                Rata-rata: <span className="text-sm font-bold text-white ml-2">{formatRupiah(stats.averageTransactionValue)}</span>
-              </p>} */}
             </div>
             <div className="p-3 rounded-full bg-white bg-opacity-20">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

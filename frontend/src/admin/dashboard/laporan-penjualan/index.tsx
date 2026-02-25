@@ -21,6 +21,7 @@ interface SummaryApi {
   total_pendapatan: number;
   total_laba_kotor: number;
   total_beban: number;
+  total_barang_terjual_hari_ini?: number;
   total_laba_bersih: number;
 }
 
@@ -166,65 +167,96 @@ const LaporanPenjualan: React.FC = () => {
     
     try {
       setLoading(true);
-      const response = await fetch(`${ipbe}/api/admin/hpp-total/summary?bulan=${selectedBulan}`);
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
-      const result: ApiResponse = await response.json();
-      
-      if (!result?.success || !result?.summary) {
-        throw new Error('Data tidak valid atau tidak lengkap');
+      // Temukan info bulan yang dipilih dari daftarBulan untuk membentuk startDate/endDate
+      const bulanObj = daftarBulan.find(b => b.id === selectedBulan);
+      let startDate: string;
+      let endDate: string;
+
+      if (bulanObj) {
+        const yyyy = String(bulanObj.tahun);
+        const mm = String(bulanObj.bulan).padStart(2, '0');
+        startDate = `${yyyy}-${mm}-01`;
+        // hitung hari terakhir bulan
+        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+        endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+      } else {
+        // fallback: gunakan bulan sekarang
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        startDate = `${yyyy}-${mm}-01`;
+        const lastDay = new Date(yyyy, Number(mm), 0).getDate();
+        endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
       }
-      
+
+      // Fetch realtime ringkasan from laporan controller
+      const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+      if (!ringkasanResp.ok) throw new Error(`HTTP error! status: ${ringkasanResp.status}`);
+      const ringkasanJson = await ringkasanResp.json();
+      const ringkasan = ringkasanJson?.ringkasan || {};
+
+      // Fetch detail laba and daily data (optional - keep existing structure if available)
+      const detailResp = await fetch(`${ipbe}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`);
+      const detailJson = detailResp.ok ? await detailResp.json() : null;
+
+      // Fetch rekap metode pembayaran (not used heavily here, but keep for compatibility)
+      const rekapResp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`);
+      const rekapJson = rekapResp.ok ? await rekapResp.json() : null;
+
+      // Normalize values with safe fallbacks
+      const totalPendapatanValue = Number(ringkasan.total_pendapatan || 0);
+      setTotalPendapatan(totalPendapatanValue);
+      setTotalLabaKotor(Number(ringkasan.total_laba_kotor || 0));
+      setTotalHpp(Number(ringkasan.total_hpp || 0));
+
+      // Keep data shape compatibility: try to use detailJson.data if present, else empty
+      const result: ApiResponse = {
+        success: true,
+        summary: {
+          total_hpp: Number(ringkasan.total_hpp || 0),
+          total_pendapatan: Number(ringkasan.total_pendapatan || 0),
+          total_laba_kotor: Number(ringkasan.total_laba_kotor || 0),
+          total_beban: Number(ringkasan.total_biaya_operasional || 0),
+          total_barang_terjual_hari_ini: Number(ringkasan.total_barang_terjual || 0),
+          total_laba_bersih: Number(ringkasan.total_laba_bersih || 0)
+        },
+        data: detailJson?.data || []
+      };
+
       setData(result);
       
-      // Set data dari summary
-      setTotalPendapatan(result.summary.total_pendapatan || 0);
-      setTotalLabaKotor(result.summary.total_laba_kotor || 0);
-      setTotalHpp(result.summary.total_hpp || 0);
-      
-      // Proses data harian
-      if (result.data && result.data.length > 0) {
-        const today = new Date().toISOString().split('T')[0];
-        const todayData = result.data.find(item => item.tanggal === today);
-        
-        // Set beban perhari
-        setTotalBebanPerhari(todayData?.total_beban || result.data[result.data.length - 1].total_beban || 0);
-        
-        // Hitung total beban perbulan
-        const totalBebanBulanan = result.data.reduce((sum, item) => sum + (item.total_beban || 0), 0);
-        setTotalBebanPerbulan(totalBebanBulanan);
-        
-        // Proses produk hari ini
-        if (todayData?.produk) {
-          const produkHariIniData: ProdukTerlaris[] = todayData.produk.map(item => ({
-            produk: item.nama_produk,
-            harga_jual: item.pendapatan / item.jumlah_terjual,
-            harga_beli: item.hpp_per_porsi,
-            labaPerItem: item.laba_kotor / item.jumlah_terjual,
-            jumlahTerjual: item.jumlah_terjual,
-            totalLaba: item.laba_kotor
-          }));
-          
-          produkHariIniData.sort((a, b) => b.totalLaba - a.totalLaba);
-          setProdukTerlarisHariIni(produkHariIniData);
-          
-          const totalBarangHariIni = produkHariIniData.reduce((sum, item) => sum + item.jumlahTerjual, 0);
-          setTotalBarangTerjualHariIni(totalBarangHariIni);
-        } else {
-          setProdukTerlarisHariIni([]);
-          setTotalBarangTerjualHariIni(0);
-        }
+      // Proses data harian / bulanan
+      let totalBebanBulanan = Number(ringkasan.total_biaya_operasional || 0);
+      setTotalBebanPerbulan(totalBebanBulanan);
+
+      // For per-day beban, if detail data contains daily entries, use today's; otherwise 0
+      const today = new Date().toISOString().split('T')[0];
+      const todayData = result.data?.find(item => item.tanggal === today) || null;
+      setTotalBebanPerhari(todayData ? (todayData.total_beban || 0) : 0);
+
+      // Produk hari ini: prefer detail, else use ringkasan total_barang_terjual
+      if (todayData?.produk && Array.isArray(todayData.produk) && todayData.produk.length > 0) {
+        const produkHariIniData: ProdukTerlaris[] = todayData.produk.map(item => ({
+          produk: item.nama_produk,
+          harga_jual: item.pendapatan / item.jumlah_terjual,
+          harga_beli: item.hpp_per_porsi,
+          labaPerItem: item.laba_kotor / item.jumlah_terjual,
+          jumlahTerjual: item.jumlah_terjual,
+          totalLaba: item.laba_kotor
+        }));
+        produkHariIniData.sort((a, b) => b.totalLaba - a.totalLaba);
+        setProdukTerlarisHariIni(produkHariIniData);
+        const totalBarangHariIni = produkHariIniData.reduce((sum, item) => sum + item.jumlahTerjual, 0);
+        setTotalBarangTerjualHariIni(totalBarangHariIni);
       } else {
         setProdukTerlarisHariIni([]);
-        setTotalBarangTerjualHariIni(0);
-        setTotalBebanPerhari(0);
-        setTotalBebanPerbulan(0);
+        const fallbackCount = Number(ringkasan.total_barang_terjual || 0);
+        setTotalBarangTerjualHariIni(fallbackCount);
       }
       
-      // PERBAIKAN: Hitung laba bersih dengan rumus yang benar
-      // Laba Bersih = Total Pendapatan - Total HPP - Total Beban
-      const calculatedLabaBersih = (result.summary.total_pendapatan || 0) - (result.summary.total_hpp || 0) - (result.summary.total_beban || 0);
+      // Hitung laba bersih dari ringkasan jika tersedia, else compute
+      const calculatedLabaBersih = Number(ringkasan.total_laba_bersih !== undefined ? ringkasan.total_laba_bersih : (totalPendapatanValue - (result.summary?.total_hpp || 0) - totalBebanBulanan));
       setLabaBersih(calculatedLabaBersih);
       
       console.log('Total Pendapatan:', result.summary.total_pendapatan);
@@ -233,27 +265,40 @@ const LaporanPenjualan: React.FC = () => {
       console.log('Laba Bersih (dihitung):', calculatedLabaBersih);
       console.log('Laba Bersih (dari API):', result.summary.total_laba_bersih);
       
-      // Set data pie chart
+      // Set data pie chart (fallback distribution)
       const pieDataArray = [
-        { name: 'Tunai', value: result.summary.total_pendapatan * 0.4 },
-        { name: 'E-Wallet', value: result.summary.total_pendapatan * 0.3 },
-        { name: 'Virtual Account', value: result.summary.total_pendapatan * 0.2 },
-        { name: 'Kartu Kredit', value: result.summary.total_pendapatan * 0.1 }
+        { name: 'Tunai', value: totalPendapatanValue * 0.4 },
+        { name: 'E-Wallet', value: totalPendapatanValue * 0.3 },
+        { name: 'Virtual Account', value: totalPendapatanValue * 0.2 },
+        { name: 'Kartu Kredit', value: totalPendapatanValue * 0.1 }
       ];
       
       setPieData(pieDataArray);
       
-      // Set biaya operasional
-      setBiayaOperasional({
-        rincian_biaya: [
-          { nama: 'Listrik', jumlah: totalBebanPerbulan * 0.3 },
-          { nama: 'Air', jumlah: totalBebanPerbulan * 0.1 },
-          { nama: 'Internet', jumlah: totalBebanPerbulan * 0.1 },
-          { nama: 'Sewa Tempat', jumlah: totalBebanPerbulan * 0.3 },
-          { nama: 'Gaji Karyawan', jumlah: totalBebanPerbulan * 0.2 }
-        ],
-        total: totalBebanPerbulan || 0
-      });
+      // Set biaya operasional: prefer breakdown dari backend jika tersedia
+      if ((detailJson as any)?.biaya_operasional && Array.isArray((detailJson as any).biaya_operasional.rincian_biaya)) {
+        setBiayaOperasional({
+          rincian_biaya: (detailJson as any).biaya_operasional.rincian_biaya.map((it: any) => ({ nama: it.nama, jumlah: it.jumlah })),
+          total: (detailJson as any).biaya_operasional.total || totalBebanBulanan || 0
+        });
+      } else if ((ringkasanJson as any)?.biaya_operasional && Array.isArray((ringkasanJson as any).biaya_operasional?.rincian_biaya)) {
+        setBiayaOperasional({
+          rincian_biaya: (ringkasanJson as any).biaya_operasional.rincian_biaya.map((it: any) => ({ nama: it.nama, jumlah: it.jumlah })),
+          total: (ringkasanJson as any).biaya_operasional.total || totalBebanBulanan || 0
+        });
+      } else {
+        // Fallback distribution
+        setBiayaOperasional({
+          rincian_biaya: [
+            { nama: 'Listrik', jumlah: totalBebanBulanan * 0.3 },
+            { nama: 'Air', jumlah: totalBebanBulanan * 0.1 },
+            { nama: 'Internet', jumlah: totalBebanBulanan * 0.1 },
+            { nama: 'Sewa Tempat', jumlah: totalBebanBulanan * 0.3 },
+            { nama: 'Gaji Karyawan', jumlah: totalBebanBulanan * 0.2 }
+          ],
+          total: totalBebanBulanan || 0
+        });
+      }
       setLoadingBiayaOperasional(false);
       
     } catch (err) {
@@ -549,7 +594,7 @@ const LaporanPenjualan: React.FC = () => {
                 <div>
                   <h3 className="text-sm font-medium text-amber-800">Total Barang Terjual</h3>
                   <p className="text-2xl font-bold text-amber-700">{totalBarangTerjualHariIni}</p>
-                  <p className="text-xs text-amber-600">hari ini</p>
+                  <p className="text-xs text-amber-600">per bulan</p>
                 </div>
               </div>
             </div>
@@ -612,7 +657,7 @@ const LaporanPenjualan: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-red-800">Total Beban (Perbulan)</h3>
-                  <p className="text-2xl font-bold text-red-700">{formatRupiah(totalBebanPerbulan)}</p>
+                  <p className="text-2xl font-bold text-red-700">Rp {totalBebanPerbulan.toLocaleString('id-ID')}</p>
                   <p className="text-xs text-red-600">jumlah semua hari</p>
                 </div>
               </div>
@@ -684,159 +729,7 @@ const LaporanPenjualan: React.FC = () => {
             </div>
           </div>
 
-          {/* Tabel Produk Terlaris */}
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                </svg>
-                Produk Terlaris (Hari Ini)
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">Berdasarkan total laba hari ini</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Produk
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Harga Jual
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Harga Beli
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Laba/Item
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jumlah Terjual
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total Laba Kotor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {currentItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
-                        <div className="flex flex-col items-center justify-center py-4">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="mt-2">Tidak ada data produk untuk hari ini</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    currentItems.map((item, index) => (
-                      <tr 
-                        key={index} 
-                        className={`transition-colors hover:bg-gray-50 ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        }`}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {item.produk}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatRupiah(item.harga_jual)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatRupiah(item.harga_beli)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={`text-sm font-medium ${item.labaPerItem >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatRupiah(item.labaPerItem)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.jumlahTerjual}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={`text-sm font-medium ${item.totalLaba >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatRupiah(item.totalLaba)}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination */}
-            {produkTerlarisHariIni.length > itemsPerPage && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6">
-                <div className="text-sm text-gray-600">
-                  Menampilkan <span className="font-semibold text-gray-900">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, produkTerlarisHariIni.length)}</span> dari{' '}
-                  <span className="font-semibold text-gray-900">{produkTerlarisHariIni.length}</span> produk
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={prevPage}
-                    disabled={currentPage === 1}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
-                      currentPage === 1 
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-105'
-                    }`}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sebelumnya</span>
-                  </button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => paginate(pageNum)}
-                          className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                            currentPage === pageNum 
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md scale-105' 
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === totalPages}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
-                      currentPage === totalPages 
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-105'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Selanjutnya</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+       
 
           {/* Grafik Metode Pembayaran */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

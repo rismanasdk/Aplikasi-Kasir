@@ -7,7 +7,9 @@ import {
     getRekapMetodePembayaran,
     getLaba,
     getDaftarBulanLaporan,
-    getLaporanById
+    getLaporanById,
+    getDetailLaba,
+    getRekapMetodePembayaranRealtime
 } from "../../controllers/admin/laporancontroller.js";
 
 const router = express.Router();
@@ -22,10 +24,11 @@ router.get("/periode", getLaporanByPeriode);
 router.get("/ringkasan", getRingkasanPenjualan);
 
 router.get("/bulan", getDaftarBulanLaporan);
-router.get("/:id", getLaporanById);
-
-// Admin batalkan pesanan
 router.get("/metode-pembayaran", getRekapMetodePembayaran);
-router.get("/laba", getLaba)
+router.get("/rekap-metode", getRekapMetodePembayaranRealtime);
+router.get("/laba", getLaba);
+router.get("/detail-laba", getDetailLaba);
+router.get("/:id", getLaporanById);
+// Admin batalkan pesanan
 
 export default router;
