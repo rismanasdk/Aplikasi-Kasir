@@ -46,7 +46,7 @@ Tersedia frontend interaktif dan backend API dengan **real-time update**, serta 
 - Axios & Socket.io untuk komunikasi backend
 
 ### 🌐 Backend API
-- Node.js + Express + MongoDB
+- Node.js + Express + MongoDB + Helmet
 - Endpoint CRUD lengkap untuk produk, kategori, transaksi
 - Socket.io untuk **update stok & transaksi real-time**
 - Firebase untuk real-time update stok barang 
