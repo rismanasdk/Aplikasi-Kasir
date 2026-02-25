@@ -15,14 +15,14 @@ import BiayaOperasional from "../../models/biayaoperasional.js";
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 
 const updateHppOtomatis = async (barang_dibeli) => {
-  const todayString = new Date().toISOString().slice(0, 10);
-  console.log(`[HPP] Memulai proses update HPP untuk ${barang_dibeli.length} item.`);
+  const today = new Date();
+  const todayString = today.toISOString().slice(0, 10); // 'YYYY-MM-DD' string for HppHarian.tanggal
+  console.log(`[HPP] Memulai proses update HPP untuk ${barang_dibeli.length} item pada ${todayString}.`);
 
   // Ambil SEMUA data yang dibutuhkan di awal
   const modalUtama = await ModalUtama.findOne();
   const biayaLayanan = await BiayaLayanan.findOne();
   // compute today's pengeluaran total from pengeluaran_biaya
-  const today = new Date();
   const startDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23,59,59,999);
   const agg = await PengeluaranBiaya.aggregate([
@@ -39,19 +39,27 @@ const updateHppOtomatis = async (barang_dibeli) => {
     console.error("[HPP] ERROR: Data biaya layanan tidak ditemukan.");
     throw new Error("Data biaya layanan tidak ditemukan.");
   }
+  // debug: tampilkan daftar produk yang tersedia di ModalUtama (nama_produk)
+  try {
+    const availableProduk = (modalUtama.bahan_baku || []).map(p => String(p.nama_produk).toLowerCase().trim());
+    console.log(`[HPP] Produk tersedia di ModalUtama: ${availableProduk.join(", ")}`);
+  } catch (e) {
+    console.warn('[HPP] Gagal membaca daftar produk dari ModalUtama:', e.message);
+  }
 
-  let hppHarian = await HppHarian.findOne({ tanggal: today });
+  // Cari dokumen HPP harian berdasarkan string tanggal (konsisten dengan model dan controller lain)
+  let hppHarian = await HppHarian.findOne({ tanggal: todayString });
   if (!hppHarian) {
     hppHarian = new HppHarian({
-      tanggal: today,
+      tanggal: todayString,
       produk: [],
       total_hpp: 0,
       total_pendapatan: 0,
       total_laba_kotor: 0,
-      total_beban: 0, // Inisialisasi
-      laba_bersih: 0  // Inisialisasi
+      total_beban: 0,
+      laba_bersih: 0
     });
-    console.log(`[HPP] Membuat dokumen HPP baru untuk tanggal ${today}.`);
+    console.log(`[HPP] Membuat dokumen HPP baru untuk tanggal ${todayString}.`);
   }
 
   for (const item of barang_dibeli) {
@@ -110,7 +118,16 @@ const updateHppOtomatis = async (barang_dibeli) => {
 
   try {
     await hppHarian.save();
-    console.log(`[HPP] SUKSES: HPP Harian berhasil diperbarui (${today})`);
+    console.log(`[HPP] SUKSES: HPP Harian berhasil diperbarui untuk tanggal ${todayString}. Produk count=${(hppHarian.produk||[]).length}`);
+    console.log('[HPP] HppHarian snapshot:', JSON.stringify({
+      tanggal: hppHarian.tanggal,
+      total_hpp: hppHarian.total_hpp,
+      total_pendapatan: hppHarian.total_pendapatan,
+      total_laba_kotor: hppHarian.total_laba_kotor,
+      total_beban: hppHarian.total_beban,
+      laba_bersih: hppHarian.laba_bersih,
+      produk_count: (hppHarian.produk||[]).length
+    }));
   } catch (error) {
     console.error("[HPP] ERROR: Gagal menyimpan HPP Harian:", error);
   }

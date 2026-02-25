@@ -10,7 +10,6 @@ interface TableDataItem {
   nama_produk: string;
   jumlah_terjual: number;
   hpp_per_porsi: number;
-  hpp_total: number;
   pendapatan: number;
   laba_kotor: number;
   tanggal: string;
@@ -55,14 +54,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
       item.nama_produk,
       item.jumlah_terjual,
       `Rp ${item.hpp_per_porsi.toLocaleString('id-ID')}`,
-      `Rp ${item.hpp_total.toLocaleString('id-ID')}`,
       `Rp ${item.pendapatan.toLocaleString('id-ID')}`,
       `Rp ${item.laba_kotor.toLocaleString('id-ID')}`,
       item.pendapatan > 0 ? `${((item.laba_kotor / item.pendapatan) * 100).toFixed(2)}%` : '0%'
     ]);
     
     autoTable(doc, {
-      head: [['No', 'Tanggal', 'Produk', 'Jumlah Terjual', 'HPP per Porsi', 'HPP Total', 'Pendapatan', 'Laba Kotor', 'Margin Laba']],
+      head: [['No', 'Tanggal', 'Produk', 'Jumlah Terjual', 'HPP per Porsi', 'Pendapatan', 'Laba Kotor', 'Margin Laba']],
       body: tableDataForPDF,
       startY: 25,
       styles: {
@@ -102,7 +100,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
         'Produk': item.nama_produk,
         'Jumlah Terjual': item.jumlah_terjual,
         'HPP per Porsi': item.hpp_per_porsi,
-        'HPP Total': item.hpp_total,
         'Pendapatan': item.pendapatan,
         'Laba Kotor': item.laba_kotor,
         'Margin Laba': item.pendapatan > 0 ? ((item.laba_kotor / item.pendapatan) * 100).toFixed(2) + '%' : '0%'
@@ -161,9 +158,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                       HPP per Porsi
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      HPP Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Pendapatan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -209,11 +203,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                             Rp {item.hpp_per_porsi.toLocaleString('id-ID')}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            Rp {item.hpp_total.toLocaleString('id-ID')}
-                          </div>
-                        </td>
+                        
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             Rp {item.pendapatan.toLocaleString('id-ID')}
@@ -251,7 +241,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
                     currentPage === 1 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-105'
+                      : 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:scale-105'
                   }`}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -277,7 +267,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                         onClick={() => handlePageChange(pageNum)}
                         className={`w-10 h-10 rounded-lg font-medium transition-all ${
                           currentPage === pageNum 
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md scale-105' 
+                            ? 'bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow-md scale-105' 
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                       >
@@ -293,7 +283,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
                     currentPage === totalPages 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-105'
+                      : 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:scale-105'
                   }`}
                 >
                   <span className="hidden sm:inline">Selanjutnya</span>

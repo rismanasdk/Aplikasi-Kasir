@@ -1,5 +1,5 @@
 // src/meneger/laporan/components/TransactionChart.tsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import type { TooltipItem } from 'chart.js';
-import { Package } from 'lucide-react';
+import { Package, ChevronDown } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -30,7 +30,6 @@ interface ProdukItem {
   nama_produk: string;
   jumlah_terjual: number;
   hpp_per_porsi: number;
-  hpp_total: number;
   pendapatan: number;
   laba_kotor: number;
   _id: string;
@@ -46,14 +45,18 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
   produk, produkData
 }) => {
   const chartRef = useRef<ChartJSOrUndefined>(undefined);
+  const [showAll, setShowAll] = useState(false);
   const produkList = produk ?? produkData ?? [];
+  
+  // Limit to 9 items initially
+  const displayedProducts = showAll ? produkList : produkList.slice(0, 9);
 
   const chartData: ChartData<'bar'> = {
-    labels: produkList.map(item => item.nama_produk),
+    labels: displayedProducts.map(item => item.nama_produk),
     datasets: [
       {
         label: 'Pendapatan',
-        data: produkList.map(item => item.pendapatan),
+        data: displayedProducts.map(item => item.pendapatan),
         backgroundColor: 'rgba(54, 162, 235, 0.7)',
         borderColor: 'rgb(54, 162, 235)',
         borderWidth: 2,
@@ -62,18 +65,8 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
         categoryPercentage: 0.7,
       },
       {
-        label: 'HPP Total',
-        data: produkList.map(item => item.hpp_total),
-        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-        borderColor: 'rgb(255, 99, 132)',
-        borderWidth: 2,
-        borderRadius: 5,
-        barPercentage: 0.6,
-        categoryPercentage: 0.7,
-      },
-      {
         label: 'Laba Kotor',
-        data: produkList.map(item => item.laba_kotor),
+        data: displayedProducts.map(item => item.laba_kotor),
         backgroundColor: 'rgba(75, 192, 192, 0.7)',
         borderColor: 'rgb(75, 192, 192)',
         borderWidth: 2,
@@ -131,7 +124,7 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
             if (context.datasetIndex === 2) return undefined;
             
             const salesValue = context.chart.data.datasets[0].data[context.dataIndex] as number;
-            const profitValue = context.chart.data.datasets[2].data[context.dataIndex] as number;
+            const profitValue = context.chart.data.datasets[2]?.data[context.dataIndex] as number;
             
             if (salesValue > 0) {
               const percentage = ((profitValue / salesValue) * 100).toFixed(2);
@@ -261,58 +254,67 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
       </div>
       
       {produkList.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {produkList.map((produk) => {
-            const sales = produk.pendapatan;
-            const hpp = produk.hpp_total;
-            const profit = produk.laba_kotor;
-            const percentage = sales > 0 ? ((profit / sales) * 100).toFixed(2) : '0';
-            const percentageNum = parseFloat(percentage);
-            
-            return (
-              <div key={produk._id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="font-medium text-gray-800 mb-2 flex items-center">
-                  <Package className="h-5 w-5 text-blue-500 mr-2" />
-                  {produk.nama_produk}
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-600">Terjual: </span>
-                    <span className="font-semibold">{produk.jumlah_terjual}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">HPP/Porsi: </span>
-                    <span className="font-semibold">Rp {produk.hpp_per_porsi.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Pendapatan: </span>
-                    <span className="font-semibold">Rp {sales.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">HPP Total: </span>
-                    <span className="font-semibold">Rp {hpp.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-600">Laba Kotor: </span>
-                    <span className="font-semibold">Rp {profit.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-600">Margin: </span>
-                    <span className={`font-semibold ${percentageNum >= 30 ? 'text-green-600' : percentageNum >= 15 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {percentage}%
-                    </span>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className={`h-2 rounded-full ${percentageNum >= 30 ? 'bg-green-500' : percentageNum >= 15 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                        style={{ width: `${Math.min(percentageNum, 100)}%` }}
-                      ></div>
+        <>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayedProducts.map((produk) => {
+              const sales = produk.pendapatan;
+              const profit = produk.laba_kotor;
+              const percentage = sales > 0 ? ((profit / sales) * 100).toFixed(2) : '0';
+              const percentageNum = parseFloat(percentage);
+              
+              return (
+                <div key={produk._id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-medium text-gray-800 mb-2 flex items-center">
+                    <Package className="h-5 w-5 text-blue-500 mr-2" />
+                    {produk.nama_produk}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Terjual: </span>
+                      <span className="font-semibold">{produk.jumlah_terjual}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">HPP/Porsi: </span>
+                      <span className="font-semibold">Rp {produk.hpp_per_porsi.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Pendapatan: </span>
+                      <span className="font-semibold">Rp {sales.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Laba Kotor: </span>
+                      <span className="font-semibold">Rp {profit.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Margin: </span>
+                      <span className={`font-semibold ${percentageNum >= 30 ? 'text-green-600' : percentageNum >= 15 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {percentage}%
+                      </span>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className={`h-2 rounded-full ${percentageNum >= 30 ? 'bg-green-500' : percentageNum >= 15 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(percentageNum, 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          
+          {produkList.length > 9 && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {showAll ? 'Tampilkan Lebih Sedikit' : 'Lihat Lebih Banyak'}
+                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

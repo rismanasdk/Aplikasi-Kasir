@@ -244,7 +244,7 @@ const InputBiaya: React.FC = () => {
                 <thead>
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
                     <th className="pb-3 font-medium">Tanggal</th>
-                    <th className="pb-3 font-medium">Kategori</th>
+                    <th className="pb-3 font-medium">Nama Biaya</th>
                     <th className="pb-3 font-medium">Jumlah</th>
                     <th className="pb-3 font-medium">Keterangan</th>
                     <th className="pb-3 font-medium text-right w-20">Aksi</th>

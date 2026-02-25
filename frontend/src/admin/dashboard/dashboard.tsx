@@ -160,14 +160,16 @@ const AdminDashboard: React.FC = () => {
           hppTotalResponse,
           transaksiResponse,
           settingsResponse,
-          omzetResponse
+          omzetResponse,
+          adminRiwayatResponse
         ] = await Promise.all([
           fetch(`${ipbe}/api/admin/users`),
           fetch(`${ipbe}/api/admin/dashboard/top-barang?filter=bulan`),
           fetch(`${ipbe}/api/admin/hpp-total`),
-          fetch(`${ipbe}/api/admin/dashboard/transaksi/terakhir`),
+          fetch(`${ipbe}/api/admin/riwayat`),
           fetch(`${ipbe}/api/admin/settings`),
-          fetch(`${ipbe}/api/admin/dashboard/omzet`)
+          fetch(`${ipbe}/api/admin/dashboard/omzet`),
+          fetch(`${ipbe}/api/admin/riwayat`)
         ]);
 
         // Check for errors
@@ -184,6 +186,7 @@ const AdminDashboard: React.FC = () => {
         // Try to handle both summary and full data shapes
         const hppTotalData = hppTotalDataRaw as HppTotalSummaryResponse | HppRecord[];
         const transaksiData: Transaksi[] = await transaksiResponse.json();
+        const adminRiwayatData = await adminRiwayatResponse.json();
         const settingsData: SettingsResponse = await settingsResponse.json();
         // omzetResponse returns { omzet: { hari_ini, minggu_ini, bulan_ini } }
         let omzetData: { omzet?: { hari_ini?: number; minggu_ini?: number; bulan_ini?: number } } = {};
@@ -199,7 +202,8 @@ const AdminDashboard: React.FC = () => {
         // Calculate statistics
         const totalUsers = usersData.length;
         const activeUsers = usersData.filter(user => user.status === 'aktif').length;
-        const totalTransactions = transaksiData.length;
+        // Use /api/admin/riwayat to compute total transactions count (all transactions)
+        const totalTransactions = Array.isArray(adminRiwayatData) ? adminRiwayatData.length : (Array.isArray(adminRiwayatData?.riwayat) ? adminRiwayatData.riwayat.length : 0);
         const completedTransactions = transaksiData.filter(t => t.status === 'selesai').length;
         
         // PERBAIKAN: Ambil total pendapatan untuk periode BULAN INI dari raw hpp-total data
@@ -238,45 +242,62 @@ const AdminDashboard: React.FC = () => {
         }
         
         // Calculate total products sold
-        // Prefer counting from hpp-total records (jumlah_terjual per product). Fall back to topBarangData if needed.
+        // Try to use admin laporan ringkasan.total_barang_terjual (same as laporan-penjualan)
         let totalProductsSold = 0;
         try {
-          const records: HppRecord[] = Array.isArray((hppTotalData as HppTotalSummaryResponse).data)
-            ? (hppTotalData as HppTotalSummaryResponse).data as HppRecord[]
-            : (Array.isArray(hppTotalData) ? (hppTotalData as HppRecord[]) : []);
+          // build start/end for current month
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          const startDate = `${yyyy}-${mm}-01`;
+          const lastDay = new Date(yyyy, Number(mm), 0).getDate();
+          const endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
 
-          const today = new Date();
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-
-          const monthRecords = records.filter((item: HppRecord) => {
-            const d = new Date(item.tanggal);
-            return d >= monthAgo && d <= today;
-          });
-
-          totalProductsSold = monthRecords.reduce((total: number, rec: HppRecord) => {
-            if (rec.produk && Array.isArray(rec.produk)) {
-              return total + rec.produk.reduce((s: number, p: HppProduct) => s + (Number.isFinite(p.jumlah_terjual) ? p.jumlah_terjual : safeNumber(p.jumlah_terjual)), 0);
+          try {
+            const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+            if (ringkasanResp.ok) {
+              const ringkasanJson = await ringkasanResp.json();
+              const ringkasan = ringkasanJson?.ringkasan || {};
+              const val = Number(ringkasan.total_barang_terjual || ringkasan.total_barang_terjual_hari_ini || 0);
+              if (val > 0) {
+                totalProductsSold = val;
+              }
             }
-            return total;
-          }, 0);
+          } catch (e) {
+            console.warn('Failed to fetch ringkasan for total products sold:', e);
+          }
 
-          // Fallback: if still zero and topBarangData provides jumlah or jumlah_terjual
-          if (!totalProductsSold && topBarangData && (topBarangData as TopBarangResponse).barang_terlaris) {
-            const list = (topBarangData as TopBarangResponse).barang_terlaris;
-            totalProductsSold = list.reduce((sum: number, item: { nama_barang: string; jumlah: number }) => {
-              if (Number.isFinite(item.jumlah)) return sum + item.jumlah;
-              return sum;
+          // Fallback: compute from hpp-total records if ringkasan not available
+          if (!totalProductsSold) {
+            const records: HppRecord[] = Array.isArray((hppTotalData as HppTotalSummaryResponse).data)
+              ? (hppTotalData as HppTotalSummaryResponse).data as HppRecord[]
+              : (Array.isArray(hppTotalData) ? (hppTotalData as HppRecord[]) : []);
+
+            const today = new Date();
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+            const monthRecords = records.filter((item: HppRecord) => {
+              const d = new Date(item.tanggal);
+              return d >= monthAgo && d <= today;
+            });
+
+            totalProductsSold = monthRecords.reduce((total: number, rec: HppRecord) => {
+              if (rec.produk && Array.isArray(rec.produk)) {
+                return total + rec.produk.reduce((s: number, p: HppProduct) => s + (Number.isFinite(p.jumlah_terjual) ? p.jumlah_terjual : safeNumber(p.jumlah_terjual)), 0);
+              }
+              return total;
             }, 0);
+
+            // Fallback to topBarangData if still zero
+            if (!totalProductsSold && topBarangData && (topBarangData as TopBarangResponse).barang_terlaris) {
+              const list = (topBarangData as TopBarangResponse).barang_terlaris;
+              totalProductsSold = list.reduce((sum: number, item: { nama_barang: string; jumlah: number }) => sum + (item.jumlah || 0), 0);
+            }
           }
         } catch (e) {
           console.warn('Failed to compute totalProductsSold:', e);
-          // fallback to previous method if available
-          if (topBarangData && (topBarangData as TopBarangResponse).barang_terlaris) {
-            totalProductsSold = (topBarangData as TopBarangResponse).barang_terlaris.reduce((sum: number, item: { nama_barang: string; jumlah: number }) => sum + (item.jumlah || 0), 0);
-          } else {
-            totalProductsSold = 0;
-          }
+          totalProductsSold = 0;
         }
         
         // Count active payment methods from settings
@@ -484,7 +505,7 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-yellow-100">Produk Terjual</p>
+              <p className="text-sm font-medium text-yellow-100">Total Produk Terjual</p>
               <p className="text-3xl font-bold text-white mt-1">{stats.totalProductsSold}</p>
               <p className="text-xs text-yellow-100 mt-2 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">

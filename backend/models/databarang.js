@@ -33,6 +33,10 @@ const barangSchema = new Schema(
     use_discount: { type: Boolean, default: true },
     gambar_url: { type: String, default: "" },
     status: { type: String, enum: ["pending", "publish"], default: "pending" },
+    // New flag to mark Best Seller items (used for faster user listing)
+    bestSeller: { type: Boolean, default: false },
+    // Store previous kategori value when a product is promoted to Best Seller
+    bestSellerPrevKategori: { type: String, default: "" },
   },
   { timestamps: true }
 );

@@ -187,7 +187,7 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                         <th className="px-6 py-4 text-left">
-                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kategori</span>
+                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Biaya</span>
                         </th>
                         <th className="px-6 py-4 text-right">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</span>

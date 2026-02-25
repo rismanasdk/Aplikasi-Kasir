@@ -1,11 +1,12 @@
 // src/meneger/laporan/index.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MenegerLayout from "../layout";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import SummaryCards from './components/SummaryCards';
 import TransactionChart from './components/TransactionChart';
 import TransactionTable from './components/TransactionTable';
 import { API_URL } from '../../config/api';
+
 interface ProdukItem {
   nama_produk: string;
   jumlah_terjual: number;
@@ -37,7 +38,7 @@ interface ApiResponse {
 
 interface FilterOptions {
   produk: string;
-  sortBy: 'nama_produk' | 'jumlah_terjual' | 'hpp_total' | 'pendapatan' | 'laba_kotor';
+  sortBy: 'nama_produk' | 'jumlah_terjual' | 'pendapatan' | 'laba_kotor';
   sortOrder: 'asc' | 'desc';
   itemsPerPage: number;
 }
@@ -46,35 +47,142 @@ const LaporanPage = () => {
   const [data, setData] = useState<LaporanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [daftarBulan, setDaftarBulan] = useState<Array<{ id: string; nama_bulan: string; bulan: number; tahun: number }>>([]);
+  const [selectedBulan, setSelectedBulan] = useState<string>('');
+  const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
+  const [totalTransaksi, setTotalTransaksi] = useState<number>(0);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     produk: 'semua',
-    sortBy: 'nama_produk',
-    sortOrder: 'asc',
+    sortBy: 'pendapatan', // Default sort by pendapatan
+    sortOrder: 'desc',    // Default sort descending
     itemsPerPage: 10
   });
 
+  // Fetch available months for filtering
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMonths = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/admin/hpp-total`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const result: ApiResponse = await response.json();
-        if (result.success && result.data && result.data.length > 0) {
-          setData(result.data[0]);
-        } else {
-          throw new Error("Data format is incorrect or empty");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setLoadingBulan(true);
+        const resp = await fetch(`${API_URL}/api/admin/laporan/bulan`);
+        if (!resp.ok) throw new Error('Failed to fetch bulan');
+        const json = await resp.json();
+        const list = json?.daftar_bulan || [];
+        setDaftarBulan(list);
+        if (list.length > 0) setSelectedBulan(list[0].id);
+      } catch (e) {
+        console.warn('Gagal ambil daftar bulan', e);
       } finally {
-        setLoading(false);
+        setLoadingBulan(false);
       }
     };
-
-    fetchData();
+    fetchMonths();
   }, []);
+
+  // Fetch ringkasan + detail for selected month and normalize to same shape as admin
+  const fetchReport = useCallback(async (bulanId?: string) => {
+    if (!bulanId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const bulanObj = daftarBulan.find(b => b.id === bulanId);
+      let startDate: string;
+      let endDate: string;
+      if (bulanObj) {
+        const yyyy = String(bulanObj.tahun);
+        const mm = String(bulanObj.bulan).padStart(2, '0');
+        startDate = `${yyyy}-${mm}-01`;
+        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+        endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+      } else {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        startDate = `${yyyy}-${mm}-01`;
+        const lastDay = new Date(yyyy, Number(mm), 0).getDate();
+        endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+      }
+
+      const ringkasanResp = await fetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+      const ringkasanJson = ringkasanResp.ok ? await ringkasanResp.json() : null;
+
+      const detailResp = await fetch(`${API_URL}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`);
+      const detailJson = detailResp.ok ? await detailResp.json() : null;
+
+      const summary = ringkasanJson?.ringkasan || {};
+
+      // Aggregate produk across days into monthly produk list
+      const produkMap: Record<string, ProdukItem> = {};
+      const detailData = detailJson?.data || [];
+      if (Array.isArray(detailData)) {
+        detailData.forEach((day: any) => {
+          if (!Array.isArray(day.produk)) return;
+          day.produk.forEach((p: any) => {
+            const key = String(p.nama_produk).toLowerCase().trim();
+            if (!produkMap[key]) {
+              produkMap[key] = {
+                _id: p._id || key,
+                nama_produk: p.nama_produk,
+                jumlah_terjual: Number(p.jumlah_terjual || 0),
+                hpp_per_porsi: Number(p.hpp_per_porsi || 0),
+                hpp_total: Number(p.hpp_total || 0),
+                pendapatan: Number(p.pendapatan || 0),
+                laba_kotor: Number(p.laba_kotor || 0),
+              };
+            } else {
+              produkMap[key].jumlah_terjual += Number(p.jumlah_terjual || 0);
+              produkMap[key].hpp_total += Number(p.hpp_total || 0);
+              produkMap[key].pendapatan += Number(p.pendapatan || 0);
+              produkMap[key].laba_kotor += Number(p.laba_kotor || 0);
+            }
+          });
+        });
+      }
+
+      const produkList = Object.values(produkMap);
+
+      const laporanForUI: LaporanData = {
+        _id: bulanId,
+        tanggal: `${startDate} to ${endDate}`,
+        produk: produkList,
+        total_hpp: Number(summary.total_hpp || 0),
+        total_pendapatan: Number(summary.total_pendapatan || 0),
+        total_laba_kotor: Number(summary.total_laba_kotor || 0),
+        total_beban: Number(summary.total_biaya_operasional || summary.total_beban || 0),
+        laba_bersih: Number(summary.total_laba_bersih || 0),
+        createdAt: '',
+        updatedAt: '',
+        __v: 0
+      };
+
+      setData(laporanForUI);
+      // fetch total transaksi count from admin riwayat
+      try {
+        const trxResp = await fetch(`${API_URL}/api/admin/riwayat`);
+        if (trxResp.ok) {
+          const trxJson = await trxResp.json();
+          if (Array.isArray(trxJson)) {
+            setTotalTransaksi(trxJson.length);
+          } else if (Array.isArray(trxJson?.riwayat)) {
+            setTotalTransaksi(trxJson.riwayat.length);
+          } else {
+            // fallback: if API returns object of items
+            const keys = trxJson && typeof trxJson === 'object' ? Object.keys(trxJson) : [];
+            setTotalTransaksi(keys.length || 0);
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal ambil total transaksi:', e);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengambil data laporan');
+    } finally {
+      setLoading(false);
+    }
+  }, [daftarBulan]);
+
+  useEffect(() => {
+    if (selectedBulan) fetchReport(selectedBulan);
+  }, [selectedBulan, fetchReport]);
 
   const products = data?.produk?.map(item => item.nama_produk) || [];
   const uniqueProducts = ['semua', ...new Set(products)];
@@ -85,7 +193,6 @@ const LaporanPage = () => {
       nama_produk: produk.nama_produk,
       jumlah_terjual: produk.jumlah_terjual,
       hpp_per_porsi: produk.hpp_per_porsi,
-      hpp_total: produk.hpp_total,
       pendapatan: produk.pendapatan,
       laba_kotor: produk.laba_kotor,
       tanggal: data?.tanggal || 'Tanggal tidak tersedia'
@@ -103,8 +210,6 @@ const LaporanPage = () => {
         return a.nama_produk.localeCompare(b.nama_produk) * modifier;
       case 'jumlah_terjual':
         return (a.jumlah_terjual - b.jumlah_terjual) * modifier;
-      case 'hpp_total':
-        return (a.hpp_total - b.hpp_total) * modifier;
       case 'pendapatan':
         return (a.pendapatan - b.pendapatan) * modifier;
       case 'laba_kotor':
@@ -150,28 +255,38 @@ const LaporanPage = () => {
 
   return (
     <MenegerLayout>
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Laporan HPP dan Laba</h1>
+      <div className="p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Laporan HPP dan Laba</h1>
+          <p className="text-sm text-gray-600 mt-1">Analisis pendapatan, HPP, dan laba kotor per periode.</p>
+        </div>
         
-        <SummaryCards 
-          totalLaba={data?.laba_bersih || 0}
-          totalPendapatan={data?.total_pendapatan || 0}
-          totalBeban={data?.total_beban || 0}
-          totalLabaKotor={data?.total_laba_kotor || 0} // Tambahkan props ini
-          periode={data?.tanggal || ''}
-        />
-
-        <TransactionChart 
-          produk={data?.produk || []}
-        />
-
-        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Filter Data</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* FILTER BAR - Semua kontrol filter dipindahkan ke sini */}
+        <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            {/* Periode Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Produk</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Periode</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
+                value={selectedBulan}
+                onChange={(e) => setSelectedBulan(e.target.value)}
+                disabled={loadingBulan}
+              >
+                {loadingBulan ? <option>Memuat...</option> : (
+                  daftarBulan.map(b => (
+                    <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Produk Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter Produk</label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
                 value={filterOptions.produk}
                 onChange={(e) => handleFilterChange('produk', e.target.value)}
               >
@@ -183,35 +298,40 @@ const LaporanPage = () => {
                 ))}
               </select>
             </div>
+
+            {/* Sort By Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Urutkan Berdasarkan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Urutkan</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
                 value={filterOptions.sortBy}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value as FilterOptions['sortBy'])}
               >
-                <option value="nama_produk">Nama Produk</option>
-                <option value="jumlah_terjual">Jumlah Terjual</option>
-                <option value="hpp_total">HPP Total</option>
                 <option value="pendapatan">Pendapatan</option>
                 <option value="laba_kotor">Laba Kotor</option>
+                <option value="jumlah_terjual">Jumlah Terjual</option>
+                <option value="nama_produk">Nama Produk</option>
               </select>
             </div>
+            
+            {/* Sort Order Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
                 value={filterOptions.sortOrder}
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value as FilterOptions['sortOrder'])}
               >
-                <option value="asc">Naik (A-Z)</option>
-                <option value="desc">Turun (Z-A)</option>
+                <option value="desc">Terbesar ke Terkecil</option>
+                <option value="asc">Terkecil ke Terbesar</option>
               </select>
             </div>
+
+            {/* Items Per Page Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Data per Halaman</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
                 value={filterOptions.itemsPerPage}
                 onChange={(e) => handleFilterChange('itemsPerPage', parseInt(e.target.value))}
               >
@@ -223,6 +343,21 @@ const LaporanPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Summary Cards - sekarang memanfaatkan lebar penuh */}
+        <div className="mb-6">
+          <SummaryCards 
+            totalLaba={data?.laba_bersih || 0}
+            totalPendapatan={data?.total_pendapatan || 0}
+            totalBeban={data?.total_beban || 0}
+            totalLabaKotor={data?.total_laba_kotor || 0}
+            periode={data?.tanggal || ''}
+          />
+        </div>
+
+        <TransactionChart 
+          produk={data?.produk || []}
+        />
 
         <TransactionTable tableData={tableData} itemsPerPage={filterOptions.itemsPerPage} />
       </div>

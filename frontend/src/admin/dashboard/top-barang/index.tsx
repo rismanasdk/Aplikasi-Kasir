@@ -95,6 +95,20 @@ const TopBarang: React.FC = () => {
         setData(top5Produk);
         if (top5Produk.length > 0) setSelectedProduct(top5Produk[0]);
 
+        // Notify backend to update Best Seller category for current top-5
+        try {
+          fetch(`${ipbe}/api/admin/dashboard/update-best-seller`, {
+            method: 'POST'
+          }).then(async (resp) => {
+            if (!resp.ok) {
+              const txt = await resp.text().catch(() => '');
+              console.warn('update-best-seller failed', resp.status, txt);
+            }
+          }).catch((e) => console.warn('update-best-seller error', e));
+        } catch (e) {
+          console.warn('failed to call update-best-seller', e);
+        }
+
         // totals
         const totalPendapatanBulan = mapped.reduce((s, p) => s + safeNumber(p.pendapatan), 0);
         setTotalPendapatan(totalPendapatanBulan);

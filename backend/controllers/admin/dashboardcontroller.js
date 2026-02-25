@@ -255,21 +255,23 @@ export const updateBestSellerCategory = async (req, res) => {
       .sort((a, b) => b.pendapatan - a.pendapatan)
       .slice(0, 5);
 
-    // Update kategori produk sesuai topBarang (cari dengan kode_barang terlebih dahulu, fallback ke nama)
-    // Unset kategori "Best Seller ⭐" dari produk yang sebelumnya berstatus Best Seller
-    // tapi tidak ada di daftar topBarang saat ini.
+    // Update produk: set `bestSeller` flag and also keep kategori string for compatibility.
     const topKeys = topBarang.map(it => it.kode_barang || it.nama_barang).filter(Boolean);
     if (topKeys.length > 0) {
-      await Barang.updateMany(
-        {
-          kategori: "Best Seller ⭐",
-          $nor: [
-            { kode_barang: { $in: topKeys } },
-            { nama_barang: { $in: topKeys } }
-          ]
-        },
-        { $set: { kategori: "" } }
-      );
+      // Find products that are currently marked as bestSeller but no longer in topKeys
+      const toUnset = await Barang.find({
+        bestSeller: true,
+        $nor: [
+          { kode_barang: { $in: topKeys } },
+          { nama_barang: { $in: topKeys } }
+        ]
+      });
+
+      // Restore their previous kategori and clear bestSeller flags
+      for (const b of toUnset) {
+        const prev = b.bestSellerPrevKategori || "";
+        await Barang.findByIdAndUpdate(b._id, { $set: { bestSeller: false, kategori: prev, bestSellerPrevKategori: "" } });
+      }
     }
 
     const updatedBarang = [];
@@ -278,14 +280,20 @@ export const updateBestSellerCategory = async (req, res) => {
         ? { $or: [{ kode_barang: item.kode_barang }, { nama_barang: item.nama_barang }] }
         : { nama_barang: item.nama_barang };
 
+      // Fetch current product to record previous kategori
+      const current = await Barang.findOne(query);
+      if (!current) continue;
+
+      const prevKategori = current.kategori === "Best Seller ⭐" ? (current.bestSellerPrevKategori || "") : (current.kategori || "");
+
       const barang = await Barang.findOneAndUpdate(
         query,
-        { kategori: "Best Seller ⭐" },
+        { $set: { kategori: "Best Seller ⭐", bestSeller: true, bestSellerPrevKategori: prevKategori } },
         { new: true }
       );
 
       if (barang) {
-        updatedBarang.push({ nama_barang: item.nama_barang, pendapatan: item.pendapatan, kategori_baru: "Best Seller ⭐" });
+        updatedBarang.push({ nama_barang: item.nama_barang, pendapatan: item.pendapatan, kategori_baru: "Best Seller ⭐", bestSeller: true });
       }
     }
 

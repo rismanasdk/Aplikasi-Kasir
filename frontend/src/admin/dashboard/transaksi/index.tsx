@@ -55,7 +55,7 @@ const Transaksi: React.FC = () => {
         setLoading(true);
         
         const [transaksiResponse, stokResponse] = await Promise.all([
-          fetch(`${ipbe}/api/admin/dashboard/transaksi/terakhir`),
+          fetch(`${ipbe}/api/admin/riwayat`),
           fetch(`${ipbe}/api/admin/stok-barang`)
         ]);
         
