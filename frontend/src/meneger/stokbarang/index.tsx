@@ -74,6 +74,13 @@ export default function StokBarangManager({
   dataBarang: dataAwalBarang,
   isLoading = false,
 }: StokBarangManagerProps) {
+  const getAuthHeaders = (withJson = false): Record<string, string> => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = withJson ? { 'Content-Type': 'application/json' } : {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  };
+
   const [dataBarang, setDataBarang] = useState<Barang[]>(dataAwalBarang || []);
   const [produkDipilih, setProdukDipilih] = useState<Barang | null>(null);
   const [kataPencarian, setKataPencarian] = useState("");
@@ -113,13 +120,9 @@ export default function StokBarangManager({
   const ambilPengaturan = useCallback(async () => {
     try {
       console.log("Mengambil data pengaturan...");
-      const token = localStorage.getItem('token');
-      const PENGATURAN_API_URL = `${API_BASE_URL}/api/admin/settings`;
+      const PENGATURAN_API_URL = `${API_BASE_URL}/api/manager/settings`;
       const res = await fetch(PENGATURAN_API_URL, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders(true)
       });
       
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -244,14 +247,10 @@ export default function StokBarangManager({
       setError(null);
       setServerError(false);
       
-      const token = localStorage.getItem('token');
-      console.log('Mengambil data dari:', `${API_BASE_URL}/api/admin/stok-barang`);
+      console.log('Mengambil data dari:', `${API_BASE_URL}/api/manager/stok-barang`);
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/stok-barang`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await fetch(`${API_BASE_URL}/api/manager/stok-barang`, {
+        headers: getAuthHeaders(true)
       });
       
       if (!response.ok) {

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { DataSatuanItem } from './SatuanTabs';
 import GroupedSelect from './GroupedSelect';
 import { API_URL } from '../../../../config/api';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Props {
   item: DataSatuanItem;
@@ -22,6 +23,18 @@ const EditSatuanForm: React.FC<Props> = ({ item, onClose }) => {
   const [tipe, setTipe] = useState(item.tipe);
   const [deskripsi, setDeskripsi] = useState(item.deskripsi || '');
   const [isActive, setIsActive] = useState(!!item.isActive);
+  
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
   
   // Temukan opsi awal berdasarkan data item
   const findInitialOption = () => {
@@ -51,7 +64,7 @@ const EditSatuanForm: React.FC<Props> = ({ item, onClose }) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/data-satuan/${item._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ nama, kode, tipe, deskripsi, isActive })
       });
       if (!res.ok) {

@@ -28,8 +28,10 @@ const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => 
           case 'chef':
             navigate('/chef/bahan-baku');
             break;
+          case 'user':
+            break;
           default:
-            navigate('/');
+            navigate('/login');
         }
       }
     }
@@ -43,7 +45,11 @@ const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => 
     );
   }
 
-  return <PublicHome dataBarang={dataBarang} />;
+  if (!auth.user || auth.user.role === 'user') {
+    return <PublicHome dataBarang={dataBarang} />;
+  }
+
+  return null;
 };
 
 export default DashboardRedirect;

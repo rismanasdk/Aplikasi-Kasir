@@ -69,7 +69,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         </div>
 
         {/* Products Grid Skeleton */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-6">
           {Array.from({ length: 10 }).map((_, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
               <div className="h-40 sm:h-48 bg-gray-200"></div>
@@ -170,7 +170,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-6">
           {filteredAndSortedProducts.map((product) => (
             <ProductCard
               key={product._id}
@@ -181,6 +181,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           ))}
         </div>
       )}
+
     </div>
   );
 };

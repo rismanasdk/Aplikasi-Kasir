@@ -26,6 +26,11 @@ const BahanBakuTable: React.FC<BahanBakuTableProps> = ({
   openEditBahanForm, 
   showDeleteConfirmation 
 }) => {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [selectedProduk, setSelectedProduk] = useState<ProdukBahan | null>(null);
   const [satuanMap, setSatuanMap] = useState<Record<string, string>>({});
 
@@ -44,7 +49,9 @@ const BahanBakuTable: React.FC<BahanBakuTableProps> = ({
   useEffect(() => {
     const fetchSatuan = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/data-satuan`);
+        const res = await fetch(`${API_URL}/api/admin/data-satuan`, {
+          headers: getAuthHeaders(),
+        });
         if (!res.ok) return;
         const json = await res.json();
         if (Array.isArray(json)) {

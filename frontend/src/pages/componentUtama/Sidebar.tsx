@@ -6,8 +6,7 @@ import {
   FileText, 
   User, 
   LogOut, 
-  LogIn, 
-  X
+  LogIn
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
   
@@ -102,10 +101,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     const fetchStoreLogo = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/admin/settings`, {
+        const hasValidToken = !!token && token !== 'null' && token !== 'undefined';
+        if (!hasValidToken) {
+          setLoadingLogo(false);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/common/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
           }
         });
         
@@ -175,15 +179,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         }`}
       >
         <div className="h-full flex flex-col">
-          <div className="md:hidden p-4 border-b border-gray-200 flex justify-end">
-            <button 
-              onClick={onToggle}
-              className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               {loadingLogo ? (

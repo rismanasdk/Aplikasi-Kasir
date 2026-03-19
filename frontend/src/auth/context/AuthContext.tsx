@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/api';
 const ApiKey = import.meta.env.VITE_API_KEY;
@@ -28,6 +28,8 @@ interface RegisterResponse {
 interface LogoutResponse {
   message: string;
 }
+
+type MeResponse = { user: User } | User;
 
 interface AuthContextType {
   user: User | null;
@@ -80,6 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [defaultProfilePicture, setDefaultProfilePicture] = useState<string>('');
+  const hasBootstrappedMe = useRef(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -108,10 +111,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchDefaultProfilePicture = useCallback(async (): Promise<{ success: boolean; defaultProfilePicture?: string; message?: string }> => {
     try {
+      const token = localStorage.getItem("token");
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const isAdmin = currentUser?.role === "admin";
+
+      if (!token || !isAdmin) {
+        return { success: false, message: "Default profile picture hanya untuk admin" };
+      }
+
       const { data } = await axios.get<{ defaultProfilePicture: string }>(
         `${API_BASE_URL}/api/admin/settings`,
         {
           headers: {
+            Authorization: `Bearer ${token}`,
             'x-api-key': API_KEY
           }
         }
@@ -353,7 +365,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return null;
       }
 
-      const { data } = await axios.get<{ user: User }>(
+      const { data } = await axios.get<MeResponse>(
         `${API_BASE_URL}/auth/me`,
         {
           headers: {
@@ -363,15 +375,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       );
 
-      if (data.user) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return data.user;
+      const meUser = "user" in data ? data.user : data;
+      if (meUser) {
+        setUser(meUser);
+        localStorage.setItem('user', JSON.stringify(meUser));
+        return meUser;
       }
       
       return null;
     } catch (error) {
       console.error('Fetch current user failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
       return null;
     }
   }, []);
@@ -413,10 +430,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (hasBootstrappedMe.current) return;
+    hasBootstrappedMe.current = true;
+
+    const token = localStorage.getItem('token');
+    if (token) {
       fetchCurrentUser();
     }
-  }, [user, fetchCurrentUser]);
+  }, [fetchCurrentUser]);
 
   const value = useMemo(() => ({ 
     user, 

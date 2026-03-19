@@ -6,7 +6,7 @@ export const getUsers = async (req, res) => {
   try {
     const { role } = req.query;
     const filter = role ? { role } : {};
-    const users = await User.find(filter);
+    const users = await User.find(filter).select("-password");
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Gagal mengambil data", error: err.message });
@@ -16,12 +16,14 @@ export const getUsers = async (req, res) => {
 // Tambah user
 export const addUser = async (req, res) => {
   try {
-    console.log("📩 Data diterima:", req.body);
-    const newUser = new User(req.body);
+    const payload = { ...req.body };
+    if (!["admin", "manajer", "kasir", "chef", "user"].includes(payload.role)) {
+      return res.status(400).json({ message: "Role tidak valid" });
+    }
+    const newUser = new User(payload);
     await newUser.save();
     res.json({ message: "User berhasil ditambahkan!" });
   } catch (err) {
-    console.error("❌ Error saat simpan:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

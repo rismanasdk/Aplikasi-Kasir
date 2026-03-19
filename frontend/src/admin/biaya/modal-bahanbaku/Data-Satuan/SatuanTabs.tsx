@@ -5,6 +5,7 @@ import TambahSatuanForm from './TambahSatuanForm';
 import EditSatuanForm from './EditSatuanForm';
 import SweetAlert from '../../../../components/SweetAlert';
 import { API_URL } from '../../../../config/api';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 export interface DataSatuanItem {
   _id: string;
@@ -25,10 +26,22 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DataSatuanItem | null>(null);
 
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      ...(json ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/admin/data-satuan`);
+      const res = await fetch(`${API_URL}/api/admin/data-satuan`, { headers: getAuthHeaders() });
       const json = await res.json();
       setData(Array.isArray(json) ? json : []);
     } catch (err) {
@@ -55,7 +68,10 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
             const result = await SweetAlert.confirmDelete();
             if (!result.isConfirmed) return;
             await SweetAlert.loading('Menghapus satuan...');
-            const res = await fetch(`${API_URL}/api/admin/data-satuan/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_URL}/api/admin/data-satuan/${id}`, {
+              method: 'DELETE',
+              headers: getAuthHeaders(),
+            });
             SweetAlert.close();
             if (!res.ok) {
               await SweetAlert.error('Gagal menghapus');
@@ -73,7 +89,7 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
           try {
             const res = await fetch(`${API_URL}/api/admin/data-satuan/${id}`, {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: getAuthHeaders(true),
               body: JSON.stringify({ isActive: newStatus })
             });
             if (!res.ok) throw new Error('Gagal memperbarui status');

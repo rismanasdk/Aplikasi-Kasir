@@ -115,12 +115,7 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.onerror = null;
-                          target.style.display = 'none';
-                          target.parentElement!.innerHTML = `
-                            <div class="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center">
-                              <span class="text-xl">📦</span>
-                            </div>
-                          `;
+                          target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='100%25' height='100%25' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='20'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E";
                         }}
                       />
                     ) : (

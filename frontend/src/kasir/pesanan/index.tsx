@@ -100,39 +100,17 @@ const PesananKasirPage = () => {
         if (storedKasirId) {
           setKasirId(storedKasirId);
         } else {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            throw new Error('Token tidak ditemukan. Silakan login terlebih dahulu.');
+          const storedUser = localStorage.getItem('user');
+          if (!storedUser) {
+            throw new Error('Data user tidak ditemukan. Silakan login kembali.');
           }
-          
-          const usersUrl = `${API_URL}/api/admin/users`;
-          console.debug("Fetching kasir user info", { url: usersUrl, tokenPresent: !!token });
-
-          const res = await fetch(usersUrl, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'x-api-key': `${ApiKey}`
-            }
-          });
-          
-          if (res.ok) {
-            const usersData = await res.json();
-            
-            if (Array.isArray(usersData) && usersData.length > 0) {
-              const currentUser = usersData[0];
-              
-              if (currentUser && currentUser._id) {
-                setKasirId(currentUser._id);
-                localStorage.setItem('kasirId', currentUser._id);
-              } else {
-                throw new Error('Data user tidak valid');
-              }
-            } else {
-              throw new Error('Tidak ada data user yang ditemukan');
-            }
-          } else {
-            throw new Error('Gagal mengambil data user dari server');
+          const currentUser = JSON.parse(storedUser) as { _id?: string; id?: string };
+          const resolvedKasirId = currentUser._id || currentUser.id;
+          if (!resolvedKasirId) {
+            throw new Error('ID kasir tidak ditemukan pada sesi login.');
           }
+          setKasirId(resolvedKasirId);
+          localStorage.setItem('kasirId', resolvedKasirId);
         }
       } catch (err) {
         console.error("Gagal ambil data kasir:", err);
@@ -150,7 +128,7 @@ const PesananKasirPage = () => {
     const fetchProdukList = async () => {
       try {
         setLoadingProduk(true);
-        const response = await fetch(`${API_URL}/api/admin/stok-barang`);
+        const response = await fetch(`${API_URL}/api/barang`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

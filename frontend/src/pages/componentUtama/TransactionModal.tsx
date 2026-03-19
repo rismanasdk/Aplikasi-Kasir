@@ -182,7 +182,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       try {
         const token = localStorage.getItem('token');
         
-        const res = await fetch(`${API_URL}/api/admin/settings`, {
+        const res = await fetch(`${API_URL}/api/common/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -214,7 +214,10 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     
     const fetchReceiptSettings = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/manager/settings`);
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_URL}/api/manager/settings`, { headers });
         if (res.ok) {
           const data: SettingsReceipt = await res.json();
           setReceiptSettings(data);
@@ -228,7 +231,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     const fetchTotalBiayaLayanan = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/admin/biaya-layanan`, {
+        const response = await fetch(`${API_URL}/api/common/biaya-layanan`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

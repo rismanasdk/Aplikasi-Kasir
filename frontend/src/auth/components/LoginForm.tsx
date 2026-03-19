@@ -36,7 +36,7 @@ export default function LoginForm() {
       if (auth.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (auth.user.role === 'manajer') {
-        navigate('/manajer/dashboard'); 
+        navigate('/meneger/dashboard'); 
       } else if (auth.user.role === 'chef') {
         navigate('/chef/bahan-baku');
       } else if (auth.user.role === 'kasir') {

@@ -7,6 +7,7 @@ import UserTable from './component/usertable';
 import UserFilter from './component/userfilter';
 import { ChevronLeft, ChevronRight } from 'lucide-react'; // Tambahkan import ini
 import { API_URL } from '../../config/api';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 
 interface User {
@@ -58,11 +59,25 @@ const UsersPage: React.FC = () => {
 
   const API_URL_USERS = `${API_URL}/api/admin/users`;
 
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      ...(json ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
   // Fetch users from API
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_URL_USERS);
+      const response = await fetch(API_URL_USERS, {
+        headers: getAuthHeaders(),
+      });
       if (!response.ok) {
         throw new Error('Gagal mengambil data user');
       }
@@ -149,18 +164,14 @@ const UsersPage: React.FC = () => {
         // Update existing user
         response = await fetch(`${API_URL_USERS}/${editingUser._id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(true),
           body: JSON.stringify(payload),
         });
       } else {
         // Create new user
         response = await fetch(`${API_URL_USERS}/create`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(true),
           body: JSON.stringify(payload),
         });
       }
@@ -191,6 +202,7 @@ const UsersPage: React.FC = () => {
         
         const response = await fetch(`${API_URL_USERS}/${id}`, {
           method: 'DELETE',
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {

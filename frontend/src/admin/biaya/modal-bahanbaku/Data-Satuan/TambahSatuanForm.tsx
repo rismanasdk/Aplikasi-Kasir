@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import GroupedSelect from './GroupedSelect';
 import { API_URL } from '../../../../config/api';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Props {
   onClose: () => void;
@@ -20,6 +21,18 @@ const TambahSatuanForm: React.FC<Props> = ({ onClose }) => {
   const [tipe, setTipe] = useState(''); // Tipe default
   const [deskripsi, setDeskripsi] = useState('');
   const [selectedSatuan, setSelectedSatuan] = useState<{ option: { label: string; value: string } | null; group: string }>({ option: null, group: 'jumlah' });
+
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
 
   // Efek untuk mengisi nama, kode, dan tipe secara otomatis saat selection berubah
   useEffect(() => {
@@ -44,7 +57,7 @@ const TambahSatuanForm: React.FC<Props> = ({ onClose }) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/data-satuan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ nama, kode, tipe, deskripsi })
       });
       if (!res.ok) {

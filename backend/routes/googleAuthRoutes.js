@@ -3,6 +3,7 @@ import passport from "../config/passportGoogle.js";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // Step 1: Redirect ke Google
 router.get("/", passport.authenticate("google", { scope: ["profile", "email"] }));
@@ -25,7 +26,8 @@ router.get(
       { expiresIn: "1d" }
     );
 
-    res.redirect(`http://localhost:5173/login-success?token=${token}`);
+    const redirectUrl = `${FRONTEND_URL}/login-success#token=${encodeURIComponent(token)}`;
+    res.redirect(redirectUrl);
   }
 );
 

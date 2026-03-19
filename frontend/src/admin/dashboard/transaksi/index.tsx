@@ -4,6 +4,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import { Landmark, Wallet, TrendingUp, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface StokBarang {
   _id: string;
@@ -49,14 +50,26 @@ const Transaksi: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 8;
 
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const headers = getAuthHeaders();
         
         const [transaksiResponse, stokResponse] = await Promise.all([
-          fetch(`${ipbe}/api/admin/riwayat`),
-          fetch(`${ipbe}/api/admin/stok-barang`)
+          fetch(`${ipbe}/api/admin/riwayat`, { headers }),
+          fetch(`${ipbe}/api/admin/stok-barang`, { headers })
         ]);
         
         if (!transaksiResponse.ok || !stokResponse.ok) {
@@ -233,12 +246,8 @@ const Transaksi: React.FC = () => {
                             className="w-16 h-16 rounded-lg object-cover shadow-sm"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentNode as HTMLElement;
-                              const placeholder = document.createElement('div');
-                              placeholder.className = 'w-16 h-16 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-sm';
-                              placeholder.innerHTML = '<span class="text-xs text-gray-500">No Image</span>';
-                              parent.appendChild(placeholder);
+                              target.onerror = null;
+                              target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='100%25' height='100%25' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='10' fill='%236b7280'%3ENo%20Image%3C/text%3E%3C/svg%3E";
                             }}
                           />
                         ) : (

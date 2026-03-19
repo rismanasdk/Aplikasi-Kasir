@@ -45,6 +45,11 @@ function Sidebar({
   collapsed: boolean;
   setCollapsed: (c: boolean) => void;
 }) {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
@@ -53,7 +58,9 @@ function Sidebar({
   useEffect(() => {
     const fetchStoreLogo = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/admin/settings`);
+        const response = await fetch(`${API_URL}/api/common/settings`, {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) throw new Error('Failed to fetch store logo');
         const data = await response.json();
         if (data.storeLogo) setStoreLogo(data.storeLogo);

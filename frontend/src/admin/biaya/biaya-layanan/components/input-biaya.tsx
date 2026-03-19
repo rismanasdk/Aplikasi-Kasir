@@ -3,6 +3,7 @@ import { API_URL } from "../../../../config/api";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { SweetAlert } from "../../../../components/SweetAlert";
 import { Calendar, DollarSign, FileText, Plus, Trash2, Search} from "lucide-react";
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Kategori { _id: string; nama: string; isActive: boolean }
 interface Pengeluaran { _id: string; kategoriId: Kategori | string; jumlah: number; tanggal: string; keterangan?: string }
@@ -22,9 +23,21 @@ const InputBiaya: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      ...(json ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+    };
+  };
+
   const fetchCategories = async () => {
     try {
-      const res = await fetch(CAT_API);
+      const res = await fetch(CAT_API, { headers: getAuthHeaders() });
       const data = await res.json();
       setCategories((data || []).filter((c: Kategori) => c.isActive));
       if ((data || []).length > 0 && !kategori) setKategori(data[0]._id);
@@ -36,7 +49,7 @@ const InputBiaya: React.FC = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch(PENGELUARAN_API);
+      const res = await fetch(PENGELUARAN_API, { headers: getAuthHeaders() });
       const data = await res.json();
       setHistory(data || []);
     } catch (err) {
@@ -59,7 +72,7 @@ const InputBiaya: React.FC = () => {
       await SweetAlert.loading("Menyimpan pengeluaran...");
       const res = await fetch(PENGELUARAN_API, { 
         method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
+        headers: getAuthHeaders(true), 
         body: JSON.stringify({ kategoriId: kategori, jumlah, tanggal, keterangan }) 
       });
       const data = await res.json().catch(() => null);
@@ -84,7 +97,7 @@ const InputBiaya: React.FC = () => {
       await SweetAlert.loading("Menghapus pengeluaran...");
       const res = await fetch(`${PENGELUARAN_API}/${id}`, { 
         method: "DELETE",
-        headers: { "Content-Type": "application/json" }
+        headers: getAuthHeaders(true)
       });
       if (!res.ok) throw new Error("HTTP error");
       SweetAlert.close();

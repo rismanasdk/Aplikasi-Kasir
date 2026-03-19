@@ -46,6 +46,11 @@ export interface Settings {
 }
 
 export default function ManagerSettingsPage() {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [settings, setSettings] = useState<Settings>({
     _id: '',
     taxRate: 0,
@@ -74,7 +79,9 @@ export default function ManagerSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/manager/settings`);
+        const response = await fetch(`${API_URL}/api/manager/settings`, {
+          headers: getAuthHeaders(),
+        });
         const data = await response.json();
         setSettings(data);
         setLoading(false);

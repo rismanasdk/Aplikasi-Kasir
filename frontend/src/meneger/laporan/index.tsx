@@ -44,6 +44,11 @@ interface FilterOptions {
 }
 
 const LaporanPage = () => {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [data, setData] = useState<LaporanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +68,9 @@ const LaporanPage = () => {
     const fetchMonths = async () => {
       try {
         setLoadingBulan(true);
-        const resp = await fetch(`${API_URL}/api/admin/laporan/bulan`);
+        const resp = await fetch(`${API_URL}/api/admin/laporan/bulan`, {
+          headers: getAuthHeaders(),
+        });
         if (!resp.ok) throw new Error('Failed to fetch bulan');
         const json = await resp.json();
         const list = json?.daftar_bulan || [];
@@ -102,10 +109,14 @@ const LaporanPage = () => {
         endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
       }
 
-      const ringkasanResp = await fetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+      const ringkasanResp = await fetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`, {
+        headers: getAuthHeaders(),
+      });
       const ringkasanJson = ringkasanResp.ok ? await ringkasanResp.json() : null;
 
-      const detailResp = await fetch(`${API_URL}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`);
+      const detailResp = await fetch(`${API_URL}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`, {
+        headers: getAuthHeaders(),
+      });
       const detailJson = detailResp.ok ? await detailResp.json() : null;
 
       const summary = ringkasanJson?.ringkasan || {};
@@ -157,7 +168,9 @@ const LaporanPage = () => {
       setData(laporanForUI);
       // fetch total transaksi count from admin riwayat
       try {
-        const trxResp = await fetch(`${API_URL}/api/admin/riwayat`);
+        const trxResp = await fetch(`${API_URL}/api/manager/riwayat`, {
+          headers: getAuthHeaders(),
+        });
         if (trxResp.ok) {
           const trxJson = await trxResp.json();
           if (Array.isArray(trxJson)) {

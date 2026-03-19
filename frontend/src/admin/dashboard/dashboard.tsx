@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Define interfaces for API responses
 interface User {
@@ -152,6 +153,25 @@ const AdminDashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
+        }
+
+        const authHeaders: HeadersInit = {
+          Authorization: `Bearer ${token}`,
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        };
+
+        const authFetch = (url: string, init?: RequestInit) =>
+          fetch(url, {
+            ...init,
+            headers: {
+              ...authHeaders,
+              ...(init?.headers || {}),
+            },
+          });
         
         // Fetch data from all endpoints including settings
         const [
@@ -163,19 +183,35 @@ const AdminDashboard: React.FC = () => {
           omzetResponse,
           adminRiwayatResponse
         ] = await Promise.all([
-          fetch(`${ipbe}/api/admin/users`),
-          fetch(`${ipbe}/api/admin/dashboard/top-barang?filter=bulan`),
-          fetch(`${ipbe}/api/admin/hpp-total`),
-          fetch(`${ipbe}/api/admin/riwayat`),
-          fetch(`${ipbe}/api/admin/settings`),
-          fetch(`${ipbe}/api/admin/dashboard/omzet`),
-          fetch(`${ipbe}/api/admin/riwayat`)
+          authFetch(`${ipbe}/api/admin/users`),
+          authFetch(`${ipbe}/api/admin/dashboard/top-barang?filter=bulan`),
+          authFetch(`${ipbe}/api/admin/hpp-total`),
+          authFetch(`${ipbe}/api/admin/riwayat`),
+          authFetch(`${ipbe}/api/admin/settings`),
+          authFetch(`${ipbe}/api/admin/dashboard/omzet`),
+          authFetch(`${ipbe}/api/admin/riwayat`)
         ]);
 
         // Check for errors
         if (!usersResponse.ok || !topBarangResponse.ok || !hppTotalResponse.ok || 
             !transaksiResponse.ok || !settingsResponse.ok) {
-          throw new Error('One or more requests failed');
+          const failedRequests: Array<[string, number]> = [
+            ['users', usersResponse.status],
+            ['top-barang', topBarangResponse.status],
+            ['hpp-total', hppTotalResponse.status],
+            ['riwayat', transaksiResponse.status],
+            ['settings', settingsResponse.status],
+            ['omzet', omzetResponse.status],
+          ];
+          const detail = failedRequests
+            .filter(([, status]) => status >= 400)
+            .map(([name, status]) => `${name}:${status}`)
+            .join(', ');
+          const hasForbidden = failedRequests.some(([, status]) => status === 401 || status === 403);
+          if (hasForbidden) {
+            throw new Error(`Akses ditolak (${detail}). Silakan login ulang dengan akun admin.`);
+          }
+          throw new Error(`Request API gagal (${detail || 'unknown'})`);
         }
 
         // Parse responses
@@ -254,7 +290,7 @@ const AdminDashboard: React.FC = () => {
           const endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
 
           try {
-            const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+            const ringkasanResp = await authFetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
             if (ringkasanResp.ok) {
               const ringkasanJson = await ringkasanResp.json();
               const ringkasan = ringkasanJson?.ringkasan || {};

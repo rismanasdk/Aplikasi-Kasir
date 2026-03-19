@@ -1,46 +1,28 @@
-import { useState, useEffect } from 'react';
-
 interface TopNavProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   totalCartItems: number;
   handleCheckout: () => void;
+  onToggleSidebar: () => void;
 }
 
 const TopNav = ({
   searchTerm,
   setSearchTerm,
+  onToggleSidebar,
 //   totalCartItems,
 //   handleCheckout
 }: TopNavProps) => {
-  const [currentTime, setCurrentTime] = useState<string>('');
-
-  useEffect(() => {
-    // Fungsi untuk memperbarui waktu
-    const updateTime = () => {
-      const now = new Date();
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      const seconds = now.getSeconds().toString().padStart(2, '0');
-      setCurrentTime(`${hours}:${minutes}:${seconds}`);
-    };
-
-    // Panggil updateTime sekali untuk menghindari delay awal
-    updateTime();
-    
-    // Set interval untuk memperbarui waktu setiap detik
-    const intervalId = setInterval(updateTime, 1000);
-    
-    // Bersihkan interval saat komponen unmount
-    return () => clearInterval(intervalId);
-  }, []);
-
   return (
     <div className="bg-white shadow-md rounded-b-xl">
       <div className="max-w-10x4 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <button className="md:hidden mr-2 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+            <button
+              onClick={onToggleSidebar}
+              className="md:hidden mr-2 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              aria-label="Buka menu sidebar"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
@@ -69,14 +51,6 @@ const TopNav = ({
                   </svg>
                 </div>
               </div>
-            </div>
-            
-            {/* Jam Waktu Real-time */}
-            <div className="flex items-center bg-gray-100 px-3 py-2 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-gray-700 font-medium">{currentTime}</span>
             </div>
             
             {/* <div className="ml-4 flex items-center">

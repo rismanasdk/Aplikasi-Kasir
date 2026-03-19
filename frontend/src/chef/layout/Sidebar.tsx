@@ -35,6 +35,11 @@ interface SettingsResponse {
 import { API_URL } from '../../config/api';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [marqueeKey, setMarqueeKey] = useState(0);
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
@@ -45,7 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const fetchStoreLogo = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/admin/settings`);
+        const response = await fetch(`${API_URL}/api/common/settings`, {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch store logo');
         }

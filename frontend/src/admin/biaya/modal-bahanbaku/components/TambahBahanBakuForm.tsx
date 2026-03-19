@@ -38,10 +38,17 @@ const TambahBahanBakuForm: React.FC<TambahBahanBakuFormProps> = ({
   const [newBahanList, setNewBahanList] = useState<Bahan[]>([{ nama: '', satuan: '', harga: 0, jumlah: 1 }]);
   const [satuanOptions, setSatuanOptions] = useState<{ nama: string; kode: string }[]>([]);
 
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => {
     const fetchSatuan = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/data-satuan`);
+        const res = await fetch(`${API_URL}/api/admin/data-satuan`, {
+          headers: getAuthHeaders(),
+        });
         if (!res.ok) return;
         const json = await res.json();
         if (Array.isArray(json)) {

@@ -10,6 +10,7 @@ import { SweetAlert } from "../../components/SweetAlert";
 import io, { Socket } from 'socket.io-client';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { API_URL } from '../../config/api';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 
 export interface BarangAPI {
@@ -138,6 +139,18 @@ const StokBarangAdmin: React.FC<ListBarangProps> = ({ dataBarang, setDataBarang 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [bahanBakuList, setBahanBakuList] = useState<BahanBakuItem[]>([]);
+
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      ...(json ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
   
   const [formData, setFormData] = useState<BarangFormData>({
     kode: "",
@@ -164,7 +177,9 @@ const StokBarangAdmin: React.FC<ListBarangProps> = ({ dataBarang, setDataBarang 
 
   const fetchBahanBaku = useCallback(async () => {
     try {
-      const response = await fetch(BAHAN_BAKU_API_URL);
+      const response = await fetch(BAHAN_BAKU_API_URL, {
+        headers: getAuthHeaders(),
+      });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       
@@ -200,12 +215,8 @@ const [settings, setSettings] = useState({
 
 const fetchSettings = useCallback(async () => {
   try {
-    const token = localStorage.getItem('token');
     const res = await fetch(SETTINGS_API_URL, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(true)
     });
     
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -239,7 +250,9 @@ const fetchSettings = useCallback(async () => {
 
   const fetchKategori = useCallback(async () => {
     try {
-      const res = await fetch(KATEGORI_API_URL);
+      const res = await fetch(KATEGORI_API_URL, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data: KategoriAPI[] = await res.json();
       
@@ -266,12 +279,8 @@ const fetchSettings = useCallback(async () => {
 
   const fetchProductions = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch(`${API_URL}/api/admin/stok-barang/productions`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(true),
       });
       if (response.ok) {
         // productions fetched but not stored in state because it's unused
@@ -290,12 +299,8 @@ const fetchSettings = useCallback(async () => {
     setLoading(true);
     setServerError(false);
     try {
-      const token = localStorage.getItem('token')
       const res = await fetch(`${API_URL}/api/admin/stok-barang`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(true),
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data: BarangAPI[] = await res.json();
@@ -513,7 +518,8 @@ const handleEdit = (id: string) => {
         await SweetAlert.loading("Menghapus barang...");
         
         const res = await fetch(`${API_URL}/api/admin/stok-barang/${id}`, {
-          method: "DELETE"
+          method: "DELETE",
+          headers: getAuthHeaders(),
         });
         
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -535,10 +541,7 @@ const handleEdit = (id: string) => {
       
       const res = await fetch(`${API_URL}/api/admin/stok-barang/${id}/status`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ status }),
       });
       
@@ -641,11 +644,13 @@ const handleSubmit = async (e: React.FormEvent) => {
     if (isEditing && editId) {
       res = await fetch(`${API_URL}/api/admin/stok-barang/${editId}`, {
         method: "PUT",
+        headers: getAuthHeaders(),
         body: payload,
       });
     } else {
       res = await fetch(`${API_URL}/api/admin/stok-barang`, {
         method: "POST",
+        headers: getAuthHeaders(),
         body: payload,
       });
     }
@@ -683,10 +688,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
   try {
     const response = await fetch(`${API_URL}/api/admin/stok-barang/production`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
+      headers: getAuthHeaders(true),
       body: JSON.stringify(productionData),
     });
 

@@ -4,6 +4,7 @@ import { AlertCircle, TrendingUp, CreditCard, Wallet, Landmark } from 'lucide-re
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, type PieLabel } from 'recharts';
 import LoadingSpinner from '../../../components/LoadingSpinner'; // Adjust path as needed
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 interface PaymentBreakdown {
   [key: string]: number;
 }
@@ -87,11 +88,24 @@ const BreakdownPembayaran: React.FC = () => {
   const [selectedBulan, setSelectedBulan] = useState<string>('');
   const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
 
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
   useEffect(() => {
     const fetchDaftarBulan = async () => {
       try {
         setLoadingBulan(true);
-        const resp = await fetch(`${ipbe}/api/admin/laporan/bulan`);
+        const resp = await fetch(`${ipbe}/api/admin/laporan/bulan`, {
+          headers: getAuthHeaders(),
+        });
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
         const json = await resp.json();
         setDaftarBulan(json.daftar_bulan || []);
@@ -135,7 +149,9 @@ const BreakdownPembayaran: React.FC = () => {
           endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
         }
 
-        const resp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`);
+        const resp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
+          headers: getAuthHeaders(),
+        });
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
         const json = await resp.json();
 

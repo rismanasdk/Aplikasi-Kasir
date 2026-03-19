@@ -13,7 +13,7 @@ const router = express.Router();
 
 // All routes require authentication and chef role
 router.use(verifyToken);
-router.use(authorize(["chef"]));
+router.use(authorize(["chef", "admin"]));
 
 router.get("/productions", getProductions);
 router.get("/bahan-baku/available", getAvailableBahanBaku);

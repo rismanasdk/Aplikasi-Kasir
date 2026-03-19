@@ -431,6 +431,12 @@ interface DashboardProps {
 
 const KasirDashboard = ({ dataBarang: initialDataBarang }: DashboardProps) => {
   console.log('Initial data barang:', initialDataBarang);
+  const getAuthHeaders = (withJson = false): Record<string, string> => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = withJson ? { 'Content-Type': 'application/json' } : {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  };
   
   const [dataBarang, setDataBarang] = useState<Barang[]>(initialDataBarang || []);
   const [searchTerm, setSearchTerm] = useState("");
@@ -469,13 +475,9 @@ const KasirDashboard = ({ dataBarang: initialDataBarang }: DashboardProps) => {
   const fetchSettings = useCallback(async () => {
     try {
       console.log("Mengambil data settings...");
-      const token = localStorage.getItem('token');
-      const SETTINGS_API_URL = `${API_BASE_URL}/api/admin/settings`;
+      const SETTINGS_API_URL = `${API_BASE_URL}/api/common/settings`;
       const res = await fetch(SETTINGS_API_URL, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders(true)
       });
       
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -593,15 +595,9 @@ const KasirDashboard = ({ dataBarang: initialDataBarang }: DashboardProps) => {
       setError(null);
       setServerError(false);
       
-      const token = localStorage.getItem('token');
-      console.log('Fetching data from:', `${API_BASE_URL}/api/admin/stok-barang`);
+      console.log('Fetching data from:', `${API_BASE_URL}/api/barang`);
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/stok-barang`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await fetch(`${API_BASE_URL}/api/barang`, { headers: getAuthHeaders(true) });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

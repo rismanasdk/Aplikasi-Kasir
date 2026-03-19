@@ -21,7 +21,7 @@ interface BarangAPI {
   status?: string;
 }
 
-const STOK_BARANG_URL = `${API_URL}/api/admin/stok-barang`;
+const STOK_BARANG_URL = `${API_URL}/api/barang`;
 
 function App() {
   const [dataBarang, setDataBarang] = useState<Barang[]>([]);

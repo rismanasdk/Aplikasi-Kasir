@@ -4,6 +4,7 @@ import StatusModal from "./StatusModal";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { SweetAlert } from "../../../components/SweetAlert";
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 export interface BarangDibeli {
   kode_barang: string;
@@ -52,10 +53,24 @@ const StatusPesananAdmin: React.FC = () => {
   const [selectedPesanan, setSelectedPesanan] = useState<{ id: string; status: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      ...(json ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+    };
+  };
+
   const fetchPesanan = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/all`);
+      const response = await fetch(`${API_URL}/all`, {
+        headers: getAuthHeaders(),
+      });
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       
       const data: PesananAPI[] = await response.json();
@@ -87,9 +102,7 @@ const StatusPesananAdmin: React.FC = () => {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ status }),
       });
 

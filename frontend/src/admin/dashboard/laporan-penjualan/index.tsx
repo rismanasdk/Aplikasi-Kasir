@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, type PieLabel } from 'recharts';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { exportPdf, exportExcel } from './utils';
-import { Landmark, Wallet, TrendingUp, CreditCard, ChevronLeft, ChevronRight, Package, DollarSign, ShoppingCart, TrendingDown } from 'lucide-react';
+import { Landmark, Wallet, TrendingUp, CreditCard, Package, DollarSign, ShoppingCart, TrendingDown } from 'lucide-react';
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Interfaces
 interface ProdukApi {
@@ -140,9 +141,23 @@ const LaporanPenjualan: React.FC = () => {
     const fetchDaftarBulan = async () => {
       try {
         setLoadingBulan(true);
-        const response = await fetch(`${ipbe}/api/admin/laporan/bulan`);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
+        }
+        const response = await fetch(`${ipbe}/api/admin/laporan/bulan`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+          },
+        });
         
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Akses ditolak. Silakan login ulang dengan akun admin.');
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
         setDaftarBulan(result.daftar_bulan);
@@ -167,6 +182,14 @@ const LaporanPenjualan: React.FC = () => {
     
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
+      }
+      const authHeaders: HeadersInit = {
+        Authorization: `Bearer ${token}`,
+        ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+      };
 
       // Temukan info bulan yang dipilih dari daftarBulan untuk membentuk startDate/endDate
       const bulanObj = daftarBulan.find(b => b.id === selectedBulan);
@@ -191,17 +214,28 @@ const LaporanPenjualan: React.FC = () => {
       }
 
       // Fetch realtime ringkasan from laporan controller
-      const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
-      if (!ringkasanResp.ok) throw new Error(`HTTP error! status: ${ringkasanResp.status}`);
+      const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`, {
+        headers: authHeaders,
+      });
+      if (!ringkasanResp.ok) {
+        if (ringkasanResp.status === 401 || ringkasanResp.status === 403) {
+          throw new Error('Akses ditolak. Silakan login ulang dengan akun admin.');
+        }
+        throw new Error(`HTTP error! status: ${ringkasanResp.status}`);
+      }
       const ringkasanJson = await ringkasanResp.json();
       const ringkasan = ringkasanJson?.ringkasan || {};
 
       // Fetch detail laba and daily data (optional - keep existing structure if available)
-      const detailResp = await fetch(`${ipbe}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`);
+      const detailResp = await fetch(`${ipbe}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`, {
+        headers: authHeaders,
+      });
       const detailJson = detailResp.ok ? await detailResp.json() : null;
 
       // Fetch rekap metode pembayaran (not used heavily here, but keep for compatibility)
-      const rekapResp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`);
+      const rekapResp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
+        headers: authHeaders,
+      });
       const rekapJson = rekapResp.ok ? await rekapResp.json() : null;
 
       // Normalize values with safe fallbacks

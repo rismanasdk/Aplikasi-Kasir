@@ -58,6 +58,11 @@ interface StokBarang {
 }
 
 const MenegerRiwayatPage = () => {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [filterBulan, setFilterBulan] = useState<string>("semua");
   const [filterTahun, setFilterTahun] = useState<string>("semua");
   const [filterStatus, setFilterStatus] = useState<string>("semua");
@@ -84,8 +89,10 @@ const MenegerRiwayatPage = () => {
       setLoading(true);
       
       // Fetch stok barang data
-      const stokUrl = `${API_URL}/api/admin/stok-barang`;
-      const stokResponse = await fetch(stokUrl);
+      const stokUrl = `${API_URL}/api/manager/stok-barang`;
+      const stokResponse = await fetch(stokUrl, {
+        headers: getAuthHeaders(),
+      });
       
       const stokMap: Record<string, string> = {};
       
@@ -101,7 +108,9 @@ const MenegerRiwayatPage = () => {
       }
       
       // Fetch riwayat data
-      const response = await fetch(`${API_URL}/api/manager/riwayat`);
+      const response = await fetch(`${API_URL}/api/manager/riwayat`, {
+        headers: getAuthHeaders(),
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

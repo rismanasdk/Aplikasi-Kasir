@@ -25,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (auth.user && (location.pathname === '/login' || location.pathname === '/register')) {
       let path = '/';
       if (auth.user.role === 'admin') path = '/admin/dashboard';
-      else if (auth.user.role === 'manajer') path = '/manajer/dashboard';
+      else if (auth.user.role === 'manajer') path = '/meneger/dashboard';
       else if (auth.user.role === 'kasir') path = '/kasir/dashboard';
       else if (auth.user.role === 'chef') path = '/chef/bahan-baku';
       

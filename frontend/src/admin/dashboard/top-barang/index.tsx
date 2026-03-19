@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { Crown, Medal, Award, Star, TrendingUp, Package, DollarSign, BarChart3, PieChart } from 'lucide-react';
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Interface untuk produk dari API
 interface ProdukApi {
@@ -42,6 +43,28 @@ const TopBarang: React.FC = () => {
   const [totalPendapatan, setTotalPendapatan] = useState<number>(0); // State untuk total pendapatan dari API
   const [selectedProduct, setSelectedProduct] = useState<ProdukApi | null>(null); // State untuk produk yang dipilih
 
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
+  const authFetch = (url: string, init?: RequestInit) => {
+    const headers = getAuthHeaders();
+    return fetch(url, {
+      ...init,
+      headers: {
+        ...headers,
+        ...(init?.headers || {}),
+      },
+    });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,7 +72,7 @@ const TopBarang: React.FC = () => {
         // Fetch top-barang from dashboard endpoint (server-side aggregation)
         const endpoint = `${ipbe}/api/admin/dashboard/top-barang`;
 
-        const response = await fetch(endpoint);
+        const response = await authFetch(endpoint);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const raw = await response.json();
 
@@ -97,7 +120,7 @@ const TopBarang: React.FC = () => {
 
         // Notify backend to update Best Seller category for current top-5
         try {
-          fetch(`${ipbe}/api/admin/dashboard/update-best-seller`, {
+          authFetch(`${ipbe}/api/admin/dashboard/update-best-seller`, {
             method: 'POST'
           }).then(async (resp) => {
             if (!resp.ok) {
@@ -129,7 +152,7 @@ const TopBarang: React.FC = () => {
     const fetchProdukList = async () => {
       try {
         setLoadingProduk(true);
-        const response = await fetch(`${ipbe}/api/admin/stok-barang`);
+        const response = await authFetch(`${ipbe}/api/admin/stok-barang`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

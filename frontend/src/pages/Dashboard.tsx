@@ -162,6 +162,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isProsesTransaksiModalOpen, setIsProsesTransaksiModalOpen] = useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [transactionSuccess, setTransactionSuccess] = useState(false);
   const [transactionData, setTransactionData] = useState<TransactionResponse | undefined>(undefined);
@@ -220,11 +221,28 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   const fetchKategori = useCallback(async () => {
     try {
       setLoadingKategori(true);
-      const response = await fetch(`${API_BASE_URL}/api/admin/kategori`);
+      const response = await fetch(`${API_BASE_URL}/api/barang`);
       if (!response.ok) throw new Error("Gagal mengambil data kategori");
-      
-      const data = await response.json();
-      setKategoriList(data);
+
+      const data = await response.json() as Array<{ kategori?: string }>;
+      const kategoriUnik = Array.from(
+        new Set(
+          (Array.isArray(data) ? data : [])
+            .map((item) => (item.kategori || "").trim())
+            .filter(Boolean)
+        )
+      );
+
+      const kategoriDariBarang: KategoriAPI[] = kategoriUnik.map((nama, idx) => ({
+        _id: `${idx}-${nama.toLowerCase().replace(/\s+/g, "-")}`,
+        nama,
+        deskripsi: "",
+        createdAt: "",
+        updatedAt: "",
+        __v: 0,
+      }));
+
+      setKategoriList(kategoriDariBarang);
     } catch {
       showToast("Gagal mengambil data kategori", "error", "fetch-kategori");
     } finally {
@@ -271,10 +289,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   };
   
   useEffect(() => {
-    setBarangList(dataBarang
-      .filter(barang => barang.statusBarang === "publish") // Filter hanya barang publish
-      .map(normalizeBarangData)
-    );
+    setBarangList(dataBarang.map(normalizeBarangData));
   }, [dataBarang]);
 
   useEffect(() => {
@@ -575,7 +590,13 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
-  
+
+  const normalizeKategoriLabel = (value?: string) =>
+    (value || "")
+      .replace(/(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu, "")
+      .toLowerCase()
+      .trim();
+
   const filteredBarang = barangList.filter(item => {
     if (!item) return false;
     
@@ -586,8 +607,14 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
     
     // Cari kategori yang cocok berdasarkan nama asli
     const selectedCategoryObj = categories.find(cat => cat.id === selectedCategory);
-    const matchesCategory = selectedCategory === "Semua" || 
-      (selectedCategoryObj && 'originalName' in selectedCategoryObj && item.kategori === selectedCategoryObj.originalName);
+    const selectedCategoryName = normalizeKategoriLabel(
+      (selectedCategoryObj && 'originalName' in selectedCategoryObj
+        ? selectedCategoryObj.originalName
+        : selectedCategoryObj?.name) || ''
+    );
+    const itemCategoryName = normalizeKategoriLabel(item.kategori);
+    const matchesCategory = selectedCategory === "Semua" ||
+      (!!selectedCategoryName && !!itemCategoryName && itemCategoryName === selectedCategoryName);
     
     return matchesSearch && matchesCategory;
   });
@@ -730,6 +757,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   };
 
   const handleCheckout = () => {
+    setIsMobileCartOpen(false);
     checkLoginAndProceed(() => {
       if (cart.length === 0) {
         showToast('Shopping cart is still empty', 'error', 'empty-cart');
@@ -842,12 +870,13 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
         setSearchTerm={setSearchTerm}
         totalCartItems={totalCartItems}
         handleCheckout={handleCheckout}
+        onToggleSidebar={toggleSidebar}
       />
       
-      <div className="flex h-[calc(100vh-120px)] mt-4 gap-4">
+      <div className="flex h-auto lg:h-[calc(100vh-120px)] mt-4 gap-4 xl:gap-6">
         <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
         
-        <div className="flex-1 bg-white rounded-2xl shadow-md p-4 overflow-y-auto">
+        <div className="flex-1 bg-white rounded-2xl shadow-md p-3 sm:p-4 lg:p-5 xl:p-6 overflow-visible lg:overflow-y-auto pb-6 lg:pb-4">
           <ProductGrid 
             products={filteredBarang}
             isLoading={isLoading || loadingKategori}
@@ -857,9 +886,10 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
             setSelectedCategory={setSelectedCategory}
             categories={categories}
           />
+
         </div>
         
-        <div className="w-80 bg-white rounded-2xl shadow-md p-4 flex flex-col">
+        <div className="hidden lg:flex lg:w-80 xl:w-96 bg-white rounded-2xl shadow-md p-4 xl:p-5 flex-col">
           <CurrentOrder 
             cartItems={cart}
             onRemoveItem={removeFromCart}
@@ -871,6 +901,38 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
           />
         </div>
       </div>
+
+      {cart.length > 0 && !isMobileCartOpen && (
+        <div className="lg:hidden fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 px-4 pointer-events-none">
+          <button
+            onClick={() => setIsMobileCartOpen(true)}
+            className="pointer-events-auto touch-pan-y mx-auto w-full max-w-md bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-2xl px-4 py-2.5 flex items-center justify-between"
+          >
+            <span className="font-semibold text-sm">Keranjang ({totalCartItems})</span>
+            <span className="font-bold text-sm">Rp {totalCartValue.toLocaleString("id-ID")}</span>
+          </button>
+        </div>
+      )}
+
+      {isMobileCartOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileCartOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] p-4">
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
+            <div className="h-[72vh]">
+              <CurrentOrder
+                cartItems={cart}
+                onRemoveItem={removeFromCart}
+                onUpdateQuantity={updateQuantity}
+                onCheckout={handleCheckout}
+                totalItems={totalCartItems}
+                totalValue={totalCartValue}
+                isLoading={isCartLoading}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

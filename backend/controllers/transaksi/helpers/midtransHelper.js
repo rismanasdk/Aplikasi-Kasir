@@ -6,6 +6,7 @@ import db from "../../../config/firebaseAdmin.js";
 import { io } from "../../../server.js";
 import { addTransaksiToLaporan } from "./laporanHelper.js";
 import ModalUtama from "../../../models/modalutama.js";
+import crypto from "crypto";
 
 function mapMidtransToSettings(notification) {
   if (notification.va_numbers && notification.va_numbers.length > 0) {
@@ -39,10 +40,28 @@ function mapMidtransToSettings(notification) {
 }
 
 export const midtransCallback = async (req, res) => {
-  console.log("Callback diterima:", req.body);
-
   try {
     const notification = req.body;
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    const { order_id, status_code, gross_amount, signature_key } = notification;
+
+    if (!serverKey) {
+      return res.status(500).json({ message: "MIDTRANS_SERVER_KEY belum diatur" });
+    }
+
+    if (!order_id || !status_code || !gross_amount || !signature_key) {
+      return res.status(400).json({ message: "Payload callback Midtrans tidak lengkap" });
+    }
+
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
+      .digest("hex");
+
+    if (signature_key !== expectedSignature) {
+      return res.status(403).json({ message: "Signature Midtrans tidak valid" });
+    }
+
     const orderId = notification.order_id;
     const transactionStatus = notification.transaction_status;
     const fraudStatus = notification.fraud_status;

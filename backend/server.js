@@ -31,6 +31,7 @@ import adminBahanBaku from "./routes/admin/bahanbaku.js";
 import adminDataSatuan from "./routes/admin/datasatuanRoutes.js";
 import adminPengeluaranBiaya from "./routes/admin/pengeluaran-biaya.js";
 import chefRoutes from "./routes/chef/chef.js";
+import commonRoutes from "./routes/common.js";
 import userAuth from "./middleware/user.js";
 import session from "express-session";
 import helmet from "helmet";
@@ -38,11 +39,28 @@ import { rateLimit } from "express-rate-limit";
 import passport from "./config/passportGoogle.js";
 import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
+import verifyToken from "./middleware/verifyToken.js";
+import authorize from "./middleware/authorize.js";
 
 
 const app = express();
 const port = process.env.PORT || 5000;
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Origin not allowed by CORS"));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.set('trust proxy', 1); 
 app.use(helmet()); 
 app.disable("x-powered-by");
@@ -80,20 +98,31 @@ app.use((req, res, next) => {
   next();
 });
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET is required");
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "secret",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    },
   })
 );
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(debugTokenLogger); 
+if (process.env.ENABLE_DEBUG_TOKEN_LOGGER === "true") {
+  app.use(debugTokenLogger);
+}
 
 app.use(express.json());
-app.use(cors());
 
 // pelanggan, kasir
 app.use("/api/auth/google", googleAuthRoutes);
@@ -105,29 +134,30 @@ app.use("/api/cart", cartRoutes)
 app.use("/auth", authRoutes);
 
 // manager
-app.use("/api/manager/dashboard", dashboardRoutes);
-app.use("/api/manager/riwayat", riwayatRoutes);
-app.use("/api/manager/stok-barang", stokBarang);
-app.use("/api/manager/laporan", laporanManagerRoutes);
-app.use("/api/manager/biaya-operasional", biayaoperasional);
-app.use("/api/manager/settings", managerSettingsRoutes);
+app.use("/api/manager/dashboard", verifyToken, authorize(["manajer", "manager", "admin"]), dashboardRoutes);
+app.use("/api/manager/riwayat", verifyToken, authorize(["manajer", "manager", "admin"]), riwayatRoutes);
+app.use("/api/manager/stok-barang", verifyToken, authorize(["manajer", "manager", "admin"]), stokBarang);
+app.use("/api/manager/laporan", verifyToken, authorize(["manajer", "manager", "admin"]), laporanManagerRoutes);
+app.use("/api/manager/biaya-operasional", verifyToken, authorize(["manajer", "manager", "admin"]), biayaoperasional);
+app.use("/api/manager/settings", verifyToken, authorize(["manajer", "manager", "admin"]), managerSettingsRoutes);
+app.use("/api/common", verifyToken, authorize(["admin", "manajer", "manager", "kasir", "chef", "user"]), commonRoutes);
 
 // admin
-app.use("/api/admin/dashboard", adminDashboardRoutes);
-app.use("/api/admin/status-pesanan", adminStatusPesanan);
-app.use("/api/admin/riwayat", adminRiwayat);
+app.use("/api/admin/dashboard", verifyToken, authorize(["admin"]), adminDashboardRoutes);
+app.use("/api/admin/status-pesanan", verifyToken, authorize(["admin"]), adminStatusPesanan);
+app.use("/api/admin/riwayat", verifyToken, authorize(["admin"]), adminRiwayat);
 app.use("/api/admin/stok-barang", adminStok);
-app.use("/api/admin/kategori", adminKategori)
-app.use("/api/admin/laporan", adminLaporan);
-app.use("/api/admin/users", adminUsers);
-app.use("/api/admin/settings", adminSettingsRoutes);
-app.use("/api/admin/biaya-operasional", adminbiayaoperasional);
-app.use("/api/admin/biaya-layanan", adminbiayalayanan)
-app.use("/api/admin/modal-utama", adminmodalutama)
-app.use("/api/admin/hpp-total", adminhpptotal)
+app.use("/api/admin/kategori", verifyToken, authorize(["admin"]), adminKategori)
+app.use("/api/admin/laporan", verifyToken, authorize(["admin", "manajer", "manager"]), adminLaporan);
+app.use("/api/admin/users", verifyToken, authorize(["admin"]), adminUsers);
+app.use("/api/admin/settings", verifyToken, authorize(["admin"]), adminSettingsRoutes);
+app.use("/api/admin/biaya-operasional", verifyToken, authorize(["admin"]), adminbiayaoperasional);
+app.use("/api/admin/biaya-layanan", verifyToken, authorize(["admin"]), adminbiayalayanan)
+app.use("/api/admin/modal-utama", verifyToken, authorize(["admin"]), adminmodalutama)
+app.use("/api/admin/hpp-total", verifyToken, authorize(["admin"]), adminhpptotal)
 app.use("/api/admin/bahan-baku", adminBahanBaku)
-app.use("/api/admin/data-satuan", adminDataSatuan)
-app.use("/api/admin/pengeluaran-biaya", adminPengeluaranBiaya);
+app.use("/api/admin/data-satuan", verifyToken, authorize(["admin"]), adminDataSatuan)
+app.use("/api/admin/pengeluaran-biaya", verifyToken, authorize(["admin"]), adminPengeluaranBiaya);
 
 // chef
 app.use("/api/chef", chefRoutes);
@@ -145,9 +175,9 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
-    methods: "*",
-    allowedHeaders: "*"
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   },
 });
 

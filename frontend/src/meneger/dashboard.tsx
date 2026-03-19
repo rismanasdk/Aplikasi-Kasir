@@ -38,6 +38,10 @@ const MenegerDashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +50,9 @@ const MenegerDashboard = () => {
         setError(null);
         
         const dashboardUrl = `${API_URL}/api/manager/dashboard`;
-        const dashboardResponse = await fetch(dashboardUrl);
+        const dashboardResponse = await fetch(dashboardUrl, {
+          headers: getAuthHeaders(),
+        });
         
         if (!dashboardResponse.ok) {
           throw new Error(`HTTP error! status: ${dashboardResponse.status}`);
@@ -56,7 +62,9 @@ const MenegerDashboard = () => {
 
         // Also fetch top products using the more detailed aggregation endpoint
         const topUrl = `${API_URL}/api/manager/dashboard/top`;
-        const topResponse = await fetch(topUrl);
+        const topResponse = await fetch(topUrl, {
+          headers: getAuthHeaders(),
+        });
         let topData = null;
         if (topResponse.ok) {
           try {
@@ -67,8 +75,10 @@ const MenegerDashboard = () => {
           }
         }
         
-        const stokUrl = `${API_URL}/api/admin/stok-barang`;
-        const stokResponse = await fetch(stokUrl);
+        const stokUrl = `${API_URL}/api/manager/stok-barang`;
+        const stokResponse = await fetch(stokUrl, {
+          headers: getAuthHeaders(),
+        });
         
         if (stokResponse.ok) {
           const stokData: StokBarang[] = await stokResponse.json();

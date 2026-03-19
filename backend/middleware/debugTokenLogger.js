@@ -1,6 +1,3 @@
-// middleware/debugTokenLogger.js
-import jwt from "jsonwebtoken";
-
 export const debugTokenLogger = (req, res, next) => {
   const start = Date.now();
 
@@ -46,32 +43,15 @@ export const debugTokenLogger = (req, res, next) => {
     console.log(`Query     :`, req.query);
   }
 
-  // tampilkan body (dipotong supaya nggak berat)
-  if (req.body && Object.keys(req.body).length > 0) {
-    const safeBody = JSON.stringify(req.body).substring(0, 300);
-    console.log(`Body      : ${safeBody}${safeBody.length >= 300 ? "..." : ""}`);
-  }
-
-  // TOKEN DEBUG
+  // Jangan log body/token detail agar tidak bocor data sensitif.
   if (!authHeader) {
     console.log(`${YELLOW}Auth      : No Authorization header${RESET}`);
   } else {
     const token = authHeader.split(" ")[1];
-
     if (!token) {
       console.log(`${YELLOW}Auth      : Bearer tanpa token${RESET}`);
     } else {
-      try {
-        // decode TANPA verify (biar cepat & aman untuk debug)
-        const decoded = jwt.decode(token);
-
-        console.log(`${GREEN}Auth      : Token received${RESET}`);
-        console.log(`UserID    : ${decoded?.id}`);
-        console.log(`Role      : ${decoded?.role}`);
-        console.log(`Expire    : ${decoded?.exp ? new Date(decoded.exp * 1000) : "?"}`);
-      } catch (e) {
-        console.log(`${RED}Auth      : Token decode failed${RESET}`);
-      }
+      console.log(`${GREEN}Auth      : Bearer token present${RESET}`);
     }
   }
 

@@ -8,6 +8,8 @@ import {
   decrementStock,
   updateBarangStatus,
 } from "../controllers/databarangControllers.js";
+import verifyToken from "../middleware/verifyToken.js";
+import authorize from "../middleware/authorize.js";
 
 const upload = multer({ dest: "uploads/" });
 const router = express.Router();
@@ -16,11 +18,11 @@ const router = express.Router();
 const handleFormData = upload.any();
 
 router.get("/", getAllBarang);
-router.post("/", upload.single("gambar"), createBarang);
-router.put("/:id", handleFormData, updateBarang);
-router.post("/:id/update", handleFormData, updateBarang);
-router.put("/:id/status", updateBarangStatus);
-router.delete("/:id", deleteBarang);
-router.post("/:id/decrement", decrementStock);
+router.post("/", verifyToken, authorize(["admin"]), upload.single("gambar"), createBarang);
+router.put("/:id", verifyToken, authorize(["admin"]), handleFormData, updateBarang);
+router.post("/:id/update", verifyToken, authorize(["admin"]), handleFormData, updateBarang);
+router.put("/:id/status", verifyToken, authorize(["admin"]), updateBarangStatus);
+router.delete("/:id", verifyToken, authorize(["admin"]), deleteBarang);
+router.post("/:id/decrement", verifyToken, authorize(["admin", "kasir"]), decrementStock);
 
 export default router;

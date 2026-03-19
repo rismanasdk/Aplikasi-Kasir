@@ -5,6 +5,7 @@ import { API_URL } from '../../../config/api';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { exportToExcel, exportToPDF } from './utils';
 import type { ModalUtama, AddModalResponse } from './types';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const PenjualanPage: React.FC = () => {
   const [modalData, setModalData] = useState<ModalUtama | null>(null);
@@ -28,11 +29,24 @@ const PenjualanPage: React.FC = () => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
+
   // Fetch modal data
   useEffect(() => {
     const fetchModalData = async () => {
       try {
-        const response = await axios.get<ModalUtama>(`${API_URL}/api/admin/modal-utama`);
+        const response = await axios.get<ModalUtama>(`${API_URL}/api/admin/modal-utama`, {
+          headers: getAuthHeaders(),
+        });
         setModalData(response.data);
       } catch (err) {
         setError('Gagal memuat data modal');
@@ -80,6 +94,9 @@ const PenjualanPage: React.FC = () => {
         {
           jumlah: Number(formData.jumlah),
           keterangan: formData.keterangan,
+        },
+        {
+          headers: getAuthHeaders(),
         }
       );
       
@@ -87,7 +104,9 @@ const PenjualanPage: React.FC = () => {
       setFormData({ jumlah: '', keterangan: '' });
       
       // Refresh data setelah menambah modal
-      const refreshResponse = await axios.get<ModalUtama>(`${API_URL}/api/admin/modal-utama`);
+      const refreshResponse = await axios.get<ModalUtama>(`${API_URL}/api/admin/modal-utama`, {
+        headers: getAuthHeaders(),
+      });
       setModalData(refreshResponse.data);
     } catch (err) {
       setSubmitError('Gagal menambah penjualan');

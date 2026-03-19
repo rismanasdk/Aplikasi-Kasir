@@ -46,6 +46,7 @@ interface SettingsResponse {
 }
 
 const ipbe = import.meta.env.VITE_IPBE;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -58,7 +59,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const fetchStoreLogo = async () => {
       try {
-        const response = await fetch(`${ipbe}/api/admin/settings`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLogoError(true);
+          return;
+        }
+
+        const response = await fetch(`${ipbe}/api/admin/settings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+          },
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch store logo');
         }

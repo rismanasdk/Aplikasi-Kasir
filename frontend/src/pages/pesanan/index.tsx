@@ -81,8 +81,8 @@ interface ApiResponse {
 }
 
 const API_URL_HISTORY = `${API_URL}/api/users/history`;
-const SETTINGS_URL = `${API_URL}/api/admin/settings`;
-const BIAYA_LAYANAN_URL = `${API_URL}/api/admin/biaya-layanan`;
+const SETTINGS_URL = `${API_URL}/api/common/settings`;
+const BIAYA_LAYANAN_URL = `${API_URL}/api/common/biaya-layanan`;
 
 const StatusPesananPage = () => {
   const [filterStatus, setFilterStatus] = useState<string>("semua");

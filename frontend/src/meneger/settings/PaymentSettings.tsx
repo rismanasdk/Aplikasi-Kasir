@@ -157,6 +157,11 @@ const getChannelIcon = (channelName: string) => {
 export default function PaymentSettings({
   payment_methods
 }: PaymentSettingsProps) {
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus[]>([]);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
@@ -165,7 +170,9 @@ export default function PaymentSettings({
     const fetchPaymentStatus = async () => {
       try {
         setLoadingStatus(true);
-        const response = await fetch(`${API_URL}/api/manager/settings/status`);
+        const response = await fetch(`${API_URL}/api/manager/settings/status`, {
+          headers: getAuthHeaders(),
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

@@ -36,6 +36,11 @@ const EditBahanBakuForm: React.FC<EditBahanBakuFormProps> = ({
     return localStorage.getItem('token');
   };
 
+  const getAuthHeaders = (): HeadersInit => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => {
     setEditBahanData(bahan);
   }, [bahan]);
@@ -43,7 +48,9 @@ const EditBahanBakuForm: React.FC<EditBahanBakuFormProps> = ({
   useEffect(() => {
     const fetchSatuan = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/data-satuan`);
+        const res = await fetch(`${API_URL}/api/admin/data-satuan`, {
+          headers: getAuthHeaders(),
+        });
         if (!res.ok) return;
         const json = await res.json();
         if (Array.isArray(json)) {
