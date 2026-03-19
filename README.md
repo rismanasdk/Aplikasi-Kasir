@@ -1,135 +1,174 @@
-# 🛒 Kasir Plus
+# Kasir Plus
 
-<!-- ![KasirPlus Dashboard Preview](https://res.cloudinary.com/dmrpx33rn/image/upload/v1761725178/Screenshot_from_2025-10-29_15-04-26_pq5f4h.png)
-
-[![Node.js](https://img.shields.io/badge/Node.js-v18-green)](https://nodejs.org/) 
-[![React](https://img.shields.io/badge/React-v18-blue)](https://reactjs.org/) 
-[![MongoDB](https://img.shields.io/badge/MongoDB-v6-green)](https://www.mongodb.com/) 
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3-blue)](https://tailwindcss.com/)  -->
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-**Kasir Plus** adalah sistem Point of Sale (POS) modern yang memudahkan pengelolaan **transaksi penjualan, stok barang, dan laporan keuangan**.  
-Tersedia frontend interaktif dan backend API dengan **real-time update**, serta integrasi pembayaran **Midtrans (sandbox)**.
+Kasir Plus adalah aplikasi Point of Sale (POS) berbasis `React + Vite` di frontend dan `Express + MongoDB` di backend. Project ini mendukung multi-role (`admin`, `manajer`, `kasir`, `chef`, `user`), update data real-time dengan `Socket.IO`, pembayaran online melalui `Midtrans`, upload gambar lewat `Cloudinary`, dan sinkronisasi stok berbasis `Firebase RTDB`.
 
+## Ringkasan Fitur
 
----------------------------------------------------------------------
+- Multi-role login: `admin`, `manajer`, `kasir`, `chef`, `user`
+- Login manual dan Google OAuth
+- Dashboard publik untuk pelanggan / user
+- Manajemen produk, kategori, bahan baku, data satuan, modal utama
+- Keranjang, checkout, transaksi tunai dan non-tunai
+- Midtrans callback untuk update status pembayaran
+- Laporan penjualan, HPP, omzet, metode pembayaran
+- Sinkronisasi stok real-time dengan `Socket.IO` dan `Firebase`
+- Upload logo toko, foto profil, dan gambar produk
 
-## 🎯 Fitur Utama
+## Struktur Project
 
-### 👤 Autentikasi Pengguna
-- Multi-role: Admin, Manajer, Kasir, User, Chef
-- Login & Logout + Login via Google
+```text
+Aplikasi-Kasir/
+├─ backend/    # API Express, MongoDB, Midtrans, Firebase, Cloudinary
+├─ frontend/   # React, TypeScript, Vite, Tailwind
+├─ uploads/    # File upload lokal sementara / legacy
+└─ README.md
+```
 
-### 🛍️ Manajemen Produk
-- CRUD produk & kategori
-- Upload foto produk
-- Tampilan responsif dengan **TailwindCSS**
+## Tech Stack
 
-### 💳 Transaksi
-- Tambah item ke keranjang
-- Checkout dan beli langsung
-- Integrasi **Midtrans Sandbox** untuk pembayaran online
-- Pembayaran (VA, E-Wallet via qris, Tunai)
-- Riwayat transaksi lengkap
+- Frontend: `React 19`, `TypeScript`, `Vite`, `TailwindCSS`, `Axios`, `Socket.IO Client`, `Recharts`, `Framer Motion`
+- Backend: `Node.js`, `Express`, `MongoDB`, `Mongoose`, `Socket.IO`, `Helmet`, `express-rate-limit`, `passport-google-oauth20`
+- Integrasi: `Midtrans`, `Cloudinary`, `Firebase Admin`
 
-### 📊 Laporan
-- Laporan penjualan harian, mingguan, bulanan
-- Export ke **PDF / Excel**
-- Visualisasi data menggunakan **Recharts**
+## Cara Menjalankan
 
-### ⚡ Frontend Interaktif
-- Sidebar navigasi responsif
-- Quick view produk
-- Panel keranjang interaktif
-- Animasi smooth dengan **Framer Motion**
-- Icon menggunakan **Lucide Icons**
-- Axios & Socket.io untuk komunikasi backend
+### 1. Backend
 
-### 🌐 Backend API
-- Node.js + Express + MongoDB + Helmet
-- Endpoint CRUD lengkap untuk produk, kategori, transaksi
-- Socket.io untuk **update stok & transaksi real-time**
-- Firebase untuk real-time update stok barang 
-- Integrasi Midtrans untuk payment gateway
-- Cloudinary untuk upload & penyimpanan gambar
-- CORS diaktifkan untuk memungkinkan akses frontend ke backend melalui API
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm start
+```
 
-------------------------------------------------------------------
+Backend berjalan di `http://localhost:5000` secara default.
 
-## 📁 Struktur Folder
+### 2. Frontend
 
-Kasir-Plus/
-├─ frontend/ # React + TypeScript + Tailwind + Framer Motion + Recharts + Lucide
-├─ backend/ # Node.js + Express + MongoDB + Firebase + Socket.io + Midtrans + Cloudinary
-├─ README.md
-└─ .gitignore
-
-
-
-------------------------------------------------------------------
-
-## 🚀 Teknologi & Tools
-
-- **Frontend:** React, TypeScript, TailwindCSS, Framer Motion, Recharts, Lucide, Axios, Socket.io-client  
-- **Backend:** Node.js, Express, MongoDB, Mongoose, Socket.io, Midtrans, Cloudinary
-- **Database:** MongoDB, Firebase
-- **Payment Gateway:** Midtrans (sandbox)
-- **Lainnya:** Git, GitHub, Ngrok  
-
--------------------------------------------------------------------
-⚙️ Cara Menjalankan
-
-1️⃣ Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
+```
 
-2️⃣ Backend
-cd backend
-npm install
-# Buat file .env berdasarkan .env.example -> isi dengan benar
-untuk google isi seperti ini:
-Authorized JavaScript origins:http://localhost:5173
-Authorized redirect URIs:URLNGROK/api/auth/google/callback
+Frontend berjalan di `http://localhost:5173` secara default.
+
+## Environment Backend
+
+Isi file `backend/.env` berdasarkan `backend/.env.example`.
+
+```env
+# Database
+MONGO_URI=
+FIREBASE_DATABASE_URL=
+
+# Authentication
+JWT_SECRET=
+SESSION_SECRET=
+
+# Midtrans
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# App
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
+ENABLE_DEBUG_TOKEN_LOGGER=false
+```
+
+Catatan:
+
+- `SESSION_SECRET` wajib, jika kosong backend akan crash saat start.
+- `JWT_SECRET` wajib untuk login, route protected, dan Google callback token.
+- Jika memakai Google OAuth lokal, callback backend mengarah ke `/api/auth/google/callback`.
+- Jika memakai Firebase service account, file `backend/config/firebase-service-account.json` tidak boleh di-commit.
+
+## Environment Frontend
+
+Frontend menggunakan variabel utama berikut:
+
+```env
+VITE_API_URL=http://localhost:5000
+VITE_API_KEY=
+```
+
+Catatan:
+
+- `VITE_API_URL` harus mengarah ke backend aktif.
+- `VITE_API_KEY` saat ini masih bersifat opsional karena validasi API key di backend belum diterapkan penuh.
+
+## Script Penting
+
+### Backend
+
+```bash
+npm start
+```
+
+Script tambahan yang tersedia di folder `backend/scripts/`:
+
+- `create-test-chef.js`
+- `create-test-bahanbaku.js`
+- `recalc-prices.js`
+- `recalc-total-harga-bahan.js`
+- `migrate-to-firebase.js`
+
+Jalankan manual bila memang dibutuhkan, misalnya:
+
+```bash
 node scripts/migrate-to-firebase.js
-npm start   # npm start dengan nodemon
+```
 
-3️⃣ Koneksi MongoDB
-MONGO_URI=mongodb://localhost:27017/nama_database
-PORT=5000
+### Frontend
 
-4️⃣ Testing Ngrok (opsional)
-ngrok http 3000   # frontend
-ngrok http 5000   # backend
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run preview
+```
 
--------------------------------------------------------------------
+## Role Akses
 
-💰 Integrasi Midtrans (Sandbox)
+- `admin`: akses penuh ke pengaturan, user, stok, laporan, dashboard admin
+- `manajer`: akses monitoring dashboard, stok, laporan, beberapa settings
+- `kasir`: transaksi dan pesanan
+- `chef`: bahan baku dan produksi
+- `user`: dashboard publik, keranjang, checkout, riwayat pribadi
 
-1.Daftar di Midtrans Dashboard
- → aktifkan sandbox mode.
+## Arsitektur Singkat
 
-2.Ambil SERVER_KEY & CLIENT_KEY.
+- Frontend menyimpan token login dan info user di browser untuk route protection.
+- Backend memverifikasi token JWT untuk route manager, admin, chef, dan user tertentu.
+- Midtrans callback mengubah status transaksi dan mengembalikan stok bila pembayaran gagal / expired.
+- Data stok disiarkan ulang lewat `Socket.IO` agar dashboard terkait ikut update tanpa refresh penuh.
 
-3.Tambahkan ke .env backend:
+## Catatan Pengembangan
 
-MIDTRANS_SERVER_KEY=your_server_key
-MIDTRANS_CLIENT_KEY=your_client_key
-MIDTRANS_IS_PRODUCTION=false
+- Beberapa route backend sudah diproteksi dengan `verifyToken` + `authorize`, tetapi masih ada area yang perlu diperketat.
+- Folder auth frontend masih memiliki beberapa file duplikat / legacy yang bisa dirapikan.
+- Jika banyak perubahan besar dilakukan, prioritaskan update dokumentasi di README ini dan `frontend/README.md`.
 
+## Checklist Setup Cepat
 
-4.Pastikan frontend menggunakan endpoint backend untuk generate transaksi.
+1. Isi `backend/.env`
+2. Jalankan backend
+3. Isi `frontend/.env` bila diperlukan
+4. Jalankan frontend
+5. Pastikan `VITE_API_URL` cocok dengan URL backend
+6. Pastikan `CORS_ORIGIN` backend mengizinkan origin frontend
 
-5.Gunakan nomor kartu virtual sandbox untuk testing pembayaran.
+## Lisensi
 
-📈 Real-Time Update
-
-Socket.io digunakan untuk update stok & transaksi secara real-time antar user di frontend.
-
-
-
-
-
-
-
+Project ini menggunakan lisensi `MIT`.
