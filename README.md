@@ -168,7 +168,3 @@ npm run preview
 4. Jalankan frontend
 5. Pastikan `VITE_API_URL` cocok dengan URL backend
 6. Pastikan `CORS_ORIGIN` backend mengizinkan origin frontend
-
-## Lisensi
-
-Project ini menggunakan lisensi `MIT`.
