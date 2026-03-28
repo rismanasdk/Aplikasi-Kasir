@@ -29,7 +29,8 @@ Aplikasi-Kasir/
 ## Tech Stack
 
 - Frontend: `React 19`, `TypeScript`, `Vite`, `TailwindCSS`, `Axios`, `Socket.IO Client`, `Recharts`, `Framer Motion`
-- Backend: `Node.js`, `Express`, `MongoDB`, `Mongoose`, `Socket.IO`, `Helmet`, `express-rate-limit`, `passport-google-oauth20`
+- Backend: `Node.js`, `Express`, `Mongoose`, `Socket.IO`, `Helmet`, `express-rate-limit`, `passport-google-oauth20`
+- Database: `MongoDB`, `Firebase`
 - Integrasi: `Midtrans`, `Cloudinary`, `Firebase Admin`
 
 ## Cara Menjalankan
