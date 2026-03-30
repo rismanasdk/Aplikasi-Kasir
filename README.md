@@ -1,6 +1,6 @@
 # Kasir Plus
 
-[![License](https://img.shields.io/badge/license-  GNU GPLv3 -green?style=plastic)](LICENSE)
+[![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)](LICENSE)
 
 Kasir Plus adalah aplikasi Point of Sale (POS) berbasis `React + Vite` di frontend dan `Express + MongoDB` di backend. Project ini mendukung multi-role (`admin`, `manajer`, `kasir`, `chef`, `user`), update data real-time dengan `Socket.IO`, pembayaran online melalui `Midtrans`, upload gambar lewat `Cloudinary`, dan sinkronisasi stok berbasis `Firebase RTDB`.
 
