@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { SweetAlert } from "../../components/SweetAlert";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 interface KategoriAPI {
   _id: string;
@@ -38,12 +39,26 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
     deskripsi: "",
   });
 
+  const getAuthHeaders = (json = false): HeadersInit => {
+    const token = getStoredToken();
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+
+    return {
+      ...(json ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
   const fetchCategories = useCallback(async () => {
     setLoading(true);
     setServerError(false);
     try {
       console.log("Fetching categories...");
-      const res = await fetch(`${API_URL}/api/admin/kategori`);
+      const res = await fetch(`${API_URL}/api/admin/kategori`, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data: KategoriAPI[] = await res.json();
       console.log("Categories fetched:", data);
@@ -106,7 +121,8 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
         await SweetAlert.loading("Menghapus kategori...");
         
         const res = await fetch(`${API_URL}/api/admin/kategori/${id}`, {
-          method: "DELETE"
+          method: "DELETE",
+          headers: getAuthHeaders(),
         });
         
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -152,17 +168,13 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
       if (isEditing && editId) {
         res = await fetch(`${API_URL}/api/admin/kategori/${editId}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(true),
           body: JSON.stringify(payload),
         });
       } else {
         res = await fetch(`${API_URL}/api/admin/kategori`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(true),
           body: JSON.stringify(payload),
         });
       }

@@ -3,7 +3,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, type PieLabe
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { exportPdf, exportExcel } from './utils';
 import { Landmark, Wallet, TrendingUp, CreditCard, Package, DollarSign, ShoppingCart, TrendingDown } from 'lucide-react';
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Interfaces
@@ -42,6 +43,25 @@ interface ApiResponse {
     updatedAt: string;
     __v: number;
   }[];
+}
+
+interface DetailLabaResponse {
+  data?: ApiResponse["data"];
+  biaya_operasional?: {
+    rincian_biaya?: Array<{
+      nama: string;
+      jumlah: number;
+    }>;
+    total?: number;
+  };
+}
+
+interface RingkasanLaporanResponse {
+  ringkasan?: Partial<SummaryApi> & {
+    total_biaya_operasional?: number;
+    total_barang_terjual?: number;
+  };
+  biaya_operasional?: DetailLabaResponse["biaya_operasional"];
 }
 
 interface DaftarBulan {
@@ -122,8 +142,6 @@ const LaporanPenjualan: React.FC = () => {
   const [totalBebanPerhari, setTotalBebanPerhari] = useState<number>(0);
   const [totalBebanPerbulan, setTotalBebanPerbulan] = useState<number>(0);
   const [pieData, setPieData] = useState<PieData[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(10);
   const [daftarBulan, setDaftarBulan] = useState<DaftarBulan[]>([]);
   const [selectedBulan, setSelectedBulan] = useState<string>('');
   const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
@@ -141,11 +159,11 @@ const LaporanPenjualan: React.FC = () => {
     const fetchDaftarBulan = async () => {
       try {
         setLoadingBulan(true);
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         if (!token) {
           throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
         }
-        const response = await fetch(`${ipbe}/api/admin/laporan/bulan`, {
+        const response = await fetch(`${API_URL}/api/admin/laporan/bulan`, {
           headers: {
             Authorization: `Bearer ${token}`,
             ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
@@ -182,7 +200,7 @@ const LaporanPenjualan: React.FC = () => {
     
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       if (!token) {
         throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
       }
@@ -214,7 +232,7 @@ const LaporanPenjualan: React.FC = () => {
       }
 
       // Fetch realtime ringkasan from laporan controller
-      const ringkasanResp = await fetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`, {
+      const ringkasanResp = await fetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`, {
         headers: authHeaders,
       });
       if (!ringkasanResp.ok) {
@@ -223,20 +241,20 @@ const LaporanPenjualan: React.FC = () => {
         }
         throw new Error(`HTTP error! status: ${ringkasanResp.status}`);
       }
-      const ringkasanJson = await ringkasanResp.json();
+      const ringkasanJson: RingkasanLaporanResponse = await ringkasanResp.json();
       const ringkasan = ringkasanJson?.ringkasan || {};
 
       // Fetch detail laba and daily data (optional - keep existing structure if available)
-      const detailResp = await fetch(`${ipbe}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`, {
+      const detailResp = await fetch(`${API_URL}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`, {
         headers: authHeaders,
       });
-      const detailJson = detailResp.ok ? await detailResp.json() : null;
+      const detailJson: DetailLabaResponse | null = detailResp.ok ? await detailResp.json() : null;
 
       // Fetch rekap metode pembayaran (not used heavily here, but keep for compatibility)
-      const rekapResp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
+      const rekapResp = await fetch(`${API_URL}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
         headers: authHeaders,
       });
-      const rekapJson = rekapResp.ok ? await rekapResp.json() : null;
+      await rekapResp.json();
 
       // Normalize values with safe fallbacks
       const totalPendapatanValue = Number(ringkasan.total_pendapatan || 0);
@@ -261,7 +279,7 @@ const LaporanPenjualan: React.FC = () => {
       setData(result);
       
       // Proses data harian / bulanan
-      let totalBebanBulanan = Number(ringkasan.total_biaya_operasional || 0);
+      const totalBebanBulanan = Number(ringkasan.total_biaya_operasional || 0);
       setTotalBebanPerbulan(totalBebanBulanan);
 
       // For per-day beban, if detail data contains daily entries, use today's; otherwise 0
@@ -310,15 +328,15 @@ const LaporanPenjualan: React.FC = () => {
       setPieData(pieDataArray);
       
       // Set biaya operasional: prefer breakdown dari backend jika tersedia
-      if ((detailJson as any)?.biaya_operasional && Array.isArray((detailJson as any).biaya_operasional.rincian_biaya)) {
+      if (detailJson?.biaya_operasional && Array.isArray(detailJson.biaya_operasional.rincian_biaya)) {
         setBiayaOperasional({
-          rincian_biaya: (detailJson as any).biaya_operasional.rincian_biaya.map((it: any) => ({ nama: it.nama, jumlah: it.jumlah })),
-          total: (detailJson as any).biaya_operasional.total || totalBebanBulanan || 0
+          rincian_biaya: detailJson.biaya_operasional.rincian_biaya.map((it) => ({ nama: it.nama, jumlah: it.jumlah })),
+          total: detailJson.biaya_operasional.total || totalBebanBulanan || 0
         });
-      } else if ((ringkasanJson as any)?.biaya_operasional && Array.isArray((ringkasanJson as any).biaya_operasional?.rincian_biaya)) {
+      } else if (ringkasanJson?.biaya_operasional && Array.isArray(ringkasanJson.biaya_operasional.rincian_biaya)) {
         setBiayaOperasional({
-          rincian_biaya: (ringkasanJson as any).biaya_operasional.rincian_biaya.map((it: any) => ({ nama: it.nama, jumlah: it.jumlah })),
-          total: (ringkasanJson as any).biaya_operasional.total || totalBebanBulanan || 0
+          rincian_biaya: ringkasanJson.biaya_operasional.rincian_biaya.map((it) => ({ nama: it.nama, jumlah: it.jumlah })),
+          total: ringkasanJson.biaya_operasional.total || totalBebanBulanan || 0
         });
       } else {
         // Fallback distribution
@@ -341,18 +359,13 @@ const LaporanPenjualan: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedBulan, totalBebanPerbulan]);
+  }, [selectedBulan, daftarBulan]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = produkTerlarisHariIni.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(produkTerlarisHariIni.length / itemsPerPage);
-
   // Format Rupiah
   const formatRupiah = useCallback((amount: number): string => {
     return new Intl.NumberFormat('id-ID', {
@@ -361,11 +374,6 @@ const LaporanPenjualan: React.FC = () => {
       minimumFractionDigits: 0,
     }).format(amount);
   }, []);
-
-  // Pagination functions
-  const paginate = useCallback((pageNumber: number) => setCurrentPage(pageNumber), []);
-  const nextPage = useCallback(() => setCurrentPage(prev => Math.min(prev + 1, totalPages)), [totalPages]);
-  const prevPage = useCallback(() => setCurrentPage(prev => Math.max(prev - 1, 1)), []);
 
   // Export functions
   const handleExport = useCallback((type: 'pdf' | 'excel') => {
@@ -474,7 +482,6 @@ const LaporanPenjualan: React.FC = () => {
   // Handle bulan change
   const handleBulanChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedBulan(e.target.value);
-    setCurrentPage(1);
   }, []);
 
   // Get payment icon

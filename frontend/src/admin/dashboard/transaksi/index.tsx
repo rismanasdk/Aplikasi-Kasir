@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { Landmark, Wallet, TrendingUp, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface StokBarang {
@@ -51,7 +51,7 @@ const Transaksi: React.FC = () => {
   const itemsPerPage = 8;
 
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -68,8 +68,8 @@ const Transaksi: React.FC = () => {
         const headers = getAuthHeaders();
         
         const [transaksiResponse, stokResponse] = await Promise.all([
-          fetch(`${ipbe}/api/admin/riwayat`, { headers }),
-          fetch(`${ipbe}/api/admin/stok-barang`, { headers })
+          fetch(`${API_URL}/api/admin/riwayat`, { headers }),
+          fetch(`${API_URL}/api/admin/stok-barang`, { headers })
         ]);
         
         if (!transaksiResponse.ok || !stokResponse.ok) {

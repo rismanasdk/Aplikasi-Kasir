@@ -13,7 +13,12 @@ export const getAllBarang = async (req, res) => {
     
     // Jika ada filter status, tambahkan ke query
     if (status) {
-      query.status = status;
+      query = {
+        $or: [
+          { status_publish: status },
+          { status },
+        ],
+      };
     }
 
     const barang = await Barang.find(query).lean();
@@ -40,12 +45,15 @@ export const getAllBarang = async (req, res) => {
       let status = "aman";
       if (stok === 0) status = "habis";
       else if (stok <= (item.stok_minimal || 5)) status = "hampir habis";
+      const statusPublish = item.status_publish || item.status || "pending";
 
       return {
         ...item,
         stok,
         hargaFinal: Math.round(item.hargaFinal),
-        status
+        status,
+        status_publish: statusPublish,
+        status_stok: item.status_stok || status
       };
     });
 

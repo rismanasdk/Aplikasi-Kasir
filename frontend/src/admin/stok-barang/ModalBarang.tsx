@@ -58,16 +58,13 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
   onClose,
   loading,
   kategoriOptions,
-  bahanBakuList,
   onGenerateCode,
   globalDiscount = 0
 }) => {
   const [useBahanBaku, setUseBahanBaku] = useState(false);
-  const [selectedBahanBaku, setSelectedBahanBaku] = useState("");
   const [isNamaReadOnly, setIsNamaReadOnly] = useState(false);
   const [isStokReadOnly, setIsStokReadOnly] = useState(false); // Tambahkan kembali state ini
   const [isHargaBeliReadOnly, setIsHargaBeliReadOnly] = useState(false);
-  const [isKategoriReadOnly, setIsKategoriReadOnly] = useState(false);
   const [isHargaJualReadOnly, setIsHargaJualReadOnly] = useState(false);
   
   // Gunakan ref untuk menyimpan nilai formData terbaru tanpa menyebabkan re-render
@@ -86,18 +83,14 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
         setIsNamaReadOnly(true);
         setIsStokReadOnly(true); // Tambahkan kembali
         setIsHargaBeliReadOnly(true);
-        setIsKategoriReadOnly(true);
         setIsHargaJualReadOnly(true);
-        setSelectedBahanBaku(formDataRef.current.bahanBaku[0].nama_produk);
       } else {
         // Jika modal baru dibuka atau tidak ada bahan baku, reset semua
         setUseBahanBaku(false);
         setIsNamaReadOnly(false);
         setIsStokReadOnly(false); // Tambahkan kembali
         setIsHargaBeliReadOnly(false);
-        setIsKategoriReadOnly(false);
         setIsHargaJualReadOnly(false);
-        setSelectedBahanBaku("");
       }
     }
   }, [visible, isEditing]); // Hanya depend pada visible dan isEditing
@@ -105,85 +98,6 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onInputChange("gambar", e.target.files[0]);
-    }
-  };
-
-   const handleBahanBakuChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value;
-    setSelectedBahanBaku(selectedValue);
-    
-    if (selectedValue) {
-      const selected = bahanBakuList.find(item => item.nama_produk === selectedValue);
-      if (selected) {
-        // Update form data with selected bahan baku
-        onInputChange("bahanBaku", [{
-          nama_produk: selected.nama_produk,
-          bahan: selected.bahan
-        }]);
-        
-        // Set nama barang dari nama bahan baku yang dipilih
-        onInputChange("nama", selected.nama_produk);
-        
-        // Set stok dari total_porsi (readonly)
-        onInputChange("stok", selected.total_porsi.toString());
-        
-        // Set harga beli dari modal_per_porsi
-        if (selected.modal_per_porsi > 0) {
-          onInputChange("hargaBeli", selected.modal_per_porsi.toString());
-        }
-        
-        // Set kategori default berdasarkan nama produk
-        let defaultKategori = "Makanan";
-        if (selected.nama_produk.toLowerCase().includes("minum") || 
-            selected.nama_produk.toLowerCase().includes("jus") ||
-            selected.nama_produk.toLowerCase().includes("teh") ||
-            selected.nama_produk.toLowerCase().includes("kopi")) {
-          defaultKategori = "Minuman";
-        } else if (selected.nama_produk.toLowerCase().includes("cemilan") || 
-                   selected.nama_produk.toLowerCase().includes("snack")) {
-          defaultKategori = "Cemilan";
-        }
-        onInputChange("kategori", defaultKategori);
-        
-        // Hitung harga jual berdasarkan margin
-        if (selected.modal_per_porsi > 0) {
-          const beli = selected.modal_per_porsi;
-          const jual = beli + (beli * (margin / 100));
-          onInputChange("hargaJual", Math.round(jual).toString());
-        }
-        
-        // Set fields to read-only
-        setIsNamaReadOnly(true);
-        setIsStokReadOnly(true); // Tambahkan kembali
-        setIsHargaBeliReadOnly(true);
-        setIsKategoriReadOnly(true);
-        setIsHargaJualReadOnly(true);
-      }
-    } else {
-      // Reset fields to editable when no bahan baku is selected
-      setIsNamaReadOnly(false);
-      setIsStokReadOnly(false); // Tambahkan kembali
-      setIsHargaBeliReadOnly(false);
-      setIsKategoriReadOnly(false);
-      setIsHargaJualReadOnly(false);
-    }
-  };
-
-  const handleUseBahanBakuChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const isChecked = e.target.checked;
-    setUseBahanBaku(isChecked);
-    
-    if (!isChecked) {
-      // Reset bahan baku selection
-      setSelectedBahanBaku("");
-      onInputChange("bahanBaku", []);
-      
-      // Make fields editable again
-      setIsNamaReadOnly(false);
-      setIsStokReadOnly(false); // Tambahkan kembali
-      setIsHargaBeliReadOnly(false);
-      setIsKategoriReadOnly(false);
-      setIsHargaJualReadOnly(false);
     }
   };
 
@@ -207,7 +121,6 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
     // Perbaikan: Pastikan bahanBaku dikirim saat update
     if (isEditing && formData.bahanBaku && formData.bahanBaku.length > 0) {
       // Jika menggunakan bahan baku, pastikan data bahan baku dikirim
-      console.log("Mengirim bahan baku:", formData.bahanBaku);
     }
     
     onSubmit(e);

@@ -3,7 +3,8 @@ import PesananTable from "./PesananTable";
 import StatusModal from "./StatusModal";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { SweetAlert } from "../../../components/SweetAlert";
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from "../../../config/api";
+import { getStoredToken } from "../../../auth/storage";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 export interface BarangDibeli {
@@ -43,7 +44,7 @@ export interface Pesanan {
   updatedAt: string;
 }
 
-const API_URL = `${ipbe}/api/admin/status-pesanan`;
+const STATUS_PESANAN_API_URL = `${API_URL}/api/admin/status-pesanan`;
 
 const StatusPesananAdmin: React.FC = () => {
   const [pesananData, setPesananData] = useState<Pesanan[]>([]);
@@ -54,7 +55,7 @@ const StatusPesananAdmin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const getAuthHeaders = (json = false): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -68,7 +69,7 @@ const StatusPesananAdmin: React.FC = () => {
   const fetchPesanan = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/all`, {
+      const response = await fetch(`${STATUS_PESANAN_API_URL}/all`, {
         headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -100,7 +101,7 @@ const StatusPesananAdmin: React.FC = () => {
   const handleUpdateStatus = async (id: string, status: string) => {
     setActionLoading(true);
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
+      const response = await fetch(`${STATUS_PESANAN_API_URL}/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(true),
         body: JSON.stringify({ status }),

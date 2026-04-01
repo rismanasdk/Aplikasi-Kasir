@@ -5,6 +5,7 @@ import { getSocket } from "../../utils/socket";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Landmark, Wallet, TrendingUp, CreditCard, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { API_URL } from '../../config/api';
+import { getStoredToken, getStoredUser } from '../../auth/storage';
 const ApiKey = import.meta.env.VITE_API_KEY;
 
 interface BarangDibeli {
@@ -100,11 +101,10 @@ const PesananKasirPage = () => {
         if (storedKasirId) {
           setKasirId(storedKasirId);
         } else {
-          const storedUser = localStorage.getItem('user');
-          if (!storedUser) {
+          const currentUser = getStoredUser<{ _id?: string; id?: string }>();
+          if (!currentUser) {
             throw new Error('Data user tidak ditemukan. Silakan login kembali.');
           }
-          const currentUser = JSON.parse(storedUser) as { _id?: string; id?: string };
           const resolvedKasirId = currentUser._id || currentUser.id;
           if (!resolvedKasirId) {
             throw new Error('ID kasir tidak ditemukan pada sesi login.');
@@ -153,7 +153,7 @@ const PesananKasirPage = () => {
     
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       if (!token) {
         throw new Error('Token tidak ditemukan. Silakan login kembali.');
       }

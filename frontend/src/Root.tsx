@@ -1,16 +1,16 @@
 import React, { useEffect } from "react";
 import App from "./App";
 import { API_URL } from "./config/api";
+import { getStoredToken, getStoredUser } from "./auth/storage";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Root: React.FC = () => {
   useEffect(() => {
     const getStoreSettings = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getStoredToken();
         if (!token) return;
-        const storedUser = localStorage.getItem("user");
-        const role = storedUser ? JSON.parse(storedUser)?.role : undefined;
+        const role = getStoredUser<{ role?: string }>()?.role;
         const isAdmin = role === "admin";
         const isManager = role === "manajer" || role === "manager";
         const settingsPath = isAdmin

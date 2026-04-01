@@ -4,6 +4,7 @@ import SweetAlert from '../../../../components/SweetAlert';
 import LoadingSpinner from '../../../../components/LoadingSpinner';
 import { Edit, Trash2, Plus } from 'lucide-react'; // Mengganti Pencil dengan Edit
 import { API_URL } from '../../../../config/api';
+import { getStoredToken } from '../../../../auth/storage';
 
 const ApiKey = import.meta.env.VITE_API_KEY;
 
@@ -39,7 +40,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
 
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   const fetchData = useCallback(async () => {

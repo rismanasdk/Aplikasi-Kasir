@@ -21,6 +21,8 @@ import {
   Circle,
   ChefHat
 } from 'lucide-react';
+import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -45,7 +47,6 @@ interface SettingsResponse {
   storeLogo: string;
 }
 
-const ipbe = import.meta.env.VITE_IPBE;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
@@ -59,13 +60,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const fetchStoreLogo = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getStoredToken();
         if (!token) {
           setLogoError(true);
           return;
         }
 
-        const response = await fetch(`${ipbe}/api/admin/settings`, {
+        const response = await fetch(`${API_URL}/api/admin/settings`, {
           headers: {
             Authorization: `Bearer ${token}`,
             ...(API_KEY ? { "x-api-key": API_KEY } : {}),

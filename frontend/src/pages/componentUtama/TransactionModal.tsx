@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { API_URL } from '../../config/api';
+import { getStoredToken } from "../../auth/storage";
 
 import { 
   ShoppingCart, 
@@ -180,7 +181,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         
         const res = await fetch(`${API_URL}/api/common/settings`, {
           headers: {
@@ -214,7 +215,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     
     const fetchReceiptSettings = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         const headers: Record<string, string> = {};
         if (token) headers.Authorization = `Bearer ${token}`;
         const res = await fetch(`${API_URL}/api/manager/settings`, { headers });
@@ -230,7 +231,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     // Fungsi untuk mengambil total biaya layanan
     const fetchTotalBiayaLayanan = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         const response = await fetch(`${API_URL}/api/common/biaya-layanan`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -346,7 +347,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       
       // If no kasirId from localStorage, try to get from token
       if (!kasirId) {
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         if (token) {
           // Token is usually JWT format, we can decode payload to get kasir ID
           const base64Url = token.split('.')[1];
@@ -393,7 +394,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     try {
       SweetAlert.loading("Processing transaction...");
       
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       
       // Log the request data for debugging
       console.log("Sending transaction data:", JSON.stringify(bodyData, null, 2));

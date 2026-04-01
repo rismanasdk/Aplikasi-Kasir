@@ -10,6 +10,7 @@ import { SweetAlert } from "../../components/SweetAlert";
 import io, { Socket } from 'socket.io-client';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 
@@ -29,6 +30,8 @@ export interface BarangAPI {
   hargaFinal?: number;
   gambar_url?: string;
   status?: string;
+  status_publish?: string;
+  status_stok?: string;
   use_discount?: boolean;
   margin?: number;
   bahan_baku?: Array<{
@@ -141,7 +144,7 @@ const StokBarangAdmin: React.FC<ListBarangProps> = ({ dataBarang, setDataBarang 
   const [bahanBakuList, setBahanBakuList] = useState<BahanBakuItem[]>([]);
 
   const getAuthHeaders = (json = false): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -317,8 +320,8 @@ const fetchSettings = useCallback(async () => {
         stokMinimal: item.stok_minimal || lowStockAlert,
         hargaFinal: item.hargaFinal,
         gambarUrl: item.gambar_url,
-        // status: item.status,
-        statusBarang: item.status || "pending", // status barang dari API
+        status: item.status_stok || item.status || "aman",
+        statusBarang: item.status_publish || item.status || "pending",
         useDiscount: typeof item.use_discount !== 'undefined' ? item.use_discount : true,
         margin: item.margin,
         bahanBaku: item.bahan_baku || []
@@ -354,7 +357,8 @@ const fetchSettings = useCallback(async () => {
         hargaFinal: newBarang.hargaFinal,
         gambarUrl: newBarang.gambar_url,
         // status: newBarang.status,
-        statusBarang: newBarang.status || "pending",
+        status: newBarang.status_stok || newBarang.status || "aman",
+        statusBarang: newBarang.status_publish || newBarang.status || "pending",
         useDiscount: typeof newBarang.use_discount !== 'undefined' ? newBarang.use_discount : true,
         margin: newBarang.margin,
         bahanBaku: newBarang.bahan_baku || []
@@ -377,7 +381,8 @@ const fetchSettings = useCallback(async () => {
         hargaFinal: updatedBarang.hargaFinal,
         gambarUrl: updatedBarang.gambar_url,
         // status: updatedBarang.status,
-        statusBarang: updatedBarang.status || "pending",
+        status: updatedBarang.status_stok || updatedBarang.status || "aman",
+        statusBarang: updatedBarang.status_publish || updatedBarang.status || "pending",
         useDiscount: typeof updatedBarang.use_discount !== 'undefined' ? updatedBarang.use_discount : true,
         margin: updatedBarang.margin,
         bahanBaku: updatedBarang.bahan_baku || []

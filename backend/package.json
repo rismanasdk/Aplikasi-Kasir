@@ -2,7 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "scripts": {
-    "start": "nodemon bootstrap.js"
+    "dev": "nodemon bootstrap.js",
+    "start": "node bootstrap.js",
+    "check:syntax": "node scripts/check-syntax.js",
+    "check": "npm run check:syntax"
   },
   "author": "",
   "license": "ISC",

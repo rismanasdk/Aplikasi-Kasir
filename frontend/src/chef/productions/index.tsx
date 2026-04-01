@@ -23,6 +23,7 @@ interface Production {
 }
 
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 const Productions: React.FC = () => {
   const [productions, setProductions] = useState<Production[]>([]);
@@ -39,7 +40,7 @@ const Productions: React.FC = () => {
     try {
       const response = await fetch(`${API_URL}/api/chef/productions`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getStoredToken()}`,
         },
       });
       if (response.ok) {
@@ -61,7 +62,7 @@ const Productions: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getStoredToken()}`,
         },
         body: JSON.stringify({ status, catatan }),
       });

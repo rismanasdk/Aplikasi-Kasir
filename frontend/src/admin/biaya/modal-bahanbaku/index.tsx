@@ -10,6 +10,7 @@ import Tabs from './components/tabs';
 import SatuanTabs from './Data-Satuan/SatuanTabs'
 import { Plus } from 'lucide-react';
 import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 
 export interface Bahan {
   nama: string;
@@ -73,7 +74,7 @@ const ModalBahanBaku: React.FC = () => {
   const buttonText = isFormVisible ? 'Batal' : `Tambah ${activeTab === 'BahanBaku' ? 'Bahan Baku' : 'Satuan'}`;
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   // Fetch data bahan baku dari API

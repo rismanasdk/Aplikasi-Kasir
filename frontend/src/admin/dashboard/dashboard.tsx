@@ -1,7 +1,8 @@
 // src/admin/dashboard/dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../components/LoadingSpinner';
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Define interfaces for API responses
@@ -154,7 +155,7 @@ const AdminDashboard: React.FC = () => {
       try {
         setLoading(true);
 
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         if (!token) {
           throw new Error('Sesi login tidak ditemukan. Silakan login ulang.');
         }
@@ -183,13 +184,13 @@ const AdminDashboard: React.FC = () => {
           omzetResponse,
           adminRiwayatResponse
         ] = await Promise.all([
-          authFetch(`${ipbe}/api/admin/users`),
-          authFetch(`${ipbe}/api/admin/dashboard/top-barang?filter=bulan`),
-          authFetch(`${ipbe}/api/admin/hpp-total`),
-          authFetch(`${ipbe}/api/admin/riwayat`),
-          authFetch(`${ipbe}/api/admin/settings`),
-          authFetch(`${ipbe}/api/admin/dashboard/omzet`),
-          authFetch(`${ipbe}/api/admin/riwayat`)
+          authFetch(`${API_URL}/api/admin/users`),
+          authFetch(`${API_URL}/api/admin/dashboard/top-barang?filter=bulan`),
+          authFetch(`${API_URL}/api/admin/hpp-total`),
+          authFetch(`${API_URL}/api/admin/riwayat`),
+          authFetch(`${API_URL}/api/admin/settings`),
+          authFetch(`${API_URL}/api/admin/dashboard/omzet`),
+          authFetch(`${API_URL}/api/admin/riwayat`)
         ]);
 
         // Check for errors
@@ -290,7 +291,7 @@ const AdminDashboard: React.FC = () => {
           const endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
 
           try {
-            const ringkasanResp = await authFetch(`${ipbe}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
+            const ringkasanResp = await authFetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`);
             if (ringkasanResp.ok) {
               const ringkasanJson = await ringkasanResp.json();
               const ringkasan = ringkasanJson?.ringkasan || {};

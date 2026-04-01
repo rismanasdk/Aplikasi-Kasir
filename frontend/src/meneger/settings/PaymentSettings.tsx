@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { PaymentMethod, PaymentChannel } from './index';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 
 interface PaymentStatus {
@@ -158,7 +159,7 @@ export default function PaymentSettings({
   payment_methods
 }: PaymentSettingsProps) {
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

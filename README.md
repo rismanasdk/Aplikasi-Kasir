@@ -2,36 +2,95 @@
 
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-Kasir Plus adalah aplikasi Point of Sale (POS) berbasis `React + Vite` di frontend dan `Express + MongoDB` di backend. Project ini mendukung multi-role (`admin`, `manajer`, `kasir`, `chef`, `user`), update data real-time dengan `Socket.IO`, pembayaran online melalui `Midtrans`, upload gambar lewat `Cloudinary`, dan sinkronisasi stok berbasis `Firebase RTDB`.
+Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, dan update real-time via `Socket.IO`.
 
 ## Ringkasan Fitur
 
 - Multi-role login: `admin`, `manajer`, `kasir`, `chef`, `user`
-- Login manual dan Google OAuth
-- Dashboard publik untuk pelanggan / user
-- Manajemen produk, kategori, bahan baku, data satuan, modal utama
-- Keranjang, checkout, transaksi tunai dan non-tunai
-- Midtrans callback untuk update status pembayaran
-- Laporan penjualan, HPP, omzet, metode pembayaran
-- Sinkronisasi stok real-time dengan `Socket.IO` dan `Firebase`
-- Upload logo toko, foto profil, dan gambar produk
+- Login manual berbasis JWT dan login dengan Google OAuth
+- Dashboard publik / pelanggan untuk lihat produk, checkout, dan riwayat pesanan
+- Keranjang belanja, checkout, dan proses transaksi dengan status pesanan
+- Pembayaran `Tunai`, `Virtual Account`, `QRIS`, dan `E-Wallet` dengan channel yang bisa diatur dari settings
+- Integrasi Midtrans untuk pembuatan pembayaran dan callback update status transaksi
+- Sinkronisasi stok real-time memakai `Socket.IO` dan transaksi atomik di `Firebase RTDB`
+- Manajemen produk, kategori, stok barang, bahan baku, produksi, data satuan, modal utama
+- Dashboard admin untuk omzet, top barang, transaksi, breakdown pembayaran, laporan penjualan, dan input penjualan
+- Dashboard manajer untuk monitoring stok, riwayat, laporan HPP/laba, dan settings terbatas
+- Panel chef untuk bahan baku tersedia, pengambilan bahan baku, dan update status produksi
+- Pengaturan toko: informasi toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon global, service charge, low stock alert, bahasa, format tanggal
+- Upload gambar produk, logo toko, logo channel pembayaran, dan foto profil
+- Export laporan ke `PDF`, `Excel`, dan sebagian area ke `CSV`
+
+## Fitur Per Area
+
+### Admin
+
+- Kelola user dan role
+- Kelola stok barang, status barang, dan publikasi barang
+- Kelola bahan baku, data satuan, modal penjualan, biaya layanan, biaya operasional, dan pengeluaran biaya
+- Lihat dashboard transaksi, status pesanan, top barang, omzet, laporan penjualan, dan breakdown pembayaran
+- Ubah settings aplikasi termasuk payment methods dan receipt
+
+### Manajer
+
+- Pantau dashboard operasional
+- Lihat stok barang, riwayat transaksi, laporan HPP/laba, dan biaya operasional
+- Akses sebagian settings yang relevan untuk operasional
+
+### Kasir
+
+- Membuat transaksi dan memantau status pembayaran
+- Mengelola pesanan aktif
+- Mendapat assignment kasir otomatis jika transaksi dibuat tanpa memilih kasir
+
+### Chef
+
+- Melihat daftar produksi
+- Melihat bahan baku tersedia
+- Mengambil bahan baku dan mengubah status produksi
+
+### User / Pelanggan
+
+- Register dan login
+- Login via Google
+- Lihat katalog produk
+- Checkout dan bayar secara online
+- Cek status transaksi publik dan riwayat pesanan pribadi
+
+## Algoritma Dan Logika Bisnis
+
+Repo ini tidak memakai algoritma kompleks seperti machine learning, tetapi ada beberapa logika bisnis inti yang penting:
+
+- Perhitungan harga final barang:
+  harga jual dihitung ulang dari kombinasi `global discount`, `tax`, dan `service charge`, lalu dibulatkan ke bilangan bulat.
+- Round-robin assignment kasir:
+  jika transaksi dibuat tanpa `kasir_username`, backend memilih kasir aktif berikutnya secara bergiliran memakai counter di database.
+- Sinkronisasi stok atomik:
+  saat transaksi dibuat, stok dikurangi melalui `Firebase RTDB transaction` agar bentrok update stok lebih aman ketika ada beberapa client aktif sekaligus.
+- Perhitungan HPP dan laba harian:
+  backend mengakumulasi HPP per item, pendapatan, laba kotor, total beban, dan laba bersih per tanggal.
+- Validasi metode pembayaran:
+  metode dan channel pembayaran divalidasi terhadap data settings, sehingga hanya metode/channel aktif yang terdaftar yang bisa dipakai.
+- Mapping callback pembayaran:
+  notifikasi Midtrans dipetakan kembali ke metode seperti `Virtual Account`, `QRIS`, atau `E-Wallet` agar status transaksi konsisten di aplikasi.
 
 ## Struktur Project
 
 ```text
 Aplikasi-Kasir/
 ├─ backend/    # API Express, MongoDB, Midtrans, Firebase, Cloudinary
-├─ frontend/   # React, TypeScript, Vite, Tailwind
-├─ uploads/    # File upload lokal sementara / legacy
-└─ README.md
+├─ frontend/   # React, TypeScript, Vite, Tailwind, Ant Design
+├─ README.md
+└─ package.json
 ```
 
 ## Tech Stack
 
-- Frontend: `React 19`, `TypeScript`, `Vite`, `TailwindCSS`, `Axios`, `Socket.IO Client`, `Recharts`, `Framer Motion`
-- Backend: `Node.js`, `Express`, `Mongoose`, `Socket.IO`, `Helmet`, `express-rate-limit`, `passport-google-oauth20`
-- Database: `MongoDB`, `Firebase`
-- Integrasi: `Midtrans`, `Cloudinary`, `Firebase Admin`
+- Frontend: `React 19`, `TypeScript`, `Vite`, `TailwindCSS`, `Ant Design`, `Axios`, `Socket.IO Client`, `Recharts`, `Framer Motion`, `Chart.js`
+- Backend: `Node.js`, `Express 5`, `Mongoose`, `Socket.IO`, `Helmet`, `express-rate-limit`, `express-session`, `passport-google-oauth20`, `multer`
+- Database dan sinkronisasi: `MongoDB`, `Firebase RTDB`
+- Integrasi pihak ketiga: `Midtrans`, `Cloudinary`, `Firebase Admin`, `Google OAuth`
+- Export laporan: `jsPDF`, `jspdf-autotable`, `xlsx`
 
 ## Cara Menjalankan
 
@@ -51,6 +110,7 @@ Backend berjalan di `http://localhost:5000` secara default.
 ```bash
 cd frontend
 npm install
+npm run lint
 npm run dev
 ```
 
@@ -78,7 +138,7 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
-# Google OAuth
+# Google
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
@@ -90,42 +150,46 @@ ENABLE_DEBUG_TOKEN_LOGGER=false
 
 Catatan:
 
-- `SESSION_SECRET` wajib, jika kosong backend akan crash saat start.
+- `SESSION_SECRET` wajib, backend akan gagal start jika kosong.
 - `JWT_SECRET` wajib untuk login, route protected, dan Google callback token.
-- Jika memakai Google OAuth lokal, callback backend mengarah ke `/api/auth/google/callback`.
-- Jika memakai Firebase service account, file `backend/config/firebase-service-account.json` tidak boleh di-commit.
+- File service account Firebase yang nyata tidak boleh di-commit.
+- `CORS_ORIGIN` mendukung beberapa origin dipisah koma.
 
 ## Environment Frontend
 
-Frontend menggunakan variabel utama berikut:
+Frontend memakai variabel utama berikut:
 
 ```env
 VITE_API_URL=http://localhost:5000
+VITE_IPBE=http://localhost:5000
 VITE_API_KEY=
 ```
 
 Catatan:
 
 - `VITE_API_URL` harus mengarah ke backend aktif.
-- `VITE_API_KEY` saat ini masih bersifat opsional karena validasi API key di backend belum diterapkan penuh.
+- `VITE_IPBE` disediakan untuk kompatibilitas file lama, sebaiknya nilainya sama dengan `VITE_API_URL`.
+- `VITE_API_KEY` masih bersifat opsional karena middleware validasi API key belum dipakai penuh.
 
 ## Script Penting
 
 ### Backend
 
 ```bash
+npm run check
 npm start
 ```
 
-Script tambahan yang tersedia di folder `backend/scripts/`:
+Script utilitas yang tersedia di `backend/scripts/`:
 
 - `create-test-chef.js`
 - `create-test-bahanbaku.js`
 - `recalc-prices.js`
 - `recalc-total-harga-bahan.js`
 - `migrate-to-firebase.js`
+- `check-syntax.js`
 
-Jalankan manual bila memang dibutuhkan, misalnya:
+Contoh:
 
 ```bash
 node scripts/migrate-to-firebase.js
@@ -140,32 +204,59 @@ npm run lint
 npm run preview
 ```
 
-## Role Akses
+## Keamanan Server
 
-- `admin`: akses penuh ke pengaturan, user, stok, laporan, dashboard admin
-- `manajer`: akses monitoring dashboard, stok, laporan, beberapa settings
-- `kasir`: transaksi dan pesanan
-- `chef`: bahan baku dan produksi
-- `user`: dashboard publik, keranjang, checkout, riwayat pribadi
+Beberapa lapisan keamanan yang sudah ada di repo:
+
+- `Helmet` untuk menambah HTTP security headers dasar
+- `CORS` whitelist berbasis `CORS_ORIGIN` / `FRONTEND_URL`
+- `express-rate-limit` untuk semua route `/api/`
+- `JWT` untuk autentikasi route protected
+- `authorize()` untuk pembatasan role per area
+- `express-session` dengan cookie `httpOnly` dan `sameSite=lax`
+- Password user di-hash dengan `bcrypt`
+- `x-powered-by` dimatikan
+- Ada trap route sederhana untuk mendeteksi probing ke path umum seperti `/.env`, `/.git`, dan `/wp-admin`
+
+Catatan kondisi keamanan saat ini:
+
+- Secara umum fondasi keamanan backend sudah ada, tetapi belum sepenuhnya hardened untuk production.
+- Beberapa endpoint masih mengandalkan proteksi di level router internal, jadi review akses per route tetap penting setiap kali menambah endpoint baru.
+- Middleware API key sudah ada file-nya, tetapi saat ini belum aktif sebagai lapisan proteksi utama.
+- Session cookie hanya `secure` ketika `NODE_ENV=production`, jadi deployment production perlu memastikan reverse proxy dan HTTPS sudah benar.
+- Callback Google sekarang tidak perlu lagi mengirim JWT lewat URL; frontend menukar session login menjadi token setelah redirect.
+- Midtrans client di konfigurasi saat ini masih `isProduction: false`, jadi perlu disesuaikan saat go-live.
+- README ini mendeskripsikan keamanan berdasarkan implementasi repo per 28 Maret 2026, bukan hasil audit penetration test formal.
 
 ## Arsitektur Singkat
 
-- Frontend menyimpan token login dan info user di browser untuk route protection.
-- Backend memverifikasi token JWT untuk route manager, admin, chef, dan user tertentu.
-- Midtrans callback mengubah status transaksi dan mengembalikan stok bila pembayaran gagal / expired.
-- Data stok disiarkan ulang lewat `Socket.IO` agar dashboard terkait ikut update tanpa refresh penuh.
+- Frontend memakai route protection berdasarkan role dan token login.
+- Backend memisahkan area `admin`, `manager/manajer`, `chef`, `kasir`, `user`, dan endpoint publik.
+- Transaksi dibuat di backend, lalu stok disinkronkan ke MongoDB dan Firebase.
+- Perubahan stok disiarkan ke client terkait memakai `Socket.IO`.
+- Status pembayaran online diperbarui dari callback Midtrans.
+- Settings aplikasi menjadi sumber konfigurasi untuk pajak, diskon, service charge, receipt, payment methods, dan channel pembayaran.
+
+## Role Akses
+
+- `admin`: akses penuh ke dashboard, settings, user, stok, laporan, biaya, dan master data
+- `manajer`: akses monitoring operasional, stok, riwayat, laporan, dan sebagian settings
+- `kasir`: akses transaksi dan pesanan
+- `chef`: akses produksi dan bahan baku
+- `user`: akses halaman publik, checkout, riwayat pribadi, dan profil
 
 ## Catatan Pengembangan
 
-- Beberapa route backend sudah diproteksi dengan `verifyToken` + `authorize`, tetapi masih ada area yang perlu diperketat.
-- Folder auth frontend masih memiliki beberapa file duplikat / legacy yang bisa dirapikan.
-- Jika banyak perubahan besar dilakukan, prioritaskan update dokumentasi di README ini dan `frontend/README.md`.
+- Struktur repo masih memiliki beberapa file lama / duplikat, terutama di area auth dan transaksi frontend.
+- Penamaan `manajer` dan `manager` dipakai bersamaan di beberapa bagian untuk kompatibilitas role.
+- Dokumentasi backend tambahan juga ada di `backend/readme.md`, tetapi README utama ini sekarang menjadi ringkasan repo yang lebih lengkap.
 
 ## Checklist Setup Cepat
 
 1. Isi `backend/.env`
 2. Jalankan backend
-3. Isi `frontend/.env` bila diperlukan
-4. Jalankan frontend
-5. Pastikan `VITE_API_URL` cocok dengan URL backend
-6. Pastikan `CORS_ORIGIN` backend mengizinkan origin frontend
+3. Pastikan MongoDB, Firebase, Midtrans, dan Cloudinary sudah terkonfigurasi
+4. Isi env frontend bila diperlukan
+5. Jalankan frontend
+6. Pastikan `VITE_API_URL` cocok dengan URL backend
+7. Pastikan `CORS_ORIGIN` backend mengizinkan origin frontend

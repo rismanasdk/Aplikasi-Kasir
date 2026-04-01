@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 interface Production {
   _id: string;
@@ -53,7 +54,7 @@ const ProcessMemasak = () => {
         setLoading(true);
         const prodResponse = await fetch(`${API_URL}/api/admin/stok-barang/productions`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${getStoredToken()}`,
           },
         });
 
@@ -110,7 +111,7 @@ const ProcessMemasak = () => {
     // Tapi untuk menjaga kode tetap bersih, kita bisa membuat state baru jika perlu
     // atau langsung memproses di dalam return. Untuk sekarang, kita akan buat state baru.
     setProductions(paginatedData);
-  }, [allProductions, filters, pagination.currentPage]); // Dependency array
+  }, [allProductions, filters, pagination.currentPage, pagination.limit]); // Dependency array
 
   // State untuk data yang akan ditampilkan di tabel
   const [productions, setProductions] = useState<Production[]>([]);

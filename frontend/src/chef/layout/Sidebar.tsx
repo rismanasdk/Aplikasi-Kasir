@@ -33,11 +33,11 @@ interface SettingsResponse {
 }
 
 import { API_URL } from '../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from '../../auth/storage';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return getStoredAuthHeaders();
   };
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);

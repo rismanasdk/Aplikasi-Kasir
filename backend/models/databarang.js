@@ -33,6 +33,8 @@ const barangSchema = new Schema(
     use_discount: { type: Boolean, default: true },
     gambar_url: { type: String, default: "" },
     status: { type: String, enum: ["pending", "publish"], default: "pending" },
+    status_publish: { type: String, enum: ["pending", "publish"], default: "pending" },
+    status_stok: { type: String, enum: ["aman", "hampir habis", "habis"], default: "aman" },
     // New flag to mark Best Seller items (used for faster user listing)
     bestSeller: { type: Boolean, default: false },
     // Store previous kategori value when a product is promoted to Best Seller
@@ -41,14 +43,49 @@ const barangSchema = new Schema(
   { timestamps: true }
 );
 
+function calculateStockStatus(stok, stokMinimal = 0) {
+  const currentStok = Number(stok) || 0;
+  const minStok = Number(stokMinimal) || 0;
+
+  if (currentStok <= 0) return "habis";
+  if (currentStok <= minStok) return "hampir habis";
+  return "aman";
+}
+
+function calculateRecipeCost(bahanBaku = []) {
+  return bahanBaku.reduce((produkAcc, produk) => {
+    const subtotal = Array.isArray(produk?.bahan)
+      ? produk.bahan.reduce((bahanAcc, bahan) => bahanAcc + (Number(bahan?.harga) || 0), 0)
+      : 0;
+
+    return produkAcc + subtotal;
+  }, 0);
+}
+
+barangSchema.pre("validate", function (next) {
+  const publishStatus = this.status_publish || this.status || "pending";
+
+  // Keep legacy `status` aligned with explicit publish state.
+  this.status_publish = publishStatus;
+  this.status = publishStatus;
+
+  if (!this.status_stok) {
+    this.status_stok = calculateStockStatus(this.stok, this.stok_minimal);
+  }
+
+  next();
+});
+
 // 🔁 Auto-hitung total harga beli
 barangSchema.pre("save", function (next) {
-  let totalSemuaProduk = 0;
-  this.bahan_baku.forEach((produk) => {
-    const subtotal = produk.bahan.reduce((acc, b) => acc + (b.harga || 0), 0);
-    totalSemuaProduk += subtotal;
-  });
-  this.total_harga_beli = totalSemuaProduk * (this.stok || 1);
+  this.status_stok = calculateStockStatus(this.stok, this.stok_minimal);
+
+  // `total_harga_beli` is treated as the explicit total recipe/batch cost.
+  // If callers set it manually, preserve that value instead of inflating it by stock.
+  if (!this.isModified("total_harga_beli")) {
+    this.total_harga_beli = calculateRecipeCost(this.bahan_baku);
+  }
+
   next();
 });
 

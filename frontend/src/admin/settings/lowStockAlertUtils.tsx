@@ -2,13 +2,14 @@
 import { getSocket } from '../../utils/socket';
 import SweetAlert from '../../components/SweetAlert';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 const BASE_API_URL = `${API_URL}/api/admin/settings`;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Fungsi untuk mendapatkan token dari localStorage
 const getToken = () => {
-  return localStorage.getItem('token');
+  return getStoredToken();
 };
 
 export const updateLowStockAlert = async (value: number) => {

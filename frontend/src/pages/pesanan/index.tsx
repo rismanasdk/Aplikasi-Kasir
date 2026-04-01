@@ -4,6 +4,7 @@ import MainLayout from '../../components/MainLayout';
 import Sidebar from "../componentUtama/Sidebar";
 import { customStyles } from '../CssHalamanUtama';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 import {  
   Eye, 
@@ -109,7 +110,7 @@ const StatusPesananPage = () => {
   const fetchPesanan = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       const response = await fetch(API_URL_HISTORY, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -141,7 +142,7 @@ const StatusPesananPage = () => {
   // Fetch settings dari API
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       const response = await fetch(SETTINGS_URL, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -164,7 +165,7 @@ const StatusPesananPage = () => {
   // Fetch biaya layanan dari API
   const fetchBiayaLayanan = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       const response = await fetch(BIAYA_LAYANAN_URL, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -186,7 +187,7 @@ const StatusPesananPage = () => {
   // Fetch kasir data by ID
   const fetchKasirById = async (kasirId: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       const response = await fetch(`${API_URL}/api/kasir/${kasirId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

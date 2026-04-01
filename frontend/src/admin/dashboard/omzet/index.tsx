@@ -7,7 +7,8 @@ import OmzetTable from './components/OmzetTable';
 // import OmzetSummary from './components/OmzetSummary';
 import { exportOmzetToCsv, exportOmzetToExcel, exportOmzetToPdf } from '../../utils/OmzetExport';
 import { formatRupiah } from '../../utils/formatRupiah';
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 
   // Interface untuk respons endpoint admin omzet
   interface ApiOmzetResponse {
@@ -50,11 +51,11 @@ const OmzetPage: React.FC = () => {
       setLoading(true);
       
       // Ambil data dari API admin omzet (samakan dengan manager)
-      const response = await fetch(`${ipbe}/api/admin/dashboard/omzet`, {
+      const response = await fetch(`${API_URL}/api/admin/dashboard/omzet`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getStoredToken()}`
         }
       });
       

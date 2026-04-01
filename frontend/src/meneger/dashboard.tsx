@@ -2,6 +2,7 @@ import MenegerLayout from "./layout";
 import { useState, useEffect } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { API_URL } from '../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from "../auth/storage";
 
 import {
   DollarSign,
@@ -17,6 +18,8 @@ import {
 interface BarangTerlaris {
   nama_barang: string;
   jumlah: number;
+  nama?: string;
+  jumlah_terjual?: number;
   kode_barang?: string;
   gambar_url?: string;
 }
@@ -34,15 +37,19 @@ interface StokBarang {
   gambar_url?: string;
 }
 
+interface TopBarangApiItem {
+  nama_barang?: string;
+  nama?: string;
+  jumlah?: number;
+  jumlah_terjual?: number;
+  kode_barang?: string;
+  gambar_url?: string;
+}
+
 const MenegerDashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -51,7 +58,7 @@ const MenegerDashboard = () => {
         
         const dashboardUrl = `${API_URL}/api/manager/dashboard`;
         const dashboardResponse = await fetch(dashboardUrl, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         
         if (!dashboardResponse.ok) {
@@ -63,9 +70,9 @@ const MenegerDashboard = () => {
         // Also fetch top products using the more detailed aggregation endpoint
         const topUrl = `${API_URL}/api/manager/dashboard/top`;
         const topResponse = await fetch(topUrl, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
-        let topData = null;
+        let topData: { barang_terlaris?: TopBarangApiItem[] } | null = null;
         if (topResponse.ok) {
           try {
             topData = await topResponse.json();
@@ -77,7 +84,7 @@ const MenegerDashboard = () => {
         
         const stokUrl = `${API_URL}/api/manager/stok-barang`;
         const stokResponse = await fetch(stokUrl, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         
         if (stokResponse.ok) {
@@ -101,7 +108,7 @@ const MenegerDashboard = () => {
           // Prefer aggregated top products when available (more detailed from /top)
           const sourceTop = (topData && Array.isArray(topData.barang_terlaris)) ? topData.barang_terlaris : dashboardData.barang_terlaris;
 
-          const barangTerlarisWithImages = sourceTop.map((barang: any) => {
+          const barangTerlarisWithImages = sourceTop.map((barang: BarangTerlaris | TopBarangApiItem) => {
             let gambarUrl = barang.gambar_url;
             let kodeBarang = barang.kode_barang;
             

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/api';
+import { clearStoredAuthSession, getStoredToken, getStoredUser, setStoredAuthSession } from '../storage';
 const ApiKey = import.meta.env.VITE_API_KEY;
 
 
@@ -86,20 +87,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
+      const storedUser = getStoredUser<User>();
+      const token = getStoredToken();
       
       if (storedUser && token) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error('Error parsing stored user:', error);
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          setIsAuthenticated(false);
-        }
+        setUser(storedUser);
+        setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
       }
@@ -111,8 +104,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchDefaultProfilePicture = useCallback(async (): Promise<{ success: boolean; defaultProfilePicture?: string; message?: string }> => {
     try {
-      const token = localStorage.getItem("token");
-      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = getStoredToken();
+      const currentUser = getStoredUser<User>() || ({} as User);
       const isAdmin = currentUser?.role === "admin";
 
       if (!token || !isAdmin) {
@@ -162,8 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    setStoredAuthSession(data.token, data.user);
     setUser(data.user);
     setIsAuthenticated(true);
     return { success: true };
@@ -214,11 +206,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [login]);
 
   const logout = useCallback(async (): Promise<void> => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    clearStoredAuthSession();
 
     try {
       if (token) {
@@ -247,13 +238,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       
       if (!token) {
         return { success: false, message: 'Anda belum login' };
       }
 
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUser = getStoredUser<User>() || ({} as User);
       const userRole = currentUser.role || 'user';
       const userId = getUserId(currentUser);
 
@@ -279,7 +270,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (data.user) {
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        setStoredAuthSession(token, data.user);
       }
 
       return { success: true, message: data.message };
@@ -308,13 +299,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       
       if (!token) {
         return { success: false, message: 'Anda belum login' };
       }
 
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUser = getStoredUser<User>() || ({} as User);
       const userRole = currentUser.role || 'user';
       const userId = getUserId(currentUser);
 
@@ -337,7 +328,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (data.user) {
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        setStoredAuthSession(token, data.user);
       }
 
       return { success: true, message: data.message };
@@ -359,7 +350,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchCurrentUser = useCallback(async (): Promise<User | null> => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       
       if (!token) {
         return null;
@@ -378,15 +369,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const meUser = "user" in data ? data.user : data;
       if (meUser) {
         setUser(meUser);
-        localStorage.setItem('user', JSON.stringify(meUser));
+        setStoredAuthSession(token, meUser);
         return meUser;
       }
       
       return null;
     } catch (error) {
       console.error('Fetch current user failed:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearStoredAuthSession();
       setUser(null);
       setIsAuthenticated(false);
       return null;
@@ -399,7 +389,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       console.log("Saving token to localStorage in handleGoogleToken");
       // Simpan token ke localStorage
-      localStorage.setItem('token', token);
+      const existingUser = getStoredUser<User>();
       console.log("Token saved to localStorage in handleGoogleToken");
       
       // Decode token untuk mendapatkan informasi user
@@ -414,13 +404,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Set user ke state
       setUser(userInfo);
       setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(userInfo));
+      setStoredAuthSession(token, existingUser ?? userInfo);
       
       console.log('Google login successful, user info:', userInfo);
     } catch (error) {
       console.error('Error handling Google token:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearStoredAuthSession();
       setUser(null);
       setIsAuthenticated(false);
       throw error; // Re-throw error untuk ditangani di komponen
@@ -433,7 +422,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (hasBootstrappedMe.current) return;
     hasBootstrappedMe.current = true;
 
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (token) {
       fetchCurrentUser();
     }

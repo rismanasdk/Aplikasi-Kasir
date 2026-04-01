@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { API_URL } from '../../../../config/api';
 import type {Bahan, ProdukBahan} from '../index';
+import { getStoredToken } from '../../../../auth/storage';
 
 interface EditBahanBakuFormProps {
   bahan: Bahan;
@@ -33,13 +34,13 @@ const EditBahanBakuForm: React.FC<EditBahanBakuFormProps> = ({
 
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
-  const getAuthHeaders = (): HeadersInit => {
+  const getAuthHeaders = useCallback((): HeadersInit => {
     const token = getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  }, []);
 
   useEffect(() => {
     setEditBahanData(bahan);
@@ -65,7 +66,7 @@ const EditBahanBakuForm: React.FC<EditBahanBakuFormProps> = ({
       }
     };
     fetchSatuan();
-  }, []);
+  }, [getAuthHeaders]);
 
   // Handle update bahan
   const handleUpdateBahan = async (e: React.FormEvent) => {

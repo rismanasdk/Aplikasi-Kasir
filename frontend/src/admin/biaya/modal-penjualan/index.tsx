@@ -5,6 +5,7 @@ import { API_URL } from '../../../config/api';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { exportToExcel, exportToPDF } from './utils';
 import type { ModalUtama, AddModalResponse } from './types';
+import { getStoredToken } from '../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 const PenjualanPage: React.FC = () => {
@@ -30,7 +31,7 @@ const PenjualanPage: React.FC = () => {
   const [endDate, setEndDate] = useState<string>('');
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }

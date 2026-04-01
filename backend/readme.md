@@ -68,6 +68,7 @@ Backend untuk aplikasi kasir yang mendukung manajemen barang, transaksi, laporan
 
 ```bash
 npm install
+npm run check
 ```
 
 2. **Siapkan konfigurasi environment** (.env contoh):

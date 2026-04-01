@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { DataSatuanItem } from './SatuanTabs';
 import GroupedSelect from './GroupedSelect';
 import { API_URL } from '../../../../config/api';
+import { getStoredToken } from '../../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Props {
@@ -25,7 +26,7 @@ const EditSatuanForm: React.FC<Props> = ({ item, onClose }) => {
   const [isActive, setIsActive] = useState(!!item.isActive);
   
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }

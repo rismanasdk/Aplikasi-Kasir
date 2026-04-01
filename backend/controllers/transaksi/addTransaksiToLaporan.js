@@ -30,7 +30,6 @@ export const addTransaksiToLaporan = async (transaksi) => {
         pengeluaran: totalPengeluaran
       });
     }
-    }
 
     const tanggalHarian = tanggal.toISOString().split("T")[0];
     let laporanHarian = laporan.laporan_penjualan.harian.find((h) => {

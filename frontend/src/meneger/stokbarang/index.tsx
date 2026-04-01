@@ -16,6 +16,7 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 const API_BASE_URL = `${API_URL}`;
 
@@ -38,6 +39,8 @@ interface ApiBarang {
   gambarUrl?: string;
   gambar_url?: string;
   status?: string;
+  status_publish?: string;
+  status_stok?: string;
   useDiscount?: boolean;
   use_discount?: boolean;
   margin?: number;
@@ -75,7 +78,7 @@ export default function StokBarangManager({
   isLoading = false,
 }: StokBarangManagerProps) {
   const getAuthHeaders = (withJson = false): Record<string, string> => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     const headers: Record<string, string> = withJson ? { 'Content-Type': 'application/json' } : {};
     if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
@@ -109,7 +112,7 @@ export default function StokBarangManager({
       stokMinimal: barang.stokMinimal || barang.stok_minimal || batasStokRendah,
       hargaFinal: barang.hargaFinal || 0,
       gambarUrl: barang.gambarUrl || barang.gambar_url || '',
-      status: barang.status || 'aman',
+      status: barang.status_stok || barang.status || 'aman',
       useDiscount: barang.useDiscount || barang.use_discount || true,
       margin: barang.margin || 30,
       bahanBaku: barang.bahan_baku || []
@@ -146,7 +149,7 @@ export default function StokBarangManager({
   // Inisialisasi Socket.io
   const inisialisasiSocket = useCallback(() => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       console.log('Menginisialisasi socket dengan token:', token ? 'Ada' : 'Tidak ada');
       
       if (socketRef.current) {

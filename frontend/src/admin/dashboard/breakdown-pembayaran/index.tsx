@@ -3,14 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, TrendingUp, CreditCard, Wallet, Landmark } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, type PieLabel } from 'recharts';
 import LoadingSpinner from '../../../components/LoadingSpinner'; // Adjust path as needed
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 interface PaymentBreakdown {
   [key: string]: number;
-}
-
-interface ApiResponse {
-  payment_breakdown: PaymentBreakdown;
 }
 
 // Komponen Detail Pembayaran Terpisah
@@ -89,7 +86,7 @@ const BreakdownPembayaran: React.FC = () => {
   const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
 
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -103,7 +100,7 @@ const BreakdownPembayaran: React.FC = () => {
     const fetchDaftarBulan = async () => {
       try {
         setLoadingBulan(true);
-        const resp = await fetch(`${ipbe}/api/admin/laporan/bulan`, {
+        const resp = await fetch(`${API_URL}/api/admin/laporan/bulan`, {
           headers: getAuthHeaders(),
         });
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
@@ -149,7 +146,7 @@ const BreakdownPembayaran: React.FC = () => {
           endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
         }
 
-        const resp = await fetch(`${ipbe}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
+        const resp = await fetch(`${API_URL}/api/admin/laporan/rekap-metode?start=${startDate}&end=${endDate}`, {
           headers: getAuthHeaders(),
         });
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
@@ -157,7 +154,7 @@ const BreakdownPembayaran: React.FC = () => {
 
         // json.rekap is array of { metode, total }
         const map: PaymentBreakdown = {};
-        (json.rekap || []).forEach((it: any) => {
+        (json.rekap || []).forEach((it: { metode?: string; _id?: string; total?: number | string }) => {
           map[it.metode || it._id || 'Unknown'] = Number(it.total || 0);
         });
 

@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import type { SweetAlertOptions } from 'sweetalert2';
 import { Package, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { getStoredToken } from '../../auth/storage';
 
 interface BahanItem {
   nama: string;
@@ -45,7 +46,7 @@ const BahanBakuTersedia: React.FC = () => {
     try {
       const response = await fetch(`${API_URL}/api/chef/bahan-baku`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getStoredToken()}`,
         },
       });
       if (response.ok) {
@@ -121,7 +122,7 @@ const BahanBakuTersedia: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getStoredToken()}`,
         },
         body: JSON.stringify({
           bahan_baku_id: bahanBakuId,

@@ -71,14 +71,15 @@ export const getAllBarang = async (req, res) => {
       const id = item._id.toString();
       const stokRTDB = stokMap[id];
       const stok = typeof stokRTDB === "number" ? stokRTDB : item.stok;
+      const statusStok = calculateStatus(stok, item.stok_minimal || lowStockAlert);
+      const statusPublish = item.status_publish || item.status || "pending";
       
-      // JANGAN override status publish dengan status stok!
-      // const status = calculateStatus(stok, item.stok_minimal || lowStockAlert);
-
       return {
         ...item,
         stok,
-        // status: status, // <-- DIHAPUS! Jangan override status publish
+        status: statusPublish,
+        status_publish: statusPublish,
+        status_stok: item.status_stok || statusStok,
         hargaFinal: Math.round(item.hargaFinal),
         use_discount: item.use_discount, // Pastikan use_discount dikembalikan
       };
@@ -355,9 +356,11 @@ export const updateBarang = async (req, res) => {
     barang.harga_beli = Math.round(hargaBeli); // Gunakan hargaBeli yang sudah ada di database
     barang.harga_jual = Math.round(hargaJual);
     barang.hargaFinal = Math.round(hargaFinal);
+    if (bahanParsed.length) {
+      barang.total_harga_beli = Math.round(totalHargaBahan);
+    }
     // Update stock status field separately; jangan overwrite publish status.
     barang.status_stok = statusStok;
-    // Tidak perlu update total_harga_beli
     barang.gambar_url = gambarUrl;
     // JANGAN update field status dengan status stok! Field status untuk publish/pending
     // barang.status = statusStok; // <-- BARIS INI DIHAPUS

@@ -15,11 +15,8 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
   globalDiscount, 
   serviceCharge, 
   lowStockAlert,
-  totalBiayaOperasional,
   onInputChange
 }) => {
-  const estimatedServiceCharge = Math.round(totalBiayaOperasional * (serviceCharge / 100));
-
   return (
     <div className="space-y-8">
       {/* Pengaturan Harga Section */}

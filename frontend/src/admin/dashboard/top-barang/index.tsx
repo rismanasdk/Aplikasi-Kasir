@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { Crown, Medal, Award, Star, TrendingUp, Package, DollarSign, BarChart3, PieChart } from 'lucide-react';
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Interface untuk produk dari API
@@ -43,8 +44,8 @@ const TopBarang: React.FC = () => {
   const [totalPendapatan, setTotalPendapatan] = useState<number>(0); // State untuk total pendapatan dari API
   const [selectedProduct, setSelectedProduct] = useState<ProdukApi | null>(null); // State untuk produk yang dipilih
 
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+  const getAuthHeaders = useCallback((): HeadersInit => {
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -52,9 +53,9 @@ const TopBarang: React.FC = () => {
       Authorization: `Bearer ${token}`,
       ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
     };
-  };
+  }, []);
 
-  const authFetch = (url: string, init?: RequestInit) => {
+  const authFetch = useCallback((url: string, init?: RequestInit) => {
     const headers = getAuthHeaders();
     return fetch(url, {
       ...init,
@@ -63,14 +64,14 @@ const TopBarang: React.FC = () => {
         ...(init?.headers || {}),
       },
     });
-  };
+  }, [getAuthHeaders]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         // Fetch top-barang from dashboard endpoint (server-side aggregation)
-        const endpoint = `${ipbe}/api/admin/dashboard/top-barang`;
+        const endpoint = `${API_URL}/api/admin/dashboard/top-barang`;
 
         const response = await authFetch(endpoint);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -120,7 +121,7 @@ const TopBarang: React.FC = () => {
 
         // Notify backend to update Best Seller category for current top-5
         try {
-          authFetch(`${ipbe}/api/admin/dashboard/update-best-seller`, {
+          authFetch(`${API_URL}/api/admin/dashboard/update-best-seller`, {
             method: 'POST'
           }).then(async (resp) => {
             if (!resp.ok) {
@@ -145,14 +146,14 @@ const TopBarang: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [authFetch]);
 
   // Fetch data produk untuk mendapatkan gambar
   useEffect(() => {
     const fetchProdukList = async () => {
       try {
         setLoadingProduk(true);
-        const response = await authFetch(`${ipbe}/api/admin/stok-barang`);
+        const response = await authFetch(`${API_URL}/api/admin/stok-barang`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -169,7 +170,7 @@ const TopBarang: React.FC = () => {
     };
 
     fetchProdukList();
-  }, []);
+  }, [authFetch]);
 
   // Format angka
   const formatAngka = (num: number): string => {

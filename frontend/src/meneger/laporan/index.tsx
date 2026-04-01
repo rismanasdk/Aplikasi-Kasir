@@ -6,6 +6,7 @@ import SummaryCards from './components/SummaryCards';
 import TransactionChart from './components/TransactionChart';
 import TransactionTable from './components/TransactionTable';
 import { API_URL } from '../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from '../../auth/storage';
 
 interface ProdukItem {
   nama_produk: string;
@@ -31,11 +32,6 @@ interface LaporanData {
   __v: number;
 }
 
-interface ApiResponse {
-  success: boolean;
-  data: LaporanData[];
-}
-
 interface FilterOptions {
   produk: string;
   sortBy: 'nama_produk' | 'jumlah_terjual' | 'pendapatan' | 'laba_kotor';
@@ -44,18 +40,12 @@ interface FilterOptions {
 }
 
 const LaporanPage = () => {
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const [data, setData] = useState<LaporanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [daftarBulan, setDaftarBulan] = useState<Array<{ id: string; nama_bulan: string; bulan: number; tahun: number }>>([]);
   const [selectedBulan, setSelectedBulan] = useState<string>('');
   const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
-  const [totalTransaksi, setTotalTransaksi] = useState<number>(0);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     produk: 'semua',
     sortBy: 'pendapatan', // Default sort by pendapatan
@@ -69,7 +59,7 @@ const LaporanPage = () => {
       try {
         setLoadingBulan(true);
         const resp = await fetch(`${API_URL}/api/admin/laporan/bulan`, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         if (!resp.ok) throw new Error('Failed to fetch bulan');
         const json = await resp.json();
@@ -110,12 +100,12 @@ const LaporanPage = () => {
       }
 
       const ringkasanResp = await fetch(`${API_URL}/api/admin/laporan/ringkasan?start=${startDate}&end=${endDate}`, {
-        headers: getAuthHeaders(),
+        headers: getStoredAuthHeaders(),
       });
       const ringkasanJson = ringkasanResp.ok ? await ringkasanResp.json() : null;
 
       const detailResp = await fetch(`${API_URL}/api/admin/laporan/detail-laba?start=${startDate}&end=${endDate}`, {
-        headers: getAuthHeaders(),
+        headers: getStoredAuthHeaders(),
       });
       const detailJson = detailResp.ok ? await detailResp.json() : null;
 
@@ -125,9 +115,9 @@ const LaporanPage = () => {
       const produkMap: Record<string, ProdukItem> = {};
       const detailData = detailJson?.data || [];
       if (Array.isArray(detailData)) {
-        detailData.forEach((day: any) => {
+        detailData.forEach((day: { produk?: ProdukItem[] }) => {
           if (!Array.isArray(day.produk)) return;
-          day.produk.forEach((p: any) => {
+          day.produk.forEach((p: ProdukItem) => {
             const key = String(p.nama_produk).toLowerCase().trim();
             if (!produkMap[key]) {
               produkMap[key] = {
@@ -166,22 +156,13 @@ const LaporanPage = () => {
       };
 
       setData(laporanForUI);
-      // fetch total transaksi count from admin riwayat
+      // Fetch riwayat once to preserve existing side effect path.
       try {
         const trxResp = await fetch(`${API_URL}/api/manager/riwayat`, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         if (trxResp.ok) {
-          const trxJson = await trxResp.json();
-          if (Array.isArray(trxJson)) {
-            setTotalTransaksi(trxJson.length);
-          } else if (Array.isArray(trxJson?.riwayat)) {
-            setTotalTransaksi(trxJson.riwayat.length);
-          } else {
-            // fallback: if API returns object of items
-            const keys = trxJson && typeof trxJson === 'object' ? Object.keys(trxJson) : [];
-            setTotalTransaksi(keys.length || 0);
-          }
+          await trxResp.json();
         }
       } catch (e) {
         console.warn('Gagal ambil total transaksi:', e);

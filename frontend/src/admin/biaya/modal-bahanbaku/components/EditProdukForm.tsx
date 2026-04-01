@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { API_URL } from '../../../../config/api';
 import type { ProdukBahan } from '../index';
+import { getStoredToken } from '../../../../auth/storage';
 
 interface EditProdukFormProps {
   produk: ProdukBahan;
@@ -18,7 +19,7 @@ const EditProdukForm: React.FC<EditProdukFormProps> = ({
 
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   // Handle update produk

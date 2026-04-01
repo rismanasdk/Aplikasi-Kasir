@@ -6,6 +6,7 @@ import { API_URL } from '../../../../config/api';
 import Tabs from './tab-2/tabs';
 import InputBiaya from './input-biaya';
 import { Edit, Trash2, Plus, X, FolderOpen } from 'lucide-react';
+import { getStoredToken } from '../../../../auth/storage';
 
 const ApiKey = import.meta.env.VITE_API_KEY;
 
@@ -36,7 +37,7 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
 
   // 🔐 Helper header (biar gak ngulang)
   const buildHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
 
     if (ApiKey) headers['x-api-key'] = ApiKey;

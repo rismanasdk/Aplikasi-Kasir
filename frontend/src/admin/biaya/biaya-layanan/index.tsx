@@ -7,6 +7,7 @@ import BiayaOperasional from './components/biaya-operasional';
 import BiayaLanjutan from './components/biaya-lanjutan';
 import BiayaService from './components/biaya-service';
 import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 
 const ApiKey = import.meta.env.VITE_API_KEY;
 
@@ -26,7 +27,7 @@ const BiayaLayanan: React.FC = () => {
 
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   const fetchSettings = useCallback(async () => {

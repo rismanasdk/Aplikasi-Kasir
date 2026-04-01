@@ -1,6 +1,6 @@
 // src/pages/transaksi/proses-transaksi/components/VirtualAccountPayment.tsx
 import { useState } from "react";
-import { API_URL } from '../../../config/api';
+import { API_URL } from '../../../../config/api';
 
 
 interface BarangDibeli {

@@ -1,8 +1,8 @@
 // src/admin/stok-barang/ModalProduction.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-
-const ipbe = import.meta.env.VITE_IPBE;
+import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 
 interface BahanBaku {
   nama: string;
@@ -52,9 +52,9 @@ const ModalProduction: React.FC<ModalProductionProps> = ({ isOpen, onClose, onSu
 
   const fetchChefs = async () => {
     try {
-      const response = await fetch(`${ipbe}/api/admin/users?role=chef`, {
+      const response = await fetch(`${API_URL}/api/admin/users?role=chef`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getStoredToken()}`,
         },
       });
       if (response.ok) {

@@ -16,6 +16,7 @@ import QRISPayment from "./components/PaymentMethodDetails/QRISPayment";
 import CashPayment from "./components/PaymentMethodDetails/CashPayment";
 import FooterActions from "./components/FooterActions";
 import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
 
 
 interface BarangDibeli {
@@ -178,7 +179,7 @@ const ProsesTransaksiModal: React.FC<ProsesTransaksiModalProps> = ({
       
       
       const baseUrl = `${API_URL}`;
-      const tokenLocal = localStorage.getItem('token');
+      const tokenLocal = getStoredToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
@@ -535,7 +536,7 @@ const ProsesTransaksiModal: React.FC<ProsesTransaksiModalProps> = ({
       
       
       const baseUrl = `${API_URL}`;
-      const tokenLocal = localStorage.getItem('token');
+      const tokenLocal = getStoredToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };

@@ -10,7 +10,7 @@ interface User {
   _id?: string;
   nama_lengkap: string;
   username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user';
+  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef';
   status: string;
   profilePicture?: string;
 }
@@ -53,6 +53,7 @@ export default function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const auth = useAuth();
+  const { user, defaultProfilePicture, refreshUser } = auth;
   const navigate = useNavigate();
 
   // Inisialisasi data user dari auth context
@@ -64,24 +65,24 @@ export default function ProfilePage() {
         // Tunggu sebentar untuk memastikan auth context sudah terisi
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        if (auth.user) {
+        if (user) {
           setForm({
-            nama_lengkap: auth.user.nama_lengkap || '',
-            username: auth.user.username || '',
+            nama_lengkap: user.nama_lengkap || '',
+            username: user.username || '',
             currentPassword: '', // Password tidak pernah diisi dari server
             newPassword: '',      // untuk alasan keamanan
             confirmPassword: ''
           });
           
           // Set preview foto profil
-          if (auth.user.profilePicture) {
-            setPreviewUrl(auth.user.profilePicture);
-          } else if (auth.defaultProfilePicture) {
-            setPreviewUrl(auth.defaultProfilePicture);
+          if (user.profilePicture) {
+            setPreviewUrl(user.profilePicture);
+          } else if (defaultProfilePicture) {
+            setPreviewUrl(defaultProfilePicture);
           }
         } else {
           // Jika user tidak tersedia, coba refresh data user
-          const refreshedUser = await auth.refreshUser();
+          const refreshedUser = await refreshUser();
           
           if (refreshedUser) {
             setForm({
@@ -94,8 +95,8 @@ export default function ProfilePage() {
             
             if (refreshedUser.profilePicture) {
               setPreviewUrl(refreshedUser.profilePicture);
-            } else if (auth.defaultProfilePicture) {
-              setPreviewUrl(auth.defaultProfilePicture);
+            } else if (defaultProfilePicture) {
+              setPreviewUrl(defaultProfilePicture);
             }
           }
         }
@@ -108,14 +109,14 @@ export default function ProfilePage() {
     };
     
     initializeForm();
-  }, [auth.user, auth.defaultProfilePicture]);
+  }, [user, defaultProfilePicture, refreshUser]);
 
   // Update preview URL jika foto profil berubah
   useEffect(() => {
-    if (auth.user && auth.user.profilePicture) {
-      setPreviewUrl(auth.user.profilePicture);
+    if (user && user.profilePicture) {
+      setPreviewUrl(user.profilePicture);
     }
-  }, [auth.user?.profilePicture]);
+  }, [user, user?.profilePicture]);
 
   // Cek kekuatan password
   useEffect(() => {

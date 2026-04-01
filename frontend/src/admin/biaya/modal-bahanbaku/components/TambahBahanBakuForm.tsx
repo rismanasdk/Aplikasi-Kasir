@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { API_URL } from '../../../../config/api';
 import type { ProdukBahan } from '../index';
+import { getStoredToken } from '../../../../auth/storage';
 
 // Definisikan tipe Bahan secara lokal di sini untuk memastikan inklusi 'satuan'
 interface Bahan {
@@ -39,7 +40,7 @@ const TambahBahanBakuForm: React.FC<TambahBahanBakuFormProps> = ({
   const [satuanOptions, setSatuanOptions] = useState<{ nama: string; kode: string }[]>([]);
 
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -66,7 +67,7 @@ const TambahBahanBakuForm: React.FC<TambahBahanBakuFormProps> = ({
   }, []);
 
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   const handleAddBahanField = () => {

@@ -1,5 +1,6 @@
 // src/admin/dashboard/input-penjualan/index.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../../../config/api';
 
 interface Produk {
   nama_produk: string;
@@ -42,11 +43,9 @@ const InputPenjualan: React.FC = () => {
   const [showData, setShowData] = useState(false);
   const [loadingProduk, setLoadingProduk] = useState(true);
   
-  const ipbe = import.meta.env.VITE_IPBE;
-
   const fetchHppData = useCallback(async () => {
     try {
-      const response = await fetch(`${ipbe}/api/admin/hpp-total`);
+      const response = await fetch(`${API_URL}/api/admin/hpp-total`);
       const data: HppResponse = await response.json();
       
       if (response.ok) {
@@ -57,13 +56,13 @@ const InputPenjualan: React.FC = () => {
     } catch {
       setError('Gagal mengambil data HPP');
     }
-  }, [ipbe]);
+  }, []);
 
   useEffect(() => {
     const fetchProduk = async () => {
       try {
         setLoadingProduk(true);
-        const response = await fetch(`${ipbe}/api/admin/hpp-total`);
+        const response = await fetch(`${API_URL}/api/admin/hpp-total`);
         const data: HppResponse = await response.json();
         
         if (response.ok && data.data) {
@@ -91,7 +90,7 @@ const InputPenjualan: React.FC = () => {
     };
 
     fetchProduk();
-  }, [ipbe]);
+  }, []);
 
   const handleJumlahChange = (index: number, value: number) => {
     const updatedList = [...produkList];
@@ -106,7 +105,7 @@ const InputPenjualan: React.FC = () => {
     setSuccess(false);
     
     try {
-      const response = await fetch(`${ipbe}/api/admin/hpp-total`, {
+      const response = await fetch(`${API_URL}/api/admin/hpp-total`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

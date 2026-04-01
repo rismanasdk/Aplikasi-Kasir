@@ -1,10 +1,11 @@
 // src/admin/bahan-baku/Data-Satuan/SatuanTabs.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import SatuanTable from './SatuanTable';
 import TambahSatuanForm from './TambahSatuanForm';
 import EditSatuanForm from './EditSatuanForm';
 import SweetAlert from '../../../../components/SweetAlert';
 import { API_URL } from '../../../../config/api';
+import { getStoredToken } from '../../../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 export interface DataSatuanItem {
@@ -27,7 +28,7 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
   const [editing, setEditing] = useState<DataSatuanItem | null>(null);
 
   const getAuthHeaders = (json = false): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -38,7 +39,7 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
     };
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/data-satuan`, { headers: getAuthHeaders() });
@@ -49,11 +50,11 @@ const SatuanTabs: React.FC<SatuanTabsProps> = ({ showAddForm, setShowAddForm }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return (
     <div>

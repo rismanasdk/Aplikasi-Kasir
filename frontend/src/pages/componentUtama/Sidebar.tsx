@@ -9,6 +9,7 @@ import {
   LogIn
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
   
 interface MenuItem {
   id: string;
@@ -70,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     const fetchUserProfile = async () => {
       if (user) {
         try {
-          const token = localStorage.getItem('token');
+          const token = getStoredToken();
           const response = await fetch(`${API_URL}/api/update-profile`, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -100,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   useEffect(() => {
     const fetchStoreLogo = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
         const hasValidToken = !!token && token !== 'null' && token !== 'undefined';
         if (!hasValidToken) {
           setLoadingLogo(false);

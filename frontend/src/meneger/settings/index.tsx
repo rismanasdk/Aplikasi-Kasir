@@ -7,6 +7,7 @@ import GeneralSettings from './GeneralSettings';
 import ReceiptSettings from './ReceiptSettings';
 import PaymentSettings from './PaymentSettings';
 import { API_URL } from '../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from '../../auth/storage';
 
 
 export interface PaymentChannel {
@@ -46,11 +47,6 @@ export interface Settings {
 }
 
 export default function ManagerSettingsPage() {
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const [settings, setSettings] = useState<Settings>({
     _id: '',
     taxRate: 0,
@@ -80,7 +76,7 @@ export default function ManagerSettingsPage() {
     const fetchSettings = async () => {
       try {
         const response = await fetch(`${API_URL}/api/manager/settings`, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         const data = await response.json();
         setSettings(data);

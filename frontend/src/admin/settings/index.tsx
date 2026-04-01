@@ -11,6 +11,7 @@ import PaymentSettings from './components/PaymentSettings';
 // import BiayaOperasionalSettings from './components/biaya-operasional';
 // import AdvancedSettings from './components/AdvancedSettings';
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 const ApiKey = import.meta.env.VITE_API_KEY;
 // Import interface with type-only import
 // import type { BiayaOperasionalData } from './components/biaya-operasional';
@@ -83,7 +84,7 @@ const SettingsPage: React.FC = () => {
 
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    return getStoredToken();
   };
 
   const fetchSettings = useCallback(async () => {

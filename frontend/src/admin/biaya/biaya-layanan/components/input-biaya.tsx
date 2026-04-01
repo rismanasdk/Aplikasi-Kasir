@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { API_URL } from "../../../../config/api";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { SweetAlert } from "../../../../components/SweetAlert";
 import { Calendar, DollarSign, FileText, Plus, Trash2, Search} from "lucide-react";
+import { getStoredToken } from "../../../../auth/storage";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Kategori { _id: string; nama: string; isActive: boolean }
@@ -24,7 +25,7 @@ const InputBiaya: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const getAuthHeaders = (json = false): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }
@@ -35,7 +36,7 @@ const InputBiaya: React.FC = () => {
     };
   };
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch(CAT_API, { headers: getAuthHeaders() });
       const data = await res.json();
@@ -45,9 +46,9 @@ const InputBiaya: React.FC = () => {
       console.error(err);
       SweetAlert.error("Gagal memuat kategori");
     }
-  };
+  }, [kategori]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const res = await fetch(PENGELUARAN_API, { headers: getAuthHeaders() });
       const data = await res.json();
@@ -58,9 +59,9 @@ const InputBiaya: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchCategories(); fetchHistory(); }, []);
+  useEffect(() => { fetchCategories(); fetchHistory(); }, [fetchCategories, fetchHistory]);
 
   const submit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

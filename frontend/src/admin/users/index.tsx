@@ -7,6 +7,7 @@ import UserTable from './component/usertable';
 import UserFilter from './component/userfilter';
 import { ChevronLeft, ChevronRight } from 'lucide-react'; // Tambahkan import ini
 import { API_URL } from '../../config/api';
+import { getStoredToken } from '../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 
@@ -60,7 +61,7 @@ const UsersPage: React.FC = () => {
   const API_URL_USERS = `${API_URL}/api/admin/users`;
 
   const getAuthHeaders = (json = false): HeadersInit => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) {
       throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
     }

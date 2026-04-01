@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { ProdukBahan } from '../index';
 import { Edit, Trash2 } from 'lucide-react'; // Mengganti Pencil dengan Edit
 import { API_URL } from '../../../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from '../../../../auth/storage';
 
 interface BahanBakuTableProps {
   bahanBaku: ProdukBahan[];
@@ -27,8 +28,7 @@ const BahanBakuTable: React.FC<BahanBakuTableProps> = ({
   showDeleteConfirmation 
 }) => {
   const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return getStoredAuthHeaders();
   };
 
   const [selectedProduk, setSelectedProduk] = useState<ProdukBahan | null>(null);

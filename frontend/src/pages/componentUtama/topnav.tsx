@@ -14,38 +14,47 @@ const TopNav = ({
 //   handleCheckout
 }: TopNavProps) => {
   return (
-    <div className="bg-white shadow-md rounded-b-xl">
-      <div className="max-w-10x4 mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
+    <div className="sticky top-0 z-20 bg-white px-3 pb-3 pt-3 sm:rounded-b-2xl sm:px-4 sm:pb-3 sm:pt-2 sm:shadow-md">
+      <div className="mx-auto w-full">
+        <div className="flex min-h-[44px] flex-col gap-2 sm:min-h-[72px] md:h-20 md:flex-row md:items-center md:justify-between md:py-0">
+          <div className="flex items-center justify-between">
             <button
               onClick={onToggleSidebar}
-              className="md:hidden mr-2 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="mr-2 rounded-xl p-2 text-gray-600 transition hover:bg-amber-50 hover:text-amber-600 md:hidden"
               aria-label="Buka menu sidebar"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             
-            <div className="flex-shrink-0 flex items-center">
-              <div className="bg-amber-500 p-2 rounded-xl shadow-md">
-                <span className="text-white text-xl font-bold">K+</span>
+            <div className="flex flex-1 items-center md:flex-initial">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm ring-4 ring-amber-100 sm:h-11 sm:w-11">
+                <span className="text-sm font-bold tracking-tight text-white sm:text-lg">K+</span>
               </div>
-              <div className="ml-3">
-                <h1 className="text-xl font-bold text-gray-900">KasirPlus</h1>
-                <p className="text-xs text-gray-500">Point of Sale System</p>
+              <div className="ml-3 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold leading-none tracking-tight text-gray-900 sm:text-xl">Kasir Plus</h1>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-700 sm:text-[10px]">
+                    POS
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 sm:text-sm">Point of Sale System</p>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="ml-3 flex items-center">
-              <div className="relative max-w-md w-full">
-                <input type="text" placeholder="Search for your favorite food..."
-                  className="w-full py-2 px-4 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none"
-                  value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <div className="flex w-full items-center md:max-w-md md:justify-end">
+            <div className="flex w-full items-center">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Cari nama atau kategori produk..."
+                  className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100 sm:h-11 sm:rounded-2xl sm:pl-11"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>

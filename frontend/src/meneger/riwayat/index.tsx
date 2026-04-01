@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MenegerLayout from "../layout";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { API_URL } from '../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from '../../auth/storage';
 
 interface BarangDibeli {
   kode_barang: string;
@@ -58,11 +59,6 @@ interface StokBarang {
 }
 
 const MenegerRiwayatPage = () => {
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const [filterBulan, setFilterBulan] = useState<string>("semua");
   const [filterTahun, setFilterTahun] = useState<string>("semua");
   const [filterStatus, setFilterStatus] = useState<string>("semua");
@@ -77,21 +73,17 @@ const MenegerRiwayatPage = () => {
   const [itemsPerPage] = useState<number>(10);
 
   useEffect(() => {
-    fetchRiwayatData();
-  }, []);
-
-  useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  const fetchRiwayatData = async () => {
+  const fetchRiwayatData = useCallback(async () => {
     try {
       setLoading(true);
       
       // Fetch stok barang data
       const stokUrl = `${API_URL}/api/manager/stok-barang`;
       const stokResponse = await fetch(stokUrl, {
-        headers: getAuthHeaders(),
+        headers: getStoredAuthHeaders(),
       });
       
       const stokMap: Record<string, string> = {};
@@ -109,7 +101,7 @@ const MenegerRiwayatPage = () => {
       
       // Fetch riwayat data
       const response = await fetch(`${API_URL}/api/manager/riwayat`, {
-        headers: getAuthHeaders(),
+        headers: getStoredAuthHeaders(),
       });
       
       if (!response.ok) {
@@ -166,7 +158,11 @@ const MenegerRiwayatPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRiwayatData();
+  }, [fetchRiwayatData]);
 
   const formatRupiah = (angka: number): string =>
     new Intl.NumberFormat("id-ID", {

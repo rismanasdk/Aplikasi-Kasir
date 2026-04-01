@@ -12,6 +12,7 @@ import CurrentOrder from "./componentUtama/CurrentOrder";
 import TransactionModal from "./componentUtama/TransactionModal";
 import ProsesTransaksiModal from "./componentUtama/proses-transaksi";
 import AuthContext from "./../auth/context/AuthContext";
+import { getStoredToken } from "./../auth/storage";
 import TopNav from "./componentUtama/topnav";
 import { API_URL } from "../config/api";
 
@@ -115,6 +116,8 @@ interface BarangInput {
   gambarUrl?: string;
   gambar_url?: string;
   status?: string;
+  status_publish?: string;
+  status_stok?: string;
   statusBarang?: string;
 }
 
@@ -131,8 +134,8 @@ const normalizeBarangData = (barang: BarangInput): Barang => {
     stokMinimal: barang.stokMinimal || barang.stok_minimal || 5,
     hargaFinal: barang.hargaFinal || 0,
     gambarUrl: barang.gambarUrl || barang.gambar_url || '',
-    status: barang.status || 'aman',
-    statusBarang: barang.statusBarang || barang.status || 'pending'
+    status: barang.status_stok || barang.status || 'aman',
+    statusBarang: barang.statusBarang || barang.status_publish || barang.status || 'pending'
   };
 };
 
@@ -363,7 +366,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   }, [showToast]);
   
   const fetchCart = useCallback(async (): Promise<CartItem[]> => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) return [];
     
     try {
@@ -391,7 +394,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   }, []);
   
   const addItemToCart = useCallback(async (barangId: string, quantity: number) => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) throw new Error('No token found');
     
     const response = await fetch(`${API_BASE_URL}/api/cart`, {
@@ -412,7 +415,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   }, []);
   
   const removeItemFromCart = useCallback(async (barangId: string) => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) throw new Error('No token found');
     
     const response = await fetch(`${API_BASE_URL}/api/cart/${barangId}`, {
@@ -429,7 +432,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   }, []);
   
   const updateItemQuantity = useCallback(async (barangId: string, quantity: number) => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) throw new Error('No token found');
     
     const response = await fetch(`${API_BASE_URL}/api/cart/${barangId}`, {
@@ -450,7 +453,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
   }, [addItemToCart, removeItemFromCart]);
   
   const clearCart = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (!token) throw new Error('No token found');
     
     const response = await fetch(`${API_BASE_URL}/api/cart`, {
@@ -800,7 +803,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
         
         const saveToHistory = async () => {
           try {
-            const token = localStorage.getItem('token');
+            const token = getStoredToken();
             if (!token) return;
             
             await fetch(`${API_BASE_URL}/api/users/history`, {
@@ -873,10 +876,10 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
         onToggleSidebar={toggleSidebar}
       />
       
-      <div className="flex h-auto lg:h-[calc(100vh-120px)] mt-4 gap-4 xl:gap-6">
+      <div className="mt-0 flex h-auto gap-3 px-3 pb-4 pt-2 sm:mt-2 sm:px-0 lg:h-[calc(100vh-120px)] lg:gap-4 xl:gap-6">
         <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
         
-        <div className="flex-1 bg-white rounded-2xl shadow-md p-3 sm:p-4 lg:p-5 xl:p-6 overflow-visible lg:overflow-y-auto pb-6 lg:pb-4">
+        <div className="flex-1 overflow-visible rounded-none bg-transparent p-0 pb-5 shadow-none lg:overflow-y-auto lg:rounded-2xl lg:bg-white lg:p-5 lg:pb-4 lg:shadow-md xl:p-6">
           <ProductGrid 
             products={filteredBarang}
             isLoading={isLoading || loadingKategori}
@@ -903,7 +906,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
       </div>
 
       {cart.length > 0 && !isMobileCartOpen && (
-        <div className="lg:hidden fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 px-4 pointer-events-none">
+        <div className="lg:hidden fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.95rem)] z-30 px-4 pointer-events-none">
           <button
             onClick={() => setIsMobileCartOpen(true)}
             className="pointer-events-auto touch-pan-y mx-auto w-full max-w-md bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-2xl px-4 py-2.5 flex items-center justify-between"
@@ -1071,7 +1074,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="text-center mb-6">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
@@ -1080,7 +1083,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
             </div>
             
             <div className="flex flex-col space-y-3">
-              <button onClick={goToLogin} className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md">
+              <button onClick={goToLogin} className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md">
                 Login Now
               </button>
               <button onClick={() => setShowLoginModal(false)} className="w-full py-3 px-4 bg-white text-gray-700 rounded-xl font-medium border border-gray-300 hover:bg-gray-50 transition-all">

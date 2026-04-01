@@ -13,6 +13,7 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { API_URL } from '../../config/api';
+import { getAuthHeaders as getStoredAuthHeaders } from "../../auth/storage";
 export default function MainLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -45,11 +46,6 @@ function Sidebar({
   collapsed: boolean;
   setCollapsed: (c: boolean) => void;
 }) {
-  const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
@@ -59,7 +55,7 @@ function Sidebar({
     const fetchStoreLogo = async () => {
       try {
         const response = await fetch(`${API_URL}/api/common/settings`, {
-          headers: getAuthHeaders(),
+          headers: getStoredAuthHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch store logo');
         const data = await response.json();
