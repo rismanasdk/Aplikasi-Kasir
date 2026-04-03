@@ -57,6 +57,10 @@ const transaksiSchema = new Schema({
   stok_dikembalikan: {
     type: Boolean,
     default: false
+  },
+  completion_processed: {
+    type: Boolean,
+    default: false
   }
 
 }, { timestamps: true });

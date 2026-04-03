@@ -1,4 +1,5 @@
 import Transaksi from "./../../models/datatransaksi.js";
+import mongoose from "mongoose";
 
 export const getAllTransaksi = async (req, res) => {
   try {
@@ -9,8 +10,17 @@ export const getAllTransaksi = async (req, res) => {
     }
 
     let filter = {};
-    if (req.user.role === "kasir") {
+    const normalizedRole = String(req.user.role || "").toLowerCase();
+
+    if (normalizedRole === "kasir") {
       filter.kasir_id = req.user.username || req.user.id;
+    } else if (normalizedRole === "user") {
+      if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+        return res.status(400).json({ message: "User ID tidak valid" });
+      }
+      filter.user_id = new mongoose.Types.ObjectId(req.user.id);
+    } else if (!["admin", "manager", "manajer"].includes(normalizedRole)) {
+      return res.status(403).json({ message: "Role Anda tidak diizinkan melihat daftar transaksi" });
     }
 
     // Ambil page dari query ?page=1,2,3...

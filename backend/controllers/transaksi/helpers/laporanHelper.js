@@ -4,6 +4,9 @@ import mongoose from "mongoose";
 import Laporan from "../../../models/datalaporan.js";
 import Barang from "../../../models/databarang.js";
 import BiayaOperasional from "../../../models/biayaoperasional.js";
+import ModalUtama from "../../../models/modalutama.js";
+
+const getOmzetKeterangan = (nomorTransaksi) => `Omzet penjualan: ${nomorTransaksi}`;
 
 export const addTransaksiToLaporan = async (transaksi) => {
   try {
@@ -48,6 +51,15 @@ export const addTransaksiToLaporan = async (transaksi) => {
         total_harian: 0,
       };
       laporan.laporan_penjualan.harian.push(laporanHarian);
+    }
+
+    const alreadyRecorded = laporanHarian.transaksi.some(
+      (item) => item?.nomor_transaksi === transaksi.nomor_transaksi
+    );
+
+    if (alreadyRecorded) {
+      console.log(`ℹ️ Transaksi ${transaksi.nomor_transaksi} sudah pernah masuk laporan, skip duplikasi`);
+      return false;
     }
 
     let totalHargaFix = 0;
@@ -130,7 +142,60 @@ export const addTransaksiToLaporan = async (transaksi) => {
     await laporan.save();
 
     console.log("✅ Transaksi berhasil disimpan dan laporan diperbarui");
+    return true;
   } catch (err) {
     console.error("❌ Gagal menambahkan ke laporan:", err);
+    return false;
   }
+};
+
+export const addOmzetToModalUtama = async (transaksi) => {
+  try {
+    const keterangan = getOmzetKeterangan(transaksi.nomor_transaksi);
+    const modal = await ModalUtama.findOne();
+
+    if (!modal) {
+      const newModal = new ModalUtama({
+        total_modal: 0,
+        saldo_kas: transaksi.total_harga,
+        riwayat: [
+          {
+            keterangan,
+            tipe: "pemasukan",
+            jumlah: transaksi.total_harga,
+            saldo_setelah: transaksi.total_harga,
+          },
+        ],
+      });
+      await newModal.save();
+      return true;
+    }
+
+    const alreadyRecorded = (modal.riwayat || []).some(
+      (item) => item?.tipe === "pemasukan" && item?.keterangan === keterangan
+    );
+
+    if (alreadyRecorded) {
+      console.log(`ℹ️ Omzet ${transaksi.nomor_transaksi} sudah pernah masuk saldo kas, skip duplikasi`);
+      return false;
+    }
+
+    modal.saldo_kas = (modal.saldo_kas || 0) + (transaksi.total_harga || 0);
+    modal.riwayat.push({
+      keterangan,
+      tipe: "pemasukan",
+      jumlah: transaksi.total_harga,
+      saldo_setelah: modal.saldo_kas,
+    });
+    await modal.save();
+    return true;
+  } catch (err) {
+    console.warn("Gagal update ModalUtama.saldo_kas dari omzet:", err.message);
+    return false;
+  }
+};
+
+export const syncCompletedTransaction = async (transaksi) => {
+  await addTransaksiToLaporan(transaksi);
+  await addOmzetToModalUtama(transaksi);
 };

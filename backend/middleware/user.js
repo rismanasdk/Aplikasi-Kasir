@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
 const userAuth = (req, res, next) => {
-  if (req.path === "/midtrans-callback") {
+  if (req.path === "/midtrans-callback" || req.path.startsWith("/public/")) {
     return next();
   }
 

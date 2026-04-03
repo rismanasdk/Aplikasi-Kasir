@@ -245,7 +245,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const currentUser = getStoredUser<User>() || ({} as User);
-      const userRole = currentUser.role || 'user';
       const userId = getUserId(currentUser);
 
       if (!userId) {
@@ -255,7 +254,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const formData = new FormData();
       formData.append('profilePicture', profilePicture);
 
-      const url = `${API_BASE_URL}/api/update-profile/${userRole}/${userId}/profile-picture`;
+      const url = `${API_BASE_URL}/api/update-profile/user/${userId}/profile-picture`;
 
       const { data } = await axios.put<{ message: string; user: User }>(
         url,
@@ -306,14 +305,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const currentUser = getStoredUser<User>() || ({} as User);
-      const userRole = currentUser.role || 'user';
       const userId = getUserId(currentUser);
 
       if (!userId) {
         return { success: false, message: 'User ID tidak ditemukan' };
       }
 
-      const url = `${API_BASE_URL}/api/update-profile/${userRole}/${userId}`;
+      const url = `${API_BASE_URL}/api/update-profile/user/${userId}`;
 
       const { data } = await axios.put<{ message: string; user: User }>(
         url,

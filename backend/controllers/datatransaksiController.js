@@ -9,4 +9,4 @@ export { getStatusTransaksi } from './transaksi/getStatusTransaksi.js';
 export { getStatusTransaksiPublic } from './transaksi/getStatusTransaksiPublic.js';
 export { getUserHistory } from './transaksi/getUserHistory.js';
 export { midtransCallback } from './transaksi/helpers/midtransHelper.js';
-export { addTransaksiToLaporan } from './transaksi/helpers/laporanHelper.js'
+export { addTransaksiToLaporan, syncCompletedTransaction } from './transaksi/helpers/laporanHelper.js'

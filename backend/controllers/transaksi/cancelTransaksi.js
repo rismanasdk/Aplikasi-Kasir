@@ -8,6 +8,7 @@ import { io } from "../../server.js";
 export const cancelTransaksi = async (req, res) => {
   try {
     const { id } = req.params;
+    const normalizedRole = String(req.user?.role || "").toLowerCase();
 
     const transaksi = await Transaksi.findById(id);
 
@@ -21,6 +22,18 @@ export const cancelTransaksi = async (req, res) => {
 
     if (transaksi.stok_dikembalikan) {
       return res.status(400).json({ message: "Stok sudah dikembalikan untuk transaksi ini!" });
+    }
+
+    const isAdmin = normalizedRole === "admin";
+    const isKasirOwner =
+      normalizedRole === "kasir" &&
+      transaksi.kasir_id === (req.user.username || req.user.id);
+    const isUserOwner =
+      normalizedRole === "user" &&
+      String(transaksi.user_id) === String(req.user.id);
+
+    if (!isAdmin && !isKasirOwner && !isUserOwner) {
+      return res.status(403).json({ message: "Anda tidak diizinkan membatalkan transaksi ini" });
     }
 
     transaksi.status = "dibatalkan";
@@ -38,10 +51,10 @@ export const cancelTransaksi = async (req, res) => {
         if (db) {
           try {
             const ref = db.ref(`/barang/${barang._id.toString()}/stok`);
-      const trx = await ref.transaction(c => {
-  if (c === null || typeof c === "undefined") return jumlah; 
-  return c + jumlah; 
-});
+            const trx = await ref.transaction(c => {
+              if (c === null || typeof c === "undefined") return jumlah;
+              return c + jumlah;
+            });
 
             if (trx.committed) {
               const newStock = trx.snapshot.val();
@@ -55,8 +68,7 @@ export const cancelTransaksi = async (req, res) => {
             console.warn('RTDB increment failed, falling back to Mongo:', e.message);
           }
         }
-console.log(`(Cancel) Stok ${barang.nama_barang} dikembalikan sebanyak ${item.jumlah}, total sekarang: ${newStock}`);
-      
+
         barang.stok = Number(barang.stok) + Number(item.jumlah);
         await barang.save();
         console.log(

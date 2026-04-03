@@ -6,10 +6,24 @@ const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Root: React.FC = () => {
   useEffect(() => {
+    const loadingTitle = "Loading...";
+    const fallbackTitle = "Aplikasi Kasir";
+
+    document.title = loadingTitle;
+
+    const fallbackTimer = window.setTimeout(() => {
+      if (document.title === loadingTitle) {
+        document.title = fallbackTitle;
+      }
+    }, 800);
+
     const getStoreSettings = async () => {
       try {
         const token = getStoredToken();
-        if (!token) return;
+        if (!token) {
+          document.title = fallbackTitle;
+          return;
+        }
         const role = getStoredUser<{ role?: string }>()?.role;
         const isAdmin = role === "admin";
         const isManager = role === "manajer" || role === "manager";
@@ -25,20 +39,28 @@ const Root: React.FC = () => {
             ...(API_KEY ? { "x-api-key": API_KEY } : {}),
           },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          document.title = fallbackTitle;
+          return;
+        }
         const data = await res.json();
 
-        if (data.storeName) document.title = data.storeName;
+        document.title = data.storeName || fallbackTitle;
         if (data.storeLogo) {
           const favicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
           if (favicon) favicon.href = data.storeLogo;
         }
       } catch (error) {
         console.error("Gagal mengambil store name:", error);
+        document.title = fallbackTitle;
       }
     };
 
     getStoreSettings();
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return <App />;

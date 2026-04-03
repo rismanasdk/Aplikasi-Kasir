@@ -1,142 +1,26 @@
 import Transaksi from "./../../models/datatransaksi.js";
 import Barang from "./../../models/databarang.js";
-import db from "./../../config/firebaseAdmin.js";
-import { io } from "./../../server.js";
 import { snap, core } from "./../../config/midtrans.js";
 import User from "./../../models/user.js";
 import Settings from "./../../models/settings.js";
 import { v4 as uuidv4 } from "uuid";
 import { pilihKasirRoundRobin } from "./helpers/kasirHelper.js";
-import { addTransaksiToLaporan } from "./helpers/laporanHelper.js";
-import ModalUtama from "../../models/modalutama.js";
-import HppHarian from "../../models/hpptotal.js";
-import BiayaLayanan from "../../models/biayalayanan.js";
-import BiayaOperasional from "../../models/biayaoperasional.js";
-import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
-
-const updateHppOtomatis = async (barang_dibeli) => {
-  const today = new Date();
-  const todayString = today.toISOString().slice(0, 10); // 'YYYY-MM-DD' string for HppHarian.tanggal
-  console.log(`[HPP] Memulai proses update HPP untuk ${barang_dibeli.length} item pada ${todayString}.`);
-
-  // Ambil SEMUA data yang dibutuhkan di awal
-  const modalUtama = await ModalUtama.findOne();
-  const biayaLayanan = await BiayaLayanan.findOne();
-  // compute today's pengeluaran total from pengeluaran_biaya
-  const startDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23,59,59,999);
-  const agg = await PengeluaranBiaya.aggregate([
-    { $match: { tanggal: { $gte: startDay, $lte: endDay } } },
-    { $group: { _id: null, total: { $sum: "$jumlah" } } }
-  ]);
-  const biayaOperasionalToday = agg && agg[0] ? agg[0].total : 0;
-
-  if (!modalUtama) {
-    console.error("[HPP] ERROR: Data modal utama tidak ditemukan.");
-    throw new Error("Data modal utama tidak ditemukan.");
-  }
-  if (!biayaLayanan) {
-    console.error("[HPP] ERROR: Data biaya layanan tidak ditemukan.");
-    throw new Error("Data biaya layanan tidak ditemukan.");
-  }
-  // debug: tampilkan daftar produk yang tersedia di ModalUtama (nama_produk)
-  try {
-    const availableProduk = (modalUtama.bahan_baku || []).map(p => String(p.nama_produk).toLowerCase().trim());
-    console.log(`[HPP] Produk tersedia di ModalUtama: ${availableProduk.join(", ")}`);
-  } catch (e) {
-    console.warn('[HPP] Gagal membaca daftar produk dari ModalUtama:', e.message);
-  }
-
-  // Cari dokumen HPP harian berdasarkan string tanggal (konsisten dengan model dan controller lain)
-  let hppHarian = await HppHarian.findOne({ tanggal: todayString });
-  if (!hppHarian) {
-    hppHarian = new HppHarian({
-      tanggal: todayString,
-      produk: [],
-      total_hpp: 0,
-      total_pendapatan: 0,
-      total_laba_kotor: 0,
-      total_beban: 0,
-      laba_bersih: 0
-    });
-    console.log(`[HPP] Membuat dokumen HPP baru untuk tanggal ${todayString}.`);
-  }
-
-  for (const item of barang_dibeli) {
-    // ... (logika perulangan untuk memproses item tetap sama) ...
-    const produk = modalUtama.bahan_baku.find(
-      (p) => p.nama_produk.toLowerCase().trim() === item.nama_barang.toLowerCase().trim()
-    );
-
-    if (!produk) {
-      console.warn(`[HPP] SKIP: Produk "${item.nama_barang}" tidak ditemukan.`);
-      continue;
-    }
-
-    const jumlah = Number(item.jumlah);
-    const hpp_per_porsi = Number(produk.modal_per_porsi);
-    const harga_jual = Number(item.harga_satuan);
-
-    const hpp_total = hpp_per_porsi * jumlah;
-    const pendapatan = harga_jual * jumlah;
-    const laba_kotor = pendapatan - hpp_total;
-
-    const existing = hppHarian.produk.find(
-      (p) => p.nama_produk.toLowerCase().trim() === item.nama_barang.toLowerCase().trim()
-    );
-
-    if (existing) {
-      existing.jumlah_terjual += jumlah;
-      existing.hpp_total += hpp_total;
-      existing.pendapatan += pendapatan;
-      existing.laba_kotor += laba_kotor;
-    } else {
-      hppHarian.produk.push({
-        nama_produk: item.nama_barang,
-        jumlah_terjual: jumlah,
-        hpp_per_porsi,
-        hpp_total,
-        pendapatan,
-        laba_kotor,
-      });
-    }
-
-    hppHarian.total_hpp += hpp_total;
-    hppHarian.total_pendapatan += pendapatan;
-    hppHarian.total_laba_kotor += laba_kotor;
-  }
-
-  // --- TAMBAHKAN LOGIKA INI DI AKHIR SEBELUM SAVE ---
-  // Hitung total beban dan laba bersih berdasarkan total yang sudah terakumulasi
-  const biayaLayananHariIni = (biayaLayanan.persen / 100) * hppHarian.total_pendapatan;
-  const totalBebanHariIni = biayaLayananHariIni + (Number(biayaOperasionalToday) || 0);
-  const labaBersihHariIni = hppHarian.total_laba_kotor - totalBebanHariIni;
-
-  hppHarian.total_beban = totalBebanHariIni;
-  hppHarian.laba_bersih = labaBersihHariIni;
-  // --- SELESAI LOGIKA TAMBAHAN ---
-
-  try {
-    await hppHarian.save();
-    console.log(`[HPP] SUKSES: HPP Harian berhasil diperbarui untuk tanggal ${todayString}. Produk count=${(hppHarian.produk||[]).length}`);
-    console.log('[HPP] HppHarian snapshot:', JSON.stringify({
-      tanggal: hppHarian.tanggal,
-      total_hpp: hppHarian.total_hpp,
-      total_pendapatan: hppHarian.total_pendapatan,
-      total_laba_kotor: hppHarian.total_laba_kotor,
-      total_beban: hppHarian.total_beban,
-      laba_bersih: hppHarian.laba_bersih,
-      produk_count: (hppHarian.produk||[]).length
-    }));
-  } catch (error) {
-    console.error("[HPP] ERROR: Gagal menyimpan HPP Harian:", error);
-  }
-
-  return hppHarian;
-};
+import {
+  processCompletedTransaction,
+  reserveStockForItems,
+  restoreStockForItems,
+} from "./helpers/transactionLifecycleHelper.js";
 
 export const createTransaksi = async (req, res) => {
+  let createdTransaksi = null;
+  let reservedItems = [];
+
   try {
+    const allowedRoles = ["admin", "kasir", "user"];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Role Anda tidak diizinkan membuat transaksi" });
+    }
+
     const { barang_dibeli, metode_pembayaran, total_harga } = req.body;
     const grossAmount = Math.round(Number(total_harga));
 
@@ -174,7 +58,10 @@ export const createTransaksi = async (req, res) => {
     }
 
     // PINDAHKAN PENGECEKAN KASIR KE SINI (SEBELUM PENGURANGAN STOK)
-    let kasirUsername = req.body.kasir_username;
+    let kasirUsername = req.body.kasir_username || req.body.kasir_id;
+    if (req.user.role === "user") {
+      kasirUsername = null;
+    }
     if (!kasirUsername) {
       try {
         const kasirTerpilih = await pilihKasirRoundRobin();
@@ -192,44 +79,8 @@ export const createTransaksi = async (req, res) => {
       }
     }
 
-    // SEKARANG BARU KURANGI STOK SETELAH PASTI ADA KASIR AKTIF
-    for (const item of barang_dibeli) {
-      const barang = await Barang.findOne({
-        $or: [{ kode_barang: item.kode_barang }, { nama_barang: item.nama_barang }],
-      });
-
-      if (!barang) {
-        return res.status(404).json({ message: `Barang ${item.nama_barang} tidak ditemukan!` });
-      }
-
-      const jumlah = Number(item.jumlah);
-
-      if (db) {
-        const ref = db.ref(`/barang/${barang._id.toString()}/stok`);
-        const trx = await ref.transaction(current => {
-          if (current === null || typeof current === "undefined") return 0;
-          if (current < jumlah) return;
-          return current - jumlah;
-        });
-
-        if (!trx.committed) {
-          return res.status(400).json({ message: `Stok ${item.nama_barang} tidak mencukupi!` });
-        }
-
-        const newStock = trx.snapshot.val();
-
-        await Barang.findByIdAndUpdate(barang._id, { stok: newStock });
-
-        io.emit("stockUpdated", { id: barang._id.toString(), stok: newStock });
-      } else {
-        if (barang.stok < jumlah) {
-          return res.status(400).json({ message: `Stok ${item.nama_barang} tidak mencukupi!` });
-        }
-        barang.stok -= jumlah;
-        await barang.save();
-        io.emit("stockUpdated", { id: barang._id.toString(), stok: barang.stok });
-      }
-    }
+    await reserveStockForItems(barang_dibeli);
+    reservedItems = barang_dibeli;
 
     // Sisanya tetap sama
     const nomorTransaksi = uuidv4();
@@ -272,45 +123,14 @@ export const createTransaksi = async (req, res) => {
       status: baseMethod === "Tunai" ? "selesai" : "pending",
       tanggal_transaksi: new Date(),
       kasir_id: kasirUsername,
-      user_id: req.user?.id || null,
+      user_id: req.user.id,
     });
 
     await transaksi.save();
-    await updateHppOtomatis(barangFinal);
+    createdTransaksi = transaksi;
 
     if (transaksi.status === "selesai") {
-      await addTransaksiToLaporan(transaksi);
-
-      // Tambah omzet ke saldo_kas di ModalUtama
-      try {
-        const modal = await ModalUtama.findOne();
-        if (!modal) {
-          const newModal = new ModalUtama({
-            total_modal: 0,
-            saldo_kas: transaksi.total_harga,
-            riwayat: [
-              {
-                keterangan: `Omzet penjualan: ${transaksi.nomor_transaksi}`,
-                tipe: "pemasukan",
-                jumlah: transaksi.total_harga,
-                saldo_setelah: transaksi.total_harga,
-              },
-            ],
-          });
-          await newModal.save();
-        } else {
-          modal.saldo_kas = (modal.saldo_kas || 0) + (transaksi.total_harga || 0);
-          modal.riwayat.push({
-            keterangan: `Omzet penjualan: ${transaksi.nomor_transaksi}`,
-            tipe: "pemasukan",
-            jumlah: transaksi.total_harga,
-            saldo_setelah: modal.saldo_kas,
-          });
-          await modal.save();
-        }
-      } catch (e) {
-        console.warn("Gagal update ModalUtama.saldo_kas dari omzet:", e.message);
-      }
+      await processCompletedTransaction(transaksi);
     }
 
     let midtransResponse = {};
@@ -368,6 +188,22 @@ export const createTransaksi = async (req, res) => {
     });
   } catch (error) {
     console.error("Error createTransaksi:", error);
+    if (createdTransaksi && createdTransaksi.status !== "selesai") {
+      try {
+        await createdTransaksi.deleteOne();
+      } catch (cleanupError) {
+        console.warn("Gagal membersihkan transaksi gagal:", cleanupError.message);
+      }
+    }
+
+    if (reservedItems.length > 0) {
+      try {
+        await restoreStockForItems(reservedItems);
+      } catch (rollbackError) {
+        console.error("Rollback stok gagal setelah createTransaksi error:", rollbackError);
+      }
+    }
+
     return res.status(400).json({ message: "Gagal membuat transaksi", error: error.message });
   }
 };

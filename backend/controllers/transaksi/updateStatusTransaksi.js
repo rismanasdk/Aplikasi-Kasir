@@ -1,26 +1,37 @@
 import Transaksi from "./../../models/datatransaksi.js";
 import { io } from "./../../server.js";
-import { addTransaksiToLaporan } from "./helpers/laporanHelper.js";
+import { processCompletedTransaction } from "./helpers/transactionLifecycleHelper.js";
 
 export const updateStatusTransaksi = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    const normalizedRole = String(req.user?.role || "").toLowerCase();
 
-    const transaksi = await Transaksi.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    if (!["admin", "kasir"].includes(normalizedRole)) {
+      return res.status(403).json({ message: "Role Anda tidak diizinkan mengubah status transaksi" });
+    }
+
+    const transaksi = await Transaksi.findById(id);
 
     if (!transaksi) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan!" });
     }
 
+    if (normalizedRole === "kasir") {
+      const kasirKey = req.user.username || req.user.id;
+      if (transaksi.kasir_id !== kasirKey) {
+        return res.status(403).json({ message: "Anda tidak bisa mengubah transaksi milik kasir lain" });
+      }
+    }
+
+    transaksi.status = status;
+    await transaksi.save();
+
     io.emit("statusUpdated", transaksi);
 
     if (status === "selesai") {
-      await addTransaksiToLaporan(transaksi);
+      await processCompletedTransaction(transaksi);
     }
 
     res.json({

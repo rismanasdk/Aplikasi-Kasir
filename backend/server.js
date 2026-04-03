@@ -67,7 +67,7 @@ app.disable("x-powered-by");
 
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 1000,
+  max: 100,
   message: { message: "Stop Spam, I see you!" },
   standardHeaders: true,
   legacyHeaders: false,
