@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// alamat backend kamu
+// ip backend
 const API_TARGET = process.env.VITE_API_URL || 'http://localhost:5000'
 
 export default defineConfig({
