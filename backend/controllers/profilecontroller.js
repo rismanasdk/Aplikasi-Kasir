@@ -1,7 +1,7 @@
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 import User from "../models/user.js";
-import bcrypt from "bcrypt"; // Tambahkan import bcrypt
+import bcrypt from "bcrypt";
 
 export const updateUser = async (req, res) => {
   try {
@@ -12,13 +12,10 @@ export const updateUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User tidak ditemukan" });
 
-    // Update data dasar
     if (req.body.nama_lengkap) user.nama_lengkap = req.body.nama_lengkap;
     if (req.body.username) user.username = req.body.username;
 
-    // Proses password jika ada
     if (req.body.currentPassword && req.body.newPassword) {
-      // Verifikasi password saat ini
       const isPasswordValid = await user.comparePassword(req.body.currentPassword);
       if (!isPasswordValid) {
         return res.status(400).json({ message: "Password saat ini salah" });
@@ -28,7 +25,7 @@ export const updateUser = async (req, res) => {
       
       console.log('Password baru akan di-hash otomatis oleh pre-save hook');
     } else if (req.body.currentPassword || req.body.newPassword) {
-      // Jika hanya salah satu password yang dikirim
+
       return res.status(400).json({ 
         message: "Harap isi password saat ini dan password baru untuk mengubah password" 
       });
@@ -36,7 +33,6 @@ export const updateUser = async (req, res) => {
 
     await user.save();
 
-    // Hapus password dari response untuk keamanan
     const userResponse = { ...user.toObject() };
     delete userResponse.password;
 
@@ -51,23 +47,19 @@ export const updateUserProfilePicture = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Cek kalau bukan dirinya
     if (req.user.id !== userId) {
       return res.status(403).json({ message: "Tidak bisa mengubah profile orang lain" });
     }
 
-    // Cek file
     if (!req.file) {
       return res.status(400).json({ message: "File foto belum diunggah" });
     }
 
-    // Cari user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "Pengguna Tidak Ditemukan" });
     }
 
-    // Hitung jumlah update dalam 7 hari terakhir
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -80,8 +72,7 @@ export const updateUserProfilePicture = async (req, res) => {
         message: "Anda Telah Melewati Batas Maksimal, Ganti Kembali Dalam 1 Minggu" 
       });
     }
-
-    // Upload ke Cloudinary
+    
     const uploadResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "user_profiles" },
@@ -93,10 +84,8 @@ export const updateUserProfilePicture = async (req, res) => {
       streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
 
-    // Simpan foto baru
     user.profilePicture = uploadResult.secure_url;
 
-    // Tambahkan riwayat update
     user.profilePictureUpdates = [
       ...(user.profilePictureUpdates || []),
       { updatedAt: new Date() }
@@ -104,7 +93,6 @@ export const updateUserProfilePicture = async (req, res) => {
 
     await user.save();
 
-    // Hapus password dari response untuk keamanan
     const userResponse = { ...user.toObject() };
     delete userResponse.password;
 
@@ -120,14 +108,13 @@ export const updateUserProfilePicture = async (req, res) => {
 
 export const getUserProfilePicture = async (req, res) => {
   try {
-    const userId = req.user.id; // ambil dari token middleware
+    const userId = req.user.id;
 
     const user = await User.findById(userId).select("profilePicture username nama_lengkap");
     if (!user) {
       return res.status(404).json({ message: "User tidak ditemukan" });
     }
-
-    // Kalau user belum punya foto
+    
     if (!user.profilePicture) {
       return res.status(200).json({ 
         message: "Belum ada foto profil",
