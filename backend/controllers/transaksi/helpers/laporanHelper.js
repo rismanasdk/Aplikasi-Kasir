@@ -65,7 +65,7 @@ export const addTransaksiToLaporan = async (transaksi) => {
     let totalHargaFix = 0;
 
     // Do not read product master during laporan creation. Use snapshot values available in transaksi.
-    const Barang = (await import('../../../models/databarang.js')).default;
+    const BarangModel = (await import('../../../models/databarang.js')).default;
     transaksi.barang_dibeli = await Promise.all(
       transaksi.barang_dibeli.map(async (barang) => {
         const jumlah = barang.jumlah || 1;
@@ -73,7 +73,7 @@ export const addTransaksiToLaporan = async (transaksi) => {
         // Try to read product master to get canonical prices
         let master = null;
         try {
-          master = await Barang.findOne({
+          master = await BarangModel.findOne({
             $or: [
               (barang.kode_barang ? { kode_barang: barang.kode_barang } : null),
               (barang.nama_barang ? { nama_barang: barang.nama_barang } : null)
