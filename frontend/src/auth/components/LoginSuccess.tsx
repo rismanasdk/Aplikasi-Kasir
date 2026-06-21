@@ -1,8 +1,17 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { API_URL } from "../../config/api";
-import { clearStoredAuthSession } from "../storage";
+import { clearStoredAuthSession, getStoredUser } from "../storage";
+
+interface User {
+  id?: string;
+  _id?: string;
+  nama_lengkap: string;
+  username?: string;
+  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security';
+  status: string;
+  profilePicture?: string;
+}
 
 export default function LoginSuccess() {
   const navigate = useNavigate();
@@ -10,32 +19,54 @@ export default function LoginSuccess() {
 
   useEffect(() => {
     const processLogin = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const queryParams = new URLSearchParams(window.location.search);
-      let token = hashParams.get("token") || queryParams.get("token");
-
       try {
-        if (!token) {
-          const response = await fetch(`${API_URL}/api/auth/google/session-token`, {
-            credentials: "include",
-          });
+        // Ambil token dari URL query param
+        const queryParams = new URLSearchParams(window.location.search);
+        const token = queryParams.get("token");
+        const error = queryParams.get("error");
 
-          if (response.ok) {
-            const data = await response.json();
-            token = data?.token || null;
-          }
-        }
-
-        if (!token) {
+        // Handle error dari Google
+        if (error) {
+          console.error("Google OAuth error:", error);
           navigate("/login");
           return;
         }
 
+        if (!token) {
+          console.error("No token found in URL");
+          navigate("/login");
+          return;
+        }
+
+        // Bersihkan token dari URL
         window.history.replaceState({}, document.title, "/login-success");
+
+        // Simpan token dan set auth state
         await auth.handleGoogleToken(token);
-        const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/";
-        sessionStorage.removeItem("redirectAfterLogin");
-        navigate(redirectPath);
+
+        // Ambil user yang sudah disimpan
+        const savedUser = getStoredUser<User>();
+
+        if (!savedUser) {
+          console.error("No user saved after handleGoogleToken");
+          navigate("/login");
+          return;
+        }
+
+        // Redirect berdasarkan role
+        if (savedUser.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (savedUser.role === 'manajer') {
+          navigate('/meneger/dashboard');
+        } else if (savedUser.role === 'chef') {
+          navigate('/chef/bahan-baku');
+        } else if (savedUser.role === 'kasir') {
+          navigate('/kasir/dashboard');
+        } else if (savedUser.role === 'security') {
+          navigate('/security/dashboard');
+        } else {
+          navigate('/');
+        }
       } catch (err) {
         console.error("Error processing Google token:", err);
         clearStoredAuthSession();

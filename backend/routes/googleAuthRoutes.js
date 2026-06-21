@@ -14,6 +14,7 @@ function buildAuthToken(user) {
       nama_lengkap: user.nama_lengkap,
       email: user.email,
       profilePicture: user.profilePicture,
+      status: user.status,
     },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
@@ -23,23 +24,21 @@ function buildAuthToken(user) {
 // Step 1: Redirect ke Google
 router.get("/", passport.authenticate("google", { scope: ["profile", "email"] }));
 
+// Step 2: Callback — langsung generate token dan kirim ke frontend via URL
 router.get(
   "/callback",
-  passport.authenticate("google", { failureRedirect: "/login-failed" }),
+  passport.authenticate("google", { failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
   (req, res) => {
-    const redirectUrl = `${FRONTEND_URL}/login-success?oauth=success`;
-    res.redirect(redirectUrl);
+    try {
+      const token = buildAuthToken(req.user);
+      // Token dikirim langsung via query param, tidak perlu session lagi
+      res.redirect(`${FRONTEND_URL}/login-success?token=${token}`);
+    } catch (err) {
+      console.error("Error building token:", err);
+      res.redirect(`${FRONTEND_URL}/login?error=token_failed`);
+    }
   }
 );
-
-router.get("/session-token", (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Session login Google tidak ditemukan" });
-  }
-
-  const token = buildAuthToken(req.user);
-  return res.json({ token });
-});
 
 router.get("/login-failed", (req, res) => {
   res.status(401).json({ message: "Login Google gagal" });

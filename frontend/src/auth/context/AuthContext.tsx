@@ -381,39 +381,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const handleGoogleToken = useCallback(async (token: string): Promise<void> => {
-    try {
-      setIsLoading(true);
-      
-      console.log("Saving token to localStorage in handleGoogleToken");
-      // Simpan token ke localStorage
-      const existingUser = getStoredUser<User>();
-      console.log("Token saved to localStorage in handleGoogleToken");
-      
-      // Decode token untuk mendapatkan informasi user
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
+const handleGoogleToken = useCallback(async (token: string): Promise<void> => {
+  try {
+    setIsLoading(true);
+
+    // Decode JWT payload
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64).split('').map(c =>
         '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      ).join(''));
-      
-      const userInfo = JSON.parse(jsonPayload);
-      
-      // Set user ke state
-      setUser(userInfo);
-      setIsAuthenticated(true);
-      setStoredAuthSession(token, existingUser ?? userInfo);
-      
-      console.log('Google login successful, user info:', userInfo);
-    } catch (error) {
-      console.error('Error handling Google token:', error);
-      clearStoredAuthSession();
-      setUser(null);
-      setIsAuthenticated(false);
-      throw error; // Re-throw error untuk ditangani di komponen
-    } finally {
-      setIsLoading(false);
-    }
+      ).join('')
+    );
+
+    const payload = JSON.parse(jsonPayload);
+
+    // Mapping payload JWT → struktur User yang benar
+    const userInfo: User = {
+      id: payload.id,
+      _id: payload.id,
+      nama_lengkap: payload.nama_lengkap,
+      username: payload.username,
+      role: payload.role,
+      status: payload.status ?? 'aktif',
+      profilePicture: payload.profilePicture,
+    };
+
+    setStoredAuthSession(token, userInfo); // simpan token + user
+    setUser(userInfo);
+    setIsAuthenticated(true);
+
+    console.log('Google login successful, user:', userInfo);
+  } catch (error) {
+    console.error('Error handling Google token:', error);
+    clearStoredAuthSession();
+    setUser(null);
+    setIsAuthenticated(false);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
   }, []);
 
   useEffect(() => {

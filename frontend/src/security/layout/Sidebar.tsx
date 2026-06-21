@@ -150,10 +150,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white w-64 fixed inset-y-0 left-0 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30 shadow-xl flex flex-col`}>
+      <div className={`bg-gradient-to-b from-orange-500 to-yellow-400 text-white w-64 fixed inset-y-0 left-0 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30 shadow-xl flex flex-col`}>
         
         {/* Header dengan Logo */}
-        <div className="text-white flex items-center px-4 py-5 flex-shrink-0 border-b border-blue-500/30">
+        <div className="text-white flex items-center px-4 py-5 flex-shrink-0 border-b border-orange-500/30">
           <div className="flex items-center space-x-3">
             {storeLogo && !logoError ? (
               <div className="bg-white p-1.5 rounded-lg shadow-md">
@@ -166,16 +166,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
             ) : (
               <div className="bg-white p-2 rounded-lg shadow-md">
-                <Shield className="w-6 h-6 text-blue-600" />
+                <Shield className="w-6 h-6 text-orange-600" />
               </div>
             )}
             <div className="overflow-hidden">
               <h1 className="text-xl font-bold whitespace-nowrap">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-cyan-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-200 to-cyan-300">
                   Security
                 </span>
               </h1>
-              <p className="text-xs text-blue-200">Management</p>
+              <p className="text-xs text-orange-200">Management</p>
             </div>
           </div>
         </div>
@@ -188,22 +188,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div>
                   <button
                     onClick={(e) => toggleDropdown(item.name, e)}
-                    className={`w-full flex justify-between items-center py-3 px-4 rounded-lg transition-all duration-200 hover:bg-blue-700/60 hover:shadow-md hover:scale-[1.02] group ${
-                      isMenuActive(item) ? 'bg-blue-700/60 shadow-md border border-blue-400/30' : ''
+                    className={`w-full flex justify-between items-center py-3 px-4 rounded-lg transition-all duration-200 hover:bg-orange-700/60 hover:shadow-md hover:scale-[1.02] group ${
+                      isMenuActive(item) ? 'bg-orange-700/60 shadow-md border border-orange-400/30' : ''
                     }`}
                   >
                     <div className="flex items-center">
                       <div className={`mr-3 transition-colors duration-200 group-hover:text-cyan-300 ${
-                        isMenuActive(item) ? 'text-cyan-300' : 'text-blue-100'
+                        isMenuActive(item) ? 'text-cyan-300' : 'text-orange-100'
                       }`}>
                         {item.icon}
                       </div>
-                      <span className="font-bold text-blue-50 group-hover:text-white">
+                      <span className="font-bold text-orange-50 group-hover:text-white">
                         {item.name}
                       </span>
                     </div>
                     <div className={`transition-colors duration-200 group-hover:text-cyan-300 ${
-                      isMenuActive(item) ? 'text-cyan-300' : 'text-blue-200'
+                      isMenuActive(item) ? 'text-cyan-300' : 'text-orange-200'
                     }`}>
                       <DropdownArrow isOpen={activeDropdown === item.name} />
                     </div>
@@ -220,8 +220,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         <Link
                           key={subItem.name}
                           to={subItem.path}
-                          className={`flex items-center py-2.5 px-4 rounded-lg transition-all duration-200 hover:bg-blue-700/40 hover:shadow-md hover:translate-x-1 group ${
-                            location.pathname === subItem.path ? 'bg-blue-700/40 border border-blue-400/30' : ''
+                          className={`flex items-center py-2.5 px-4 rounded-lg transition-all duration-200 hover:bg-orange-700/40 hover:shadow-md hover:translate-x-1 group ${
+                            location.pathname === subItem.path ? 'bg-orange-700/40 border border-orange-400/30' : ''
                           }`}
                           onClick={() => {
                             if (window.innerWidth < 768) {
@@ -230,11 +230,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           }}
                         >
                           <div className={`mr-2 transition-colors duration-200 group-hover:text-cyan-300 ${
-                            location.pathname === subItem.path ? 'text-cyan-300' : 'text-blue-200'
+                            location.pathname === subItem.path ? 'text-cyan-300' : 'text-orange-200'
                           }`}>
                             {subItem.icon}
                           </div>
-                          <span className="text-sm font-medium text-blue-50 group-hover:text-white">
+                          <span className="text-sm font-medium text-orange-50 group-hover:text-white">
                             {subItem.name}
                           </span>
                         </Link>
@@ -245,8 +245,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               ) : (
                 <Link
                   to={item.path || '#'}
-                  className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 hover:bg-blue-700/60 hover:shadow-md hover:scale-[1.02] group ${
-                    isMenuActive(item) ? 'bg-blue-700/60 shadow-md border border-blue-400/30' : ''
+                  className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 hover:bg-orange-700/60 hover:shadow-md hover:scale-[1.02] group ${
+                    isMenuActive(item) ? 'bg-orange-700/60 shadow-md border border-orange-400/30' : ''
                   }`}
                   onClick={() => {
                     if (window.innerWidth < 768) {
@@ -255,11 +255,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   }}
                 >
                   <div className={`mr-3 transition-colors duration-200 group-hover:text-cyan-300 ${
-                    isMenuActive(item) ? 'text-cyan-300' : 'text-blue-100'
+                    isMenuActive(item) ? 'text-cyan-300' : 'text-orange-100'
                   }`}>
                     {item.icon}
                   </div>
-                  <span className="font-bold text-blue-50 group-hover:text-white">
+                  <span className="font-bold text-orange-50 group-hover:text-white">
                     {item.name}
                   </span>
                 </Link>
@@ -269,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Footer Sidebar */}
-        <div className="text-center text-blue-200 text-xs p-4 border-t border-blue-500/30">
+        <div className="text-center text-orange-200 text-xs p-4 border-t border-orange-500/30">
           Security Module v1.0.0
         </div>
       </div>
