@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getStoredToken } from '../../auth/storage';
 import { API_URL } from '../../config/api';
-import { Database, Download, Filter } from 'lucide-react';
+import { Download, Filter } from 'lucide-react';
 import SecurityLayout from '../layout';
 
 const API_KEY = import.meta.env.VITE_API_KEY;

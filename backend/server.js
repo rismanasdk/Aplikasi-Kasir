@@ -31,6 +31,7 @@ import adminBahanBaku from "./routes/admin/bahanbaku.js";
 import adminDataSatuan from "./routes/admin/datasatuanRoutes.js";
 import adminPengeluaranBiaya from "./routes/admin/pengeluaran-biaya.js";
 import chefRoutes from "./routes/chef/chef.js";
+import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
 import commonRoutes from "./routes/common.js";
 import userAuth from "./middleware/user.js";
@@ -208,6 +209,7 @@ app.use("/api/transaksi", userAuth, transaksiRoutes);
 app.use("/api/update-profile", updateProfile);
 app.use("/api/users/history", userAuth, usersRoutes);
 app.use("/api/cart", cartRoutes)
+app.use("/api/kasir/analytics", kasirAnalyticsRoutes);
 app.use("/auth", authRoutes);
 
 // manager

@@ -13,6 +13,7 @@ import StatusPesananPage from "./pages/pesanan/index";
 // Kasir
 import KasirDashboard from "./kasir/dashboard";
 import KasirPesananPage from "./kasir/pesanan";
+import CashFlowReport from "./kasir/pages/CashFlowReport";
 
 // Manager
 import MenegerDashboard from "./meneger/dashboard";
@@ -101,6 +102,7 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
                 <Routes>
                   <Route path="dashboard" element={<KasirDashboard dataBarang={dataBarang} />} />
                   <Route path="pesanan" element={<KasirPesananPage />} />
+                  <Route path="cash-flow" element={<CashFlowReport />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </ProtectedRoute>

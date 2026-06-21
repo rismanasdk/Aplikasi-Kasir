@@ -1,6 +1,6 @@
 // src/security/pages/Settings.tsx
 import React, { useState, useEffect } from 'react';
-import { Settings, Shield, Bell, Lock, Eye } from 'lucide-react';
+import { Shield, Bell, Lock, Eye } from 'lucide-react';
 import SecurityLayout from '../layout';
 
 const SecuritySettings: React.FC = () => {

@@ -8,7 +8,8 @@ import {
   User,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
@@ -85,6 +86,7 @@ function Sidebar({
   const menu = [
     { label: "Dashboard", icon: <Home className="w-5 h-5" />, path: "/kasir/dashboard" },
     { label: "Status Pesanan", icon: <ShoppingCart className="w-5 h-5" />, path: "/kasir/pesanan" },
+    { label: "Cash Flow Report", icon: <BarChart3 className="w-5 h-5" />, path: "/kasir/cash-flow" },
   ];
 
   return (

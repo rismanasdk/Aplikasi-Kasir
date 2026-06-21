@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getStoredToken } from '../../auth/storage';
 import { API_URL } from '../../config/api';
-import { AlertCircle, TrendingUp, Shield, Eye, Clock } from 'lucide-react';
+import { AlertCircle, Shield, Eye, Clock } from 'lucide-react';
 import SecurityLayout from '../layout';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
