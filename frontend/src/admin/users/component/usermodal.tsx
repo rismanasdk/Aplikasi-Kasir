@@ -179,6 +179,7 @@ const UserModal: React.FC<UserModalProps> = ({ showModal, editingUser, onClose, 
                 <option value="kasir">Kasir</option>
                 <option value="manajer">Manajer</option>
                 <option value="chef">Chef</option>
+                <option value="security">Security</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

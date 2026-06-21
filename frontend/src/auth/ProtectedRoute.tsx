@@ -5,7 +5,7 @@ import NotFound from '../auth/notif/404notfound';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'manajer' | 'kasir' | 'user' | 'chef')[];
+  allowedRoles?: ('admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security')[];
   requireAuth?: boolean;
 }
 
@@ -28,6 +28,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       else if (auth.user.role === 'manajer') path = '/meneger/dashboard';
       else if (auth.user.role === 'kasir') path = '/kasir/dashboard';
       else if (auth.user.role === 'chef') path = '/chef/bahan-baku';
+      else if (auth.user.role === 'security') path = '/security/dashboard';
       
       return { shouldRedirect: true, redirectPath: path, showLoading: false, showNotFound: false };
     }

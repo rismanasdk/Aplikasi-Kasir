@@ -27,6 +27,15 @@ import AdminRouter from "./admin/router";
 // Chef - Import router chef
 import ChefRouter from "./chef/router";
 
+// Security
+import SecurityDashboard from "./security/pages/Dashboard";
+import SecurityLogs from "./security/pages/Logs";
+import SecurityAlerts from "./security/pages/Alerts";
+import SecurityBlockedIPs from "./security/pages/BlockedIPs";
+import SecurityIPStatistics from "./security/pages/IPStatistics";
+import SecuritySystemHealth from "./security/pages/SystemHealth";
+import SecuritySettings from "./security/pages/Settings";
+
 // Auth
 import LoginForm from "./auth/pages/login";
 import RegisterPage from "./auth/pages/register";
@@ -131,6 +140,25 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminRouter dataBarang={dataBarang} setDataBarang={setDataBarang} />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Security - hanya bisa diakses oleh security dan admin */}
+          <Route 
+            path="/security/*" 
+            element={
+              <ProtectedRoute allowedRoles={['security', 'admin']}>
+                <Routes>
+                  <Route path="dashboard" element={<SecurityDashboard />} />
+                  <Route path="logs" element={<SecurityLogs />} />
+                  <Route path="alerts" element={<SecurityAlerts />} />
+                  <Route path="blocked-ips" element={<SecurityBlockedIPs />} />
+                  <Route path="ip-statistics" element={<SecurityIPStatistics />} />
+                  <Route path="system-health" element={<SecuritySystemHealth />} />
+                  <Route path="settings" element={<SecuritySettings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
               </ProtectedRoute>
             } 
           />

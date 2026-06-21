@@ -96,7 +96,10 @@ export default function LoginForm() {
     // Simpan URL saat ini untuk redirect setelah login
     sessionStorage.setItem('redirectAfterLogin', location.pathname);
     // Arahkan ke endpoint Google OAuth
-    window.location.href = `${API_URL}/api/auth/google`;
+    const targetUrl = API_URL && API_URL !== "undefined"
+      ? `${API_URL}/api/auth/google`
+      : `${window.location.origin}/api/auth/google`;
+    window.location.href = targetUrl;
   };
 
   const containerVariants: Variants = {

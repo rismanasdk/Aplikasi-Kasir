@@ -2,11 +2,11 @@
 
 [![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)](LICENSE)
 
-Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, dan update real-time via `Socket.IO`.
+Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, kemanan server, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, dan update real-time via `Socket.IO`.
 
 ## Ringkasan Fitur
 
-- Multi-role login: `admin`, `manajer`, `kasir`, `chef`, `user`
+- Multi-role login: `admin`, `manajer`, `kasir`, `chef`, `user`, `security`
 - Login manual berbasis JWT dan login dengan Google OAuth
 - Dashboard publik / pelanggan untuk lihat produk, checkout, dan riwayat pesanan
 - Keranjang belanja, checkout, dan proses transaksi dengan status pesanan
@@ -20,6 +20,9 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Pengaturan toko: informasi toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon global, service charge, low stock alert, bahasa, format tanggal
 - Upload gambar produk, logo toko, logo channel pembayaran, dan foto profil
 - Export laporan ke `PDF`, `Excel`, dan sebagian area ke `CSV`
+- Block IP address otomatis ketika terkena trap routes
+- Log server
+- Real-time alerts
 
 ## Fitur Per Area
 
@@ -56,6 +59,12 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Lihat katalog produk
 - Checkout dan bayar secara online
 - Cek status transaksi publik dan riwayat pesanan pribadi
+
+### Security
+
+- Memantau Log Server
+- Melakukan Block IP Address
+- Memantau kesehatan server 
 
 ## Algoritma Dan Logika Bisnis
 
@@ -157,19 +166,7 @@ Catatan:
 
 ## Environment Frontend
 
-Frontend memakai variabel utama berikut:
-
-```env
-VITE_API_URL=http://localhost:5000
-VITE_IPBE=http://localhost:5000
-VITE_API_KEY=
-```
-
-Catatan:
-
-- `VITE_API_URL` harus mengarah ke backend aktif.
-- `VITE_IPBE` disediakan untuk kompatibilitas file lama, sebaiknya nilainya sama dengan `VITE_API_URL`.
-- `VITE_API_KEY` masih bersifat opsional karena middleware validasi API key belum dipakai penuh.
+- `Otomatis mendeteksi ip laptop yang langsung terhubung dengan backend(5000) sehingga saat ip frontend terganti tidak menjadi masalah`
 
 ## Script Penting
 
@@ -244,6 +241,7 @@ Catatan kondisi keamanan saat ini:
 - `kasir`: akses transaksi dan pesanan
 - `chef`: akses produksi dan bahan baku
 - `user`: akses halaman publik, checkout, riwayat pribadi, dan profil
+- `security` : akses log server dan block ip address
 
 ## Catatan Pengembangan
 

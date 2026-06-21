@@ -28,6 +28,9 @@ const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => 
           case 'chef':
             navigate('/chef/bahan-baku');
             break;
+          case 'security':
+            navigate('/security/dashboard');
+            break;
           case 'user':
             break;
           default:

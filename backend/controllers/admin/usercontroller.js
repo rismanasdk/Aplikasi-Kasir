@@ -17,7 +17,7 @@ export const getUsers = async (req, res) => {
 export const addUser = async (req, res) => {
   try {
     const payload = { ...req.body };
-    if (!["admin", "manajer", "kasir", "chef", "user"].includes(payload.role)) {
+    if (!["admin", "manajer", "kasir", "chef", "user", "security"].includes(payload.role)) {
       return res.status(400).json({ message: "Role tidak valid" });
     }
     const newUser = new User(payload);

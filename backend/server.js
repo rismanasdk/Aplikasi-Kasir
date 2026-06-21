@@ -31,6 +31,7 @@ import adminBahanBaku from "./routes/admin/bahanbaku.js";
 import adminDataSatuan from "./routes/admin/datasatuanRoutes.js";
 import adminPengeluaranBiaya from "./routes/admin/pengeluaran-biaya.js";
 import chefRoutes from "./routes/chef/chef.js";
+import securityRoutes from "./routes/security/securityRoutes.js";
 import commonRoutes from "./routes/common.js";
 import userAuth from "./middleware/user.js";
 import session from "express-session";
@@ -41,20 +42,36 @@ import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
 import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
+import { requestLogger } from "./middleware/requestLogger.js";
+import BlockedIP from "./models/blockedIP.js";
 
 
 const app = express();
 const port = process.env.PORT || 5000;
-const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
+
+// Parse allowed origins dari environment atau gunakan default
+const configuredOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Regex untuk match local network IPs lebih fleksibel
+const isLocalNetworkOrigin = (origin) => {
+  if (!origin) return true;
+  
+  // Check direct match
+  if (configuredOrigins.includes(origin)) return true;
+  
+  // Match any local/private IP
+  return /^https?:\/\/(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(origin);
+};
+
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isLocalNetworkOrigin(origin)) {
       return callback(null, true);
     }
+    console.warn(`CORS rejected origin: ${origin}`);
     return callback(new Error("Origin not allowed by CORS"));
   },
   credentials: true,
@@ -84,13 +101,49 @@ const trapRoutes = [
 
 app.use((req, res, next) => {
   if (trapRoutes.includes(req.originalUrl)) {
-    console.log(`\x1b[41m\x1b[37m[!!!] HONEYPOT TRIGGERED BY IP: ${req.ip}\x1b[0m`);
+    const clientIP = req.ip || req.connection.remoteAddress || "unknown";
+    console.log(`\x1b[41m\x1b[37m[!!!] HONEYPOT TRIGGERED BY IP: ${clientIP}\x1b[0m`);
     console.log(`\x1b[31m[Target Path]: ${req.originalUrl}\x1b[0m`);
+    
+    // Auto-block the IP for 1 hour
+    (async () => {
+      try {
+        const auto_unblock_at = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes from now
+        const existingBlock = await BlockedIP.findOne({ ip_address: clientIP });
+        
+        if (existingBlock) {
+          // Update existing block
+          existingBlock.status = "active";
+          existingBlock.block_type = "automatic";
+          existingBlock.reason = "Honeypot trap triggered";
+          existingBlock.auto_unblock_at = auto_unblock_at;
+          existingBlock.duration_hours = 1;
+          await existingBlock.save();
+        } else {
+          // Create new block
+          await BlockedIP.create({
+            ip_address: clientIP,
+            reason: "Honeypot trap triggered",
+            blocked_by: "system",
+            block_type: "automatic",
+            duration_hours: 1,
+            auto_unblock_at,
+            status: "active"
+          });
+        }
+        console.log(`\x1b[43m\x1b[37m[AUTO-BLOCKED] IP ${clientIP} blocked for 1 hour\x1b[0m`);
+      } catch (error) {
+        console.error("Error auto-blocking honeypot IP:", error);
+      }
+    })();
+    
     setTimeout(() => {
       return res.status(418).json({ 
         status: "error", 
         message: "Stop scanning, I see you!",
-        detected_ip: req.ip 
+        detected_ip: clientIP,
+        auto_blocked: true,
+        unblock_time: "1 hour"
       });
     }, 3000); 
     return;
@@ -124,6 +177,30 @@ if (process.env.ENABLE_DEBUG_TOKEN_LOGGER === "true") {
 
 app.use(express.json());
 
+// Add request logging middleware
+app.use(requestLogger);
+
+// Middleware untuk check blocked IP
+app.use(async (req, res, next) => {
+  try {
+    const clientIP = req.ip || req.connection.remoteAddress || "unknown";
+    const blockedIP = await BlockedIP.findOne({ ip_address: clientIP, status: "active" });
+    
+    if (blockedIP) {
+      console.log(`\x1b[41m\x1b[37m[BLOCKED] Access denied for IP: ${clientIP}\x1b[0m`);
+      return res.status(403).json({ 
+        status: "error", 
+        message: "Your IP address has been blocked. Please contact administrator.",
+        blocked_ip: clientIP 
+      });
+    }
+    next();
+  } catch (error) {
+    console.error("Error checking blocked IP:", error);
+    next(); // Continue even if there's an error
+  }
+});
+
 // pelanggan, kasir
 app.use("/api/auth/google", googleAuthRoutes);
 app.use("/api/barang", barangRoutes);
@@ -140,7 +217,7 @@ app.use("/api/manager/stok-barang", verifyToken, authorize(["manajer", "manager"
 app.use("/api/manager/laporan", verifyToken, authorize(["manajer", "manager", "admin"]), laporanManagerRoutes);
 app.use("/api/manager/biaya-operasional", verifyToken, authorize(["manajer", "manager", "admin"]), biayaoperasional);
 app.use("/api/manager/settings", verifyToken, authorize(["manajer", "manager", "admin"]), managerSettingsRoutes);
-app.use("/api/common", verifyToken, authorize(["admin", "manajer", "manager", "kasir", "chef", "user"]), commonRoutes);
+app.use("/api/common", verifyToken, authorize(["admin", "manajer", "manager", "kasir", "chef", "user", "security"]), commonRoutes);
 
 // admin
 app.use("/api/admin/dashboard", verifyToken, authorize(["admin"]), adminDashboardRoutes);
@@ -162,6 +239,9 @@ app.use("/api/admin/pengeluaran-biaya", verifyToken, authorize(["admin"]), admin
 // chef
 app.use("/api/chef", chefRoutes);
 
+// security
+app.use("/api/security", securityRoutes);
+
 app.get("/", (req, res) => {
   res.json({ message: "Welcome To API" });
 });
@@ -175,9 +255,16 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isLocalNetworkOrigin(origin)) {
+        return callback(null, true);
+      }
+      console.warn(`Socket.IO CORS rejected origin: ${origin}`);
+      return callback(new Error("Socket.IO CORS blocked"));
+    },
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   },
 });
 
@@ -190,6 +277,31 @@ io.on("connection", (socket) => {
 });
 
 export { io };
+
+// Auto-unblock function
+const performAutoUnblock = async () => {
+  try {
+    const now = new Date();
+    const expiredBlocks = await BlockedIP.find({
+      status: "active",
+      auto_unblock_at: { $lte: now }
+    });
+
+    for (const block of expiredBlocks) {
+      block.status = "inactive";
+      await block.save();
+      console.log(`\x1b[42m\x1b[37m[AUTO-UNBLOCKED] IP ${block.ip_address} auto-unblocked\x1b[0m`);
+    }
+  } catch (error) {
+    console.error("Error in auto-unblock scheduler:", error);
+  }
+};
+
+// Run auto-unblock immediately on startup
+performAutoUnblock();
+
+// Auto-unblock scheduler - check every minute
+setInterval(performAutoUnblock, 1 * 60 * 1000); // Every 1 minute
 
 const startServer = async () => {
   await connectDB();

@@ -10,7 +10,7 @@ interface User {
   _id?: string;
   nama_lengkap: string;
   username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef';
+  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security';
   status: string;
   profilePicture?: string;
 }
@@ -38,7 +38,7 @@ interface AuthContextType {
   defaultProfilePicture: string;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' ) => Promise<{ success: boolean; message?: string }>;
+  register: (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security' ) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateProfilePicture: (profilePicture: File) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (profileData: {
@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 }, []);
 
-  const register = useCallback(async (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef'): Promise<{ success: boolean; message?: string }> => {
+  const register = useCallback(async (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security'): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
 
     try {
