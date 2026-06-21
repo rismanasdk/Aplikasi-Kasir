@@ -155,6 +155,7 @@ GOOGLE_CLIENT_SECRET=
 FRONTEND_URL=http://localhost:5173
 CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
 ENABLE_DEBUG_TOKEN_LOGGER=false
+BACKEND_URL=https://xxx.ngrok-free.app 
 ```
 
 Catatan:
