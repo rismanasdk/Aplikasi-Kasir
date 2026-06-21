@@ -39,4 +39,4 @@ VITE_API_KEY=
 ## Catatan
 
 - Route protection frontend ada di `src/auth/ProtectedRoute.tsx`, `src/auth/AuthGuard.tsx`, dan `src/auth/DashboardRedirect.tsx`.
-- Beberapa file auth masih bersifat legacy / duplikat dan sebaiknya dirapikan bertahap.
+- Beberapa file sekarang sudah tidak duplikat
