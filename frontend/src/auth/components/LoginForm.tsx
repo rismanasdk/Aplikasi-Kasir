@@ -196,7 +196,7 @@ export default function LoginForm() {
 
   return (
     <motion.div
-      className="flex h-screen w-full overflow-hidden"
+      className="flex min-h-screen w-full overflow-x-hidden md:h-screen md:overflow-hidden"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -240,23 +240,23 @@ export default function LoginForm() {
       {/* Panel Kanan — Form */}
       <motion.div
         variants={rightVariants}
-        className="flex w-full md:w-1/2 justify-center items-center bg-gradient-to-br from-amber-50 to-yellow-50 p-6"
+        className="flex w-full md:w-1/2 justify-center items-center bg-gradient-to-br from-amber-50 to-yellow-50 p-4 sm:p-6"
       >
         <motion.form
           onSubmit={handleSubmit}
           variants={formVariants}
           initial="hidden"
           animate="visible"
-          className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md backdrop-blur-sm bg-opacity-90 relative z-10"
+          className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md backdrop-blur-sm bg-opacity-90 relative z-10"
         >
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-center mb-8"
+            className="text-center mb-6 sm:mb-8"
           >
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Selamat Datang</h2>
-            <p className="text-gray-500">Silakan login untuk melanjutkan</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Selamat Datang</h2>
+            <p className="text-gray-500 text-sm sm:text-base">Silakan login untuk melanjutkan</p>
           </motion.div>
 
           <AnimatePresence>
@@ -277,7 +277,7 @@ export default function LoginForm() {
 
           {/* Input Username */}
           <motion.div
-            className="mb-6"
+            className="mb-4 sm:mb-6"
             variants={inputVariants}
             initial="rest"
             animate={isFocused.username ? "focus" : "rest"}
@@ -305,7 +305,7 @@ export default function LoginForm() {
 
           {/* Input Password */}
           <motion.div
-            className="mb-8"
+            className="mb-6 sm:mb-8"
             variants={inputVariants}
             initial="rest"
             animate={isFocused.password ? "focus" : "rest"}
@@ -348,7 +348,7 @@ export default function LoginForm() {
             whileTap="tap"
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-70 mb-4"
+            className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-70 mb-3 sm:mb-4"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
@@ -367,7 +367,7 @@ export default function LoginForm() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={isGoogleLoading}
-            className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 rounded-xl font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center disabled:opacity-70 mb-6"
+            className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 rounded-xl font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center disabled:opacity-70 mb-4 sm:mb-6"
           >
             {isGoogleLoading ? (
               <span className="flex items-center justify-center">
@@ -384,7 +384,7 @@ export default function LoginForm() {
 
           {/* Daftar */}
           <motion.div
-            className="mt-4 text-center"
+            className="mt-3 sm:mt-4 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
@@ -407,7 +407,7 @@ export default function LoginForm() {
 
           {/* Kembali ke Halaman Utama */}
           <motion.div
-            className="mt-6 text-center"
+            className="mt-4 sm:mt-6 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
@@ -427,7 +427,7 @@ export default function LoginForm() {
           </motion.div>
 
           <motion.p
-            className="text-center text-xs text-gray-400 mt-8"
+            className="text-center text-xs text-gray-400 mt-6 sm:mt-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
