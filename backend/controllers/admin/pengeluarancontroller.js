@@ -2,6 +2,7 @@ import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import BiayaOperasional from "../../models/biayaoperasional.js";
 import ModalUtama from "../../models/modalutama.js";
 import HppHarian from "../../models/hpptotal.js";
+import { updateAllBarangHargaFinal } from "./biayaoperasionalcontroller.js";
 
 // POST /api/admin/pengeluaran-biaya
 export const createPengeluaran = async (req, res) => {
@@ -40,6 +41,7 @@ export const createPengeluaran = async (req, res) => {
       saldo_setelah: modal.saldo_kas,
     });
     await modal.save();
+    await updateAllBarangHargaFinal();
 
     // Update HppHarian.total_beban untuk tanggal pengeluaran (gunakan string YYYY-MM-DD)
     try {
@@ -107,6 +109,7 @@ export const deletePengeluaran = async (req, res) => {
 
     // Hapus dokumen pengeluaran
     await PengeluaranBiaya.deleteOne({ _id: id });
+    await updateAllBarangHargaFinal();
 
     // Kembalikan saldo kas pada ModalUtama
     try {

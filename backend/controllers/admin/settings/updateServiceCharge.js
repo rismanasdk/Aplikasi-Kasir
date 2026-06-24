@@ -41,8 +41,14 @@ export const updateServiceCharge = async (req, res) => {
     // 🔹 Update settings
     settings.calculatedServiceCharge = calculatedServiceCharge;
     settings.serviceCharge = calculatedServiceCharge;
+    console.log("SERVICE CHARGE RECALC");
+    console.log({
+      totalBiayaOperasional,
+      totalNilaiBarang,
+      calculatedServiceCharge
+    });
     await settings.save();
-
+    
     // 🔹 Update semua barang menggunakan fungsi utilitas
     await updateAllBarangHargaFinal(Barang, settings);
 

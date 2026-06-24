@@ -25,6 +25,9 @@ import MenegerSettingsPage from "./meneger/settings";
 // Admin - Import router admin
 import AdminRouter from "./admin/router";
 
+// Super Admin - Import router super-admin
+import SuperAdminRouter from "./super-admin/router";
+
 // Chef - Import router chef
 import ChefRouter from "./chef/router";
 
@@ -142,6 +145,16 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminRouter dataBarang={dataBarang} setDataBarang={setDataBarang} />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Super Admin - hanya bisa diakses oleh super-admin */}
+          <Route 
+            path="/super-admin/*" 
+            element={
+              <ProtectedRoute allowedRoles={['super-admin']}>
+                <SuperAdminRouter />
               </ProtectedRoute>
             } 
           />

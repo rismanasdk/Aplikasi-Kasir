@@ -25,10 +25,10 @@ const Root: React.FC = () => {
           return;
         }
         const role = getStoredUser<{ role?: string }>()?.role;
-        const isAdmin = role === "admin";
+        const isSuperAdmin = role === "super-admin";
         const isManager = role === "manajer" || role === "manager";
-        const settingsPath = isAdmin
-          ? "/api/admin/settings"
+        const settingsPath = isSuperAdmin
+          ? "/api/super-admin/settings"
           : isManager
             ? "/api/manager/settings"
             : "/api/common/settings";

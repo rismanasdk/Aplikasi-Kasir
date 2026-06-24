@@ -10,7 +10,7 @@ interface User {
   _id?: string;
   nama_lengkap: string;
   username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security';
+  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security' | 'super-admin';
   status: string;
   profilePicture?: string;
 }

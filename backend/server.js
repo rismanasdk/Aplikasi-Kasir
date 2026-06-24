@@ -30,6 +30,12 @@ import adminhpptotal from "./routes/admin/hpptotal.js"
 import adminBahanBaku from "./routes/admin/bahanbaku.js";
 import adminDataSatuan from "./routes/admin/datasatuanRoutes.js";
 import adminPengeluaranBiaya from "./routes/admin/pengeluaran-biaya.js";
+import superAdminDashboardRoutes from "./routes/super-admin/dashboard.js";
+import superAdminLaporanRoutes from "./routes/super-admin/laporan.js";
+import superAdminSettingsRoutes from "./routes/super-admin/settings.js";
+import superAdminUsersRoutes from "./routes/super-admin/user.js";
+import superAdminBiayaLayananRoutes from "./routes/super-admin/biayalayanan.js";
+import superAdminModalUtamaRoutes from "./routes/super-admin/modalutama.js";
 import chefRoutes from "./routes/chef/chef.js";
 import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
@@ -84,7 +90,7 @@ app.use(helmet());
 app.disable("x-powered-by");
 
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
+  windowMs: 10 * 60 * 60 *1000,
   max: 75,
   message: { message: "Stop Spam, I see you!" },
   standardHeaders: true,
@@ -228,15 +234,26 @@ app.use("/api/admin/riwayat", verifyToken, authorize(["admin"]), adminRiwayat);
 app.use("/api/admin/stok-barang", adminStok);
 app.use("/api/admin/kategori", verifyToken, authorize(["admin"]), adminKategori)
 app.use("/api/admin/laporan", verifyToken, authorize(["admin", "manajer", "manager"]), adminLaporan);
-app.use("/api/admin/users", verifyToken, authorize(["admin"]), adminUsers);
-app.use("/api/admin/settings", verifyToken, authorize(["admin"]), adminSettingsRoutes);
+app.use("/api/admin/users", verifyToken, authorize(["super-admin"]), adminUsers);
+app.use("/api/admin/settings", verifyToken, authorize(["super-admin"]), adminSettingsRoutes);
 app.use("/api/admin/biaya-operasional", verifyToken, authorize(["admin"]), adminbiayaoperasional);
-app.use("/api/admin/biaya-layanan", verifyToken, authorize(["admin"]), adminbiayalayanan)
-app.use("/api/admin/modal-utama", verifyToken, authorize(["admin"]), adminmodalutama)
+app.use("/api/admin/biaya-layanan", verifyToken, authorize(["super-admin"]), adminbiayalayanan)
+app.use("/api/admin/modal-utama", verifyToken, authorize(["super-admin"]), adminmodalutama)
 app.use("/api/admin/hpp-total", verifyToken, authorize(["admin"]), adminhpptotal)
 app.use("/api/admin/bahan-baku", adminBahanBaku)
 app.use("/api/admin/data-satuan", verifyToken, authorize(["admin"]), adminDataSatuan)
 app.use("/api/admin/pengeluaran-biaya", verifyToken, authorize(["admin"]), adminPengeluaranBiaya);
+
+// super-admin
+app.use("/api/super-admin/dashboard", verifyToken, authorize(["super-admin"]), superAdminDashboardRoutes);
+app.use("/api/super-admin/laporan", verifyToken, authorize(["super-admin"]), superAdminLaporanRoutes);
+app.use("/api/super-admin/settings", verifyToken, authorize(["super-admin"]), superAdminSettingsRoutes);
+app.use("/api/super-admin/users", verifyToken, authorize(["super-admin"]), superAdminUsersRoutes);
+app.use("/api/super-admin/biaya-layanan", verifyToken, authorize(["super-admin"]), superAdminBiayaLayananRoutes);
+app.use("/api/super-admin/modal-utama", verifyToken, authorize(["super-admin"]), superAdminModalUtamaRoutes);
+app.use("/api/super-admin/biaya-operasional", verifyToken, authorize(["super-admin"]), adminbiayaoperasional);
+app.use("/api/super-admin/pengeluaran-biaya", verifyToken, authorize(["super-admin"]), adminPengeluaranBiaya);
+
 
 // chef
 app.use("/api/chef", chefRoutes);

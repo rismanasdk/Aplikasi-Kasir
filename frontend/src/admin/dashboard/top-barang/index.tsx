@@ -3,6 +3,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import { Crown, Medal, Award, Star, TrendingUp, Package, DollarSign, BarChart3, PieChart } from 'lucide-react';
 import { API_URL } from '../../../config/api';
 import { getStoredToken } from '../../../auth/storage';
+import { logPageView } from '../../../utils/logpageview';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Interface untuk produk dari API
@@ -43,6 +44,10 @@ const TopBarang: React.FC = () => {
   const [totalPenjualan, setTotalPenjualan] = useState<number>(0); // State untuk total penjualan
   const [totalPendapatan, setTotalPendapatan] = useState<number>(0); // State untuk total pendapatan dari API
   const [selectedProduct, setSelectedProduct] = useState<ProdukApi | null>(null); // State untuk produk yang dipilih
+
+  useEffect(() => {
+    logPageView('Top-Barang', window.location.href);
+  }, []);
 
   const getAuthHeaders = useCallback((): HeadersInit => {
     const token = getStoredToken();

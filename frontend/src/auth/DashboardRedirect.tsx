@@ -19,6 +19,9 @@ const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => 
           case 'admin':
             navigate('/admin/dashboard');
             break;
+          case 'super-admin':
+            navigate('/super-admin/dashboard');
+            break;
           case 'manajer':
             navigate('/meneger/dashboard');
             break;

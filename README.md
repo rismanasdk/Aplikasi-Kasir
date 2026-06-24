@@ -26,6 +26,10 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 
 ## Fitur Per Area
 
+### Super Admin ###
+
+#### BELUM BERES ####
+
 ### Admin
 
 - Kelola user dan role
