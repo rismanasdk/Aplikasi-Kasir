@@ -43,7 +43,8 @@ import commonRoutes from "./routes/common.js";
 import userAuth from "./middleware/user.js";
 import session from "express-session";
 import helmet from "helmet";
-import { rateLimit } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import jwt from "jsonwebtoken";
 import passport from "./config/passportGoogle.js";
 import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
@@ -89,14 +90,56 @@ app.set('trust proxy', 1);
 app.use(helmet()); 
 app.disable("x-powered-by");
 
-const limiter = rateLimit({
-  windowMs: 10 * 60 * 60 *1000,
-  max: 75,
-  message: { message: "Stop Spam, I see you!" },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use("/api/", limiter);
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const RATE_LIMIT_MODE = (process.env.RATE_LIMIT_MODE || process.env.MODE || "ON").toUpperCase();
+const RATE_LIMIT_WINDOW_MS = parsePositiveInt(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
+const RATE_LIMIT_MAX = parsePositiveInt(process.env.RATE_LIMIT_MAX, 600);
+
+const getRateLimitKey = (req) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+  if (token) {
+    const decoded = jwt.decode(token);
+    if (decoded && typeof decoded === "object") {
+      const userId = decoded.id || decoded._id || decoded.sub || decoded.username;
+      if (userId) {
+        return `user:${userId}`;
+      }
+    }
+  }
+
+  return `ip:${ipKeyGenerator(req.ip)}`;
+};
+
+if (RATE_LIMIT_MODE === "OFF") {
+  console.warn("[RATE LIMIT] Disabled by MODE=OFF/RATE_LIMIT_MODE=OFF");
+} else {
+  const limiter = rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    max: RATE_LIMIT_MAX,
+    keyGenerator: getRateLimitKey,
+    skip: (req) => req.method === "OPTIONS",
+    message: {
+      message: "Terlalu banyak request. Tunggu sebentar lalu coba lagi.",
+    },
+    handler: (req, res, _next, options) => {
+      const retryAfter = Math.ceil(RATE_LIMIT_WINDOW_MS / 1000);
+      return res.status(options.statusCode).json({
+        message: options.message.message,
+        retryAfter,
+      });
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.use("/api/", limiter);
+}
 
 const trapRoutes = [
   "/.env", 
