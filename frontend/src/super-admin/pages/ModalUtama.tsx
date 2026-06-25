@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
 

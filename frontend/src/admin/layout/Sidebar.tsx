@@ -2,21 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Package,
   Calculator,
   ClipboardList,
-  DollarSign,
-  Users,
-  Settings,
   Home,
   Star,
   TrendingUp,
-  BarChart3,
   CreditCard,
   ShoppingCart,
-  Store,
-  Wrench,
   ChevronDown,
   Circle,
   ChefHat
@@ -66,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/admin/settings`, {
+        const response = await fetch(`${API_URL}/api/common/settings`, {
           headers: {
             Authorization: `Bearer ${token}`,
             ...(API_KEY ? { "x-api-key": API_KEY } : {}),
@@ -122,24 +115,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const menuItems: MenuItem[] = [
     {
       name: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-      submenu: [
-        { name: 'Dashboard Utama', path: '/admin/dashboard', icon: <Home size={16} /> },
-        { name: 'Top Barang', path: '/admin/dashboard/top-barang', icon: <Star size={16} /> },
-        { name: 'Omzet', path: '/admin/dashboard/omzet', icon: <DollarSign size={16} /> },
-        { name: 'Laporan Penjualan', path: '/admin/dashboard/laporan-penjualan', icon: <BarChart3 size={16} /> },
-        { name: 'Breakdown Pembayaran', path: '/admin/dashboard/breakdown-pembayaran', icon: <CreditCard size={16} /> },
-        { name: 'Transaksi', path: '/admin/dashboard/transaksi', icon: <ShoppingCart size={16} /> },
-
-      ],
+      icon: <Home size={20} />,
+      path: '/admin/dashboard',
     },
-     {
-      name: 'Biaya',
-      icon: <DollarSign size={20} />,
-      submenu: [
-        { name: 'Modal Utama', path: '/admin/biaya/modal-penjualan', icon: <Store size={16} /> },
-        { name: 'Biaya Layanan', path: '/admin/biaya/biaya-layanan', icon: <Wrench size={16} /> },
-      ],
+    {
+      name: 'Top Barang',
+      path: '/admin/dashboard/top-barang',
+      icon: <Star size={20} />,
+    },
+    {
+      name: 'Breakdown Pembayaran',
+      path: '/admin/dashboard/breakdown-pembayaran',
+      icon: <CreditCard size={20} />,
     },
     {
       name: 'Stok Barang',
@@ -157,19 +144,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       path: '/admin/process-memasak',
     },
     {
+      name: 'Riwayat Transaksi',
+      path: '/admin/dashboard/transaksi',
+      icon: <ShoppingCart size={20} />,
+    },
+    {
       name: 'Status Pesanan',
       icon: <ClipboardList size={20} />,
       path: '/admin/status-pesanan',
-    },
-    {
-      name: 'Users',
-      icon: <Users size={20} />,
-      path: '/admin/users',
-    },
-    {
-      name: 'Settings',
-      icon: <Settings size={20} />,
-      path: '/admin/settings',
     },
   ];
 

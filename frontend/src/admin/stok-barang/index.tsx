@@ -98,7 +98,7 @@ export interface BahanBakuFormData {
 }
 
 const KATEGORI_API_URL = `${API_URL}/api/admin/kategori`;
-const SETTINGS_API_URL = `${API_URL}/api/admin/settings`;
+const SETTINGS_API_URL = `${API_URL}/api/common/settings`;
 const BAHAN_BAKU_API_URL = `${API_URL}/api/admin/modal-utama`;
 
 interface ApiError extends Error {

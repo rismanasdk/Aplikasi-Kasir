@@ -106,14 +106,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const token = getStoredToken();
       const currentUser = getStoredUser<User>() || ({} as User);
-      const isAdmin = currentUser?.role === "admin";
+      const canReadCommonSettings = currentUser?.role === "admin";
 
-      if (!token || !isAdmin) {
+      if (!token || !canReadCommonSettings) {
         return { success: false, message: "Default profile picture hanya untuk admin" };
       }
 
       const { data } = await axios.get<{ defaultProfilePicture: string }>(
-        `${API_BASE_URL}/api/admin/settings`,
+        `${API_BASE_URL}/api/common/settings`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -138,10 +138,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  useEffect(() => {
-    fetchDefaultProfilePicture();
-  }, [fetchDefaultProfilePicture]);
-
   const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
   setIsLoading(true);
 
@@ -158,6 +154,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setStoredAuthSession(data.token, data.user);
     setUser(data.user);
     setIsAuthenticated(true);
+    if (data.user.role === 'admin') {
+      fetchDefaultProfilePicture();
+    }
     return { success: true };
   } catch (error) {
     console.error('Login gagal:', error);
@@ -172,7 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   } finally {
     setIsLoading(false);
   }
-}, []);
+}, [fetchDefaultProfilePicture]);
 
   const register = useCallback(async (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security'): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
@@ -368,6 +367,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (meUser) {
         setUser(meUser);
         setStoredAuthSession(token, meUser);
+         if (meUser.role === 'admin') {
+             fetchDefaultProfilePicture();
+        }
         return meUser;
       }
       

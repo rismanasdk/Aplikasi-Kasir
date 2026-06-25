@@ -62,7 +62,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuToggle }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Admin Dashboard</h1>
+          <h1 className="text-lg font-semibold text-gray-800">Admin Panel</h1>
         </div>
 
         <div className="flex items-center space-x-3">
