@@ -60,6 +60,16 @@ const modalUtamaSchema = new mongoose.Schema(
       },
     ],
 
+    // 🏢 Aset tetap yang dibeli dari saldo kas
+    aset_tetap: [
+      {
+        nama: { type: String, required: true },
+        nilai: { type: Number, required: true, default: 0 },
+        tanggal_pembelian: { type: Date, default: Date.now },
+        keterangan: { type: String, default: "" },
+      },
+    ],
+
     // Saldo kas: semua penerimaan / pengeluaran operasional & pembelian bahan
     saldo_kas: { type: Number, required: true, default: 0 },
 
@@ -70,7 +80,10 @@ const modalUtamaSchema = new mongoose.Schema(
       {
         tanggal: { type: Date, default: Date.now },
         keterangan: String,
-        tipe: { type: String, enum: ["pengeluaran", "pemasukan", "prive"] },
+        tipe: {
+          type: String,
+          enum: ["pengeluaran", "pemasukan", "prive", "pembatalan_pengeluaran"],
+        },
         jumlah: Number,
         saldo_setelah: Number,
       },
@@ -102,7 +115,19 @@ modalUtamaSchema.virtual("total_pengeluaran").get(function () {
     0
   );
 
-  return Math.round(totalBahan + totalOperasional);
+  const totalAsetTetap = (this.aset_tetap || []).reduce(
+    (acc, aset) => acc + (aset.nilai || 0),
+    0
+  );
+
+  return Math.round(totalBahan + totalOperasional + totalAsetTetap);
+});
+
+// ✨ Virtual: total nilai aset tetap
+modalUtamaSchema.virtual("total_aset_tetap").get(function () {
+  return Math.round(
+    (this.aset_tetap || []).reduce((total, aset) => total + (aset.nilai || 0), 0)
+  );
 });
 
 // ✨ Virtual: total harga semua bahan (semua produk)

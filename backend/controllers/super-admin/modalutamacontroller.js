@@ -9,5 +9,7 @@ export {
   editBahanBaku,
   hapusBahanBaku,
   hapusBahanDariProduk,
+  tambahAsetTetap,
+  hapusAsetTetap,
   ambilPrive
 } from "../admin/modalutamacontroller.js";

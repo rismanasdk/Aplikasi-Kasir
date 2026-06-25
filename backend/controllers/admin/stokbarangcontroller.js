@@ -295,6 +295,17 @@ export const updateBarang = async (req, res) => {
       bahanParsed = barang.bahan_baku || [];
     }
 
+    // Hitung ulang total harga bahan untuk disimpan ke total_harga_beli
+    const totalHargaBahan = Array.isArray(bahanParsed)
+      ? bahanParsed.reduce((total, produk) => {
+          const subtotal = Array.isArray(produk.bahan)
+            ? produk.bahan.reduce((sum, b) => sum + (Number(b.harga) || 0), 0)
+            : 0;
+
+          return total + subtotal;
+        }, 0)
+      : 0;
+
     // Perbaikan: Gunakan modal_per_porsi yang sudah ada di database
     // Jangan hitung ulang dari total harga bahan
     let hargaBeli;

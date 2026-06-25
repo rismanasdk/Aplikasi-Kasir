@@ -5,6 +5,9 @@ import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Barang from "../../models/databarang.js";
 import Settings from "../../models/settings.js";
 
+const DEFAULT_TARGET_OMZET_BULANAN = 15000000;
+const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
+
 // --- KATEGORI (MASTER) CRUD ---
 export const getCategories = async (req, res) => {
   try {
@@ -67,17 +70,18 @@ export const updateAllBarangHargaFinal = async () => {
 
   const totalBiayaOperasional = (agg && agg[0] && agg[0].total) ? agg[0].total : 0;
 
-  // Hitung total nilai barang
   const allBarang = await Barang.find();
-  const totalNilaiBarang = allBarang.reduce((sum, b) => sum + (Number(b.harga_jual) || 0), 0);
 
-  // Hitung service charge dari biaya operasional
+  if (settings.targetOmzetBulanan === undefined || settings.targetOmzetBulanan === null) {
+    settings.targetOmzetBulanan = DEFAULT_TARGET_OMZET_BULANAN;
+  }
+
+  const targetOmzetBulanan = Number(settings.targetOmzetBulanan) || 0;
+
+  // Hitung service charge dari target omzet bulanan
   let calculatedServiceCharge = 0;
-  if (totalNilaiBarang > 0) {
-    const estimasiPenjualanBulanan = totalNilaiBarang * 30;
-    calculatedServiceCharge = (totalBiayaOperasional / estimasiPenjualanBulanan) * 100;
-    const MAX_SERVICE_CHARGE = 100;
-    calculatedServiceCharge = Math.min(Math.round(calculatedServiceCharge * 100) / 100, MAX_SERVICE_CHARGE);
+  if (targetOmzetBulanan > 0) {
+    calculatedServiceCharge = roundToTwoDecimals((totalBiayaOperasional / targetOmzetBulanan) * 100);
   }
 
   settings.calculatedServiceCharge = calculatedServiceCharge;
@@ -90,6 +94,7 @@ export const updateAllBarangHargaFinal = async () => {
       const plainSettings = {
         calculatedServiceCharge: settings.calculatedServiceCharge,
         serviceCharge: settings.serviceCharge,
+        targetOmzetBulanan: settings.targetOmzetBulanan,
         taxRate: settings.taxRate || 0,
         globalDiscount: settings.globalDiscount || 0,
       };

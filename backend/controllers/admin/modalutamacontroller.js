@@ -380,7 +380,93 @@ export const tambahBiayaOperasional = async (req, res) => {
   }
 };
 
-// ✅ Tambah modal baru (pemasukan)
+export const tambahAsetTetap = async (req, res) => {
+  try {
+    const { nama, nilai, tanggal_pembelian, keterangan } = req.body;
+    const nilaiAset = Number(nilai);
+
+    if (!nama || !String(nama).trim()) {
+      return res.status(400).json({ message: "Nama aset tetap wajib diisi." });
+    }
+
+    if (!Number.isFinite(nilaiAset) || nilaiAset <= 0) {
+      return res.status(400).json({ message: "Nilai aset tetap harus lebih dari 0." });
+    }
+
+    const modal = await ModalUtama.findOne();
+    if (!modal) {
+      return res.status(404).json({ message: "Modal utama belum dibuat." });
+    }
+
+    if (modal.saldo_kas < nilaiAset) {
+      return res.status(400).json({
+        message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${nilaiAset}.`,
+      });
+    }
+
+    modal.aset_tetap.push({
+      nama: String(nama).trim(),
+      nilai: nilaiAset,
+      tanggal_pembelian: tanggal_pembelian ? new Date(tanggal_pembelian) : new Date(),
+      keterangan: keterangan ? String(keterangan).trim() : "",
+    });
+
+    modal.saldo_kas -= nilaiAset;
+    modal.riwayat.push({
+      keterangan: `Tambah aset tetap: ${String(nama).trim()}`,
+      tipe: "pengeluaran",
+      jumlah: nilaiAset,
+      saldo_setelah: modal.saldo_kas,
+    });
+
+    await modal.save();
+
+    res.status(201).json({
+      message: "Aset tetap berhasil ditambahkan!",
+      modal,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const hapusAsetTetap = async (req, res) => {
+  try {
+    const { id_aset } = req.params;
+
+    const modal = await ModalUtama.findOne();
+    if (!modal) {
+      return res.status(404).json({ message: "Modal utama belum dibuat." });
+    }
+
+    const aset = modal.aset_tetap.id(id_aset);
+    if (!aset) {
+      return res.status(404).json({ message: "Aset tetap tidak ditemukan." });
+    }
+
+    const nilaiAset = aset.nilai || 0;
+    const namaAset = aset.nama;
+
+    aset.deleteOne();
+    modal.saldo_kas += nilaiAset;
+    modal.riwayat.push({
+      keterangan: `Hapus aset tetap: ${namaAset}`,
+      tipe: "pemasukan",
+      jumlah: nilaiAset,
+      saldo_setelah: modal.saldo_kas,
+    });
+
+    await modal.save();
+
+    res.json({
+      message: "Aset tetap berhasil dihapus!",
+      modal,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const tambahModalBaru = async (req, res) => {
   try {
     const { jumlah, keterangan } = req.body;
@@ -411,7 +497,6 @@ export const tambahModalBaru = async (req, res) => {
   }
 };
 
-// ✅ Owner ambil uang (prive)
 export const ambilPrive = async (req, res) => {
   try {
     const { jumlah, keterangan } = req.body;

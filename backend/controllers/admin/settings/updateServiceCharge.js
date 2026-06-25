@@ -1,8 +1,10 @@
 import Settings from "../../../models/settings.js";
 import Barang from "../../../models/databarang.js";
-import BiayaOperasional from "../../../models/biayaoperasional.js";
 import PengeluaranBiaya from "../../../models/pengeluaranbiaya.js";
-import { calculateHargaFinal, updateAllBarangHargaFinal } from "../settings/utils/calculateHarga.js";
+import { updateAllBarangHargaFinal } from "../settings/utils/calculateHarga.js";
+
+const DEFAULT_TARGET_OMZET_BULANAN = 15000000;
+const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
 export const updateServiceCharge = async (req, res) => {
   try {
@@ -21,21 +23,18 @@ export const updateServiceCharge = async (req, res) => {
     ]);
     const totalBiayaOperasional = agg && agg[0] ? agg[0].total : 0;
 
-    // 🔹 Hitung total nilai barang
-    const allBarang = await Barang.find();
-    const totalNilaiBarang = allBarang.reduce((sum, b) => sum + (Number(b.harga_jual) || 0), 0);
+    if (req.body?.targetOmzetBulanan !== undefined) {
+      settings.targetOmzetBulanan = Number(req.body.targetOmzetBulanan) || 0;
+    } else if (settings.targetOmzetBulanan === undefined || settings.targetOmzetBulanan === null) {
+      settings.targetOmzetBulanan = DEFAULT_TARGET_OMZET_BULANAN;
+    }
 
-    // 🔹 Hitung service charge dari biaya operasional
+    const targetOmzetBulanan = Number(settings.targetOmzetBulanan) || 0;
+
+    // 🔹 Hitung service charge dari target omzet bulanan
     let calculatedServiceCharge = 0;
-    if (totalNilaiBarang > 0) {
-      const estimasiPenjualanBulanan = totalNilaiBarang * 30;
-      calculatedServiceCharge = (totalBiayaOperasional / estimasiPenjualanBulanan) * 100;
-      
-      const MAX_SERVICE_CHARGE = 100;
-      calculatedServiceCharge = Math.min(
-        Math.round(calculatedServiceCharge * 100) / 100,
-        MAX_SERVICE_CHARGE
-      );
+    if (targetOmzetBulanan > 0) {
+      calculatedServiceCharge = roundToTwoDecimals((totalBiayaOperasional / targetOmzetBulanan) * 100);
     }
 
     // 🔹 Update settings
@@ -44,8 +43,8 @@ export const updateServiceCharge = async (req, res) => {
     console.log("SERVICE CHARGE RECALC");
     console.log({
       totalBiayaOperasional,
-      totalNilaiBarang,
-      calculatedServiceCharge
+      targetOmzetBulanan,
+      serviceCharge: calculatedServiceCharge
     });
     await settings.save();
     
@@ -57,9 +56,8 @@ export const updateServiceCharge = async (req, res) => {
       settings,
       detail: {
         totalBiayaOperasional,
-        totalNilaiBarangPerHari: totalNilaiBarang,
-        estimasiPenjualanBulanan: totalNilaiBarang * 30,
-        serviceCharge: `${calculatedServiceCharge}% (max 25%)`
+        targetOmzetBulanan,
+        serviceCharge: calculatedServiceCharge
       }
     });
   } catch (error) {

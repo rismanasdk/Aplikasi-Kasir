@@ -8,6 +8,8 @@ import {
   editBahanBaku,
   hapusBahanBaku,
   hapusBahanDariProduk,
+  tambahAsetTetap,
+  hapusAsetTetap,
   ambilPrive
 } from "../../controllers/super-admin/modalutamacontroller.js";
 
@@ -20,6 +22,8 @@ router.put("/bahan-baku/:id_produk", editBahanBaku);
 router.delete("/bahan-baku/:id_produk", hapusBahanBaku);
 router.delete("/bahan-baku/:id_produk/bahan/:id_bahan", hapusBahanDariProduk);
 router.post("/biaya-operasional", tambahBiayaOperasional);
+router.post("/aset-tetap", tambahAsetTetap);
+router.delete("/aset-tetap/:id_aset", hapusAsetTetap);
 router.post("/tambah-modal", tambahModalBaru);
 router.post("/prive", ambilPrive);
 
