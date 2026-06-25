@@ -1,227 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
-import { API_URL } from '../../config/api';
-import { getStoredToken } from '../../auth/storage';
-
-interface ModalData {
-  _id: string;
-  total_modal: number;
-  saldo_kas: number;
-  riwayat?: Array<{
-    tanggal: string;
-    keterangan: string;
-    jumlah: number;
-  }>;
-}
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { API_URL } from './../../config/api';
+import LoadingSpinner from './../../components/LoadingSpinner';
+import { exportToExcel, exportToPDF } from './utils-modal';
+import type { AddModalResponse, ModalUtama } from './utils-modal/types';
+import { getStoredToken } from './../../auth/storage';
+import ModalSummaryCards from './components-modal-utama/ModalSummaryCards';
+import RiwayatTable from './components-modal-utama/RiwayatTable';
+import TambahModalForm from './components-modal-utama/TambahModalForm';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
+const ITEMS_PER_PAGE = 10;
 
-const ModalUtama: React.FC = () => {
-  const [modal, setModal] = useState<ModalData | null>(null);
-  const [showForm, setShowForm] = useState(false);
+const PenjualanPage: React.FC = () => {
+  const [modalData, setModalData] = useState<ModalUtama | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    total_modal: 0,
+    jumlah: '',
     keterangan: '',
   });
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('semua');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  const getAuthHeaders = () => {
+    const token = getStoredToken();
+    if (!token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan login ulang dengan akun admin.');
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+  };
 
   useEffect(() => {
-    fetchModalUtama();
+    const fetchModalData = async () => {
+      try {
+        const response = await axios.get<ModalUtama>(`${API_URL}/api/admin/modal-utama`, {
+          headers: getAuthHeaders(),
+        });
+        setModalData(response.data);
+      } catch (err) {
+        setError('Gagal memuat data modal');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModalData();
   }, []);
 
-  const fetchModalUtama = async () => {
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setStartDate(todayStr);
+    setEndDate(todayStr);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, startDate, endDate]);
+
+  const formatNumberWithDots = (value: string): string => {
+    const numericValue = value.replace(/\D/g, '');
+    if (!numericValue) return '';
+
+    const cleanValue = numericValue.replace(/^0+(?=\d)/, '');
+    return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const parseFormattedNumber = (value: string): number => {
+    const numericString = value.replace(/\D/g, '');
+    return numericString ? parseInt(numericString, 10) : 0;
+  };
+
+  const formatDate = (dateString: string) => {
     try {
-      const token = getStoredToken();
-      if (!token) {
-        setError('Token tidak ditemukan');
-        setLoading(false);
-        return;
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Tanggal tidak valid';
       }
 
-      const res = await fetch(`${API_URL}/api/super-admin/modal-utama`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...(API_KEY ? { "x-api-key": API_KEY } : {}),
-        },
+      return date.toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        setModal(data);
-        setError(null);
-      } else if (res.status === 404) {
-        setError('Modal utama belum dibuat');
-      } else {
-        setError('Gagal mengambil data modal utama');
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching modal utama:', err);
-      setError('Gagal mengambil data modal utama');
-      setLoading(false);
+    } catch {
+      return 'Tanggal tidak valid';
     }
   };
 
-  const handleAddModal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const token = getStoredToken();
-      if (!token) {
-        setError('Token tidak ditemukan');
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/api/super-admin/modal-utama`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          ...(API_KEY ? { "x-api-key": API_KEY } : {}),
-        },
-        body: JSON.stringify({ total_modal: formData.total_modal }),
-      });
-
-      if (res.ok) {
-        setFormData({ total_modal: 0, keterangan: '' });
-        setShowForm(false);
-        fetchModalUtama();
-      } else {
-        const errorData = await res.json();
-        setError(errorData.message || 'Gagal menambah modal');
-      }
-    } catch (err) {
-      console.error('Error adding modal:', err);
-      setError('Gagal menambah modal');
-    }
-  };
-
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    }).format(amount);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'jumlah') {
+      setFormData(prev => ({ ...prev, [name]: formatNumberWithDots(value) }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+    setSubmitSuccess(false);
+    setSubmitError(null);
+
+    try {
+      const response = await axios.post<AddModalResponse>(
+        `${API_URL}/api/admin/modal-utama/tambah-modal`,
+        {
+          jumlah: parseFormattedNumber(formData.jumlah),
+          keterangan: formData.keterangan,
+        },
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      setModalData(response.data.modal);
+      setSubmitSuccess(true);
+      setFormData({ jumlah: '', keterangan: '' });
+    } catch (err) {
+      setSubmitError('Gagal menambah penjualan');
+      console.error(err);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const filteredRiwayat = modalData
+    ? modalData.riwayat
+        .filter(item => {
+          const matchesSearch = searchTerm === ''
+            || item.keterangan.toLowerCase().includes(searchTerm.toLowerCase())
+            || formatDate(item.tanggal).toLowerCase().includes(searchTerm.toLowerCase());
+
+          const matchesType = filterType === 'semua' || item.tipe === filterType;
+          let matchesDate = true;
+
+          if (startDate && endDate) {
+            const itemDate = new Date(item.tanggal);
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setDate(end.getDate() + 1);
+            matchesDate = itemDate >= start && itemDate < end;
+          }
+
+          return matchesSearch && matchesType && matchesDate;
+        })
+        .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+    : [];
+
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredRiwayat.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredRiwayat.length / ITEMS_PER_PAGE);
+  const totalPemasukan = filteredRiwayat
+    .filter(item => item.tipe === 'pemasukan')
+    .reduce((sum, item) => sum + item.jumlah, 0);
+  const totalPengeluaran = filteredRiwayat
+    .filter(item => item.tipe === 'pengeluaran')
+    .reduce((sum, item) => sum + item.jumlah, 0);
+
+  // ✅ Pagination handlers — sebelumnya gak ada
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+
+  const handleExportExcel = () => {
+    exportToExcel({ modalData, startDate, endDate });
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF({ modalData, startDate, endDate });
   };
 
   if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading modal utama...</p>
+      <div className="p-6">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Modal Utama Management</h1>
-        <button 
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-        >
-          <Plus size={20} />
-          <span>Tambah Modal</span>
-        </button>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="text-red-600" size={20} />
-          <p className="text-red-700">{error}</p>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Halaman Penjualan</h1>
+          <p className="text-gray-600 mt-1">Kelola modal dan pantau transaksi keuangan</p>
         </div>
-      )}
-
-      {showForm && (
-        <form onSubmit={handleAddModal} className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Form Tambah Modal</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Modal</label>
-              <input 
-                type="number" 
-                required
-                value={formData.total_modal}
-                onChange={(e) => setFormData({...formData, total_modal: Number(e.target.value)})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Masukkan jumlah modal"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                Simpan
-              </button>
-              <button 
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Batal
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
-      {modal && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Modal</h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-600">Total Modal</p>
-                <p className="text-2xl font-bold text-purple-600">{formatCurrency(modal.total_modal)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Saldo Kas</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(modal.saldo_kas)}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Riwayat Modal</h2>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-100 border-b border-gray-300">
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-900">Tanggal</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-900">Keterangan</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-900">Jumlah</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modal?.riwayat && modal.riwayat.length > 0 ? (
-                modal.riwayat.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm text-gray-600">{new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600">{item.keterangan}</td>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-900">{formatCurrency(item.jumlah)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-4 py-2 text-sm text-gray-600 text-center">
-                    Tidak ada riwayat modal
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleExportPDF}
+            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center"
+          >
+            Export PDF
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-md hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center justify-center"
+          >
+            Export Excel
+          </button>
         </div>
       </div>
+
+      <ModalSummaryCards
+        modalData={modalData}
+        totalPemasukan={totalPemasukan}
+        totalPengeluaran={totalPengeluaran}
+        formatCurrency={formatCurrency}
+      />
+
+      <TambahModalForm
+        formData={formData}
+        submitLoading={submitLoading}
+        submitSuccess={submitSuccess}
+        submitError={submitError}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+      />
+
+      {/* ✅ Hanya render RiwayatTable — filter sudah include di dalamnya */}
+      <RiwayatTable
+        modalData={modalData}
+        currentItems={currentItems}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        indexOfFirstItem={indexOfFirstItem}
+        indexOfLastItem={indexOfLastItem}
+        totalItems={filteredRiwayat.length}
+        searchTerm={searchTerm}
+        filterType={filterType}
+        startDate={startDate}
+        endDate={endDate}
+        onSearchChange={setSearchTerm}
+        onFilterTypeChange={setFilterType}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        formatDate={formatDate}
+        formatCurrency={formatCurrency}
+        onPrevPage={prevPage}
+        onNextPage={nextPage}
+        onPaginate={paginate}
+      />
     </div>
   );
 };
 
-export default ModalUtama;
+export default PenjualanPage;

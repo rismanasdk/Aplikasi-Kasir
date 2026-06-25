@@ -7,6 +7,7 @@ import SuperAdminModalUtama from '../pages/ModalUtama';
 import SuperAdminBiayaLayanan from '../pages/BiayaLayanan';
 import SuperAdminUsersPage from '../pages/Users';
 import SuperAdminSettingsPage from '../pages/Settings';
+import SuperAdminAsetTetap from '../pages/asset-tetap';
 import SuperAdmin404 from '../pages/404notfound';
 
 const SuperAdminRouter: React.FC = () => {
@@ -24,6 +25,9 @@ const SuperAdminRouter: React.FC = () => {
         
         {/* Biaya Layanan Route */}
         <Route path="biaya-layanan" element={<SuperAdminBiayaLayanan />} />
+
+        {/* Aset Tetap Route */}
+        <Route path="aset-tetap" element={<SuperAdminAsetTetap />} />
         
         {/* Users Route */}
         <Route path="users" element={<SuperAdminUsersPage />} />
