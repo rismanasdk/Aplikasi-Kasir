@@ -26,17 +26,19 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 
 ## Fitur Per Area
 
-### Super Admin ###
+### Super Admin 
 
-#### BELUM BERES ####
+- Kelola Modal Utama
+- Kelola Laporan Penjualan
+- Mengatur pengaturan aplikasi 
+- Mengatur Biaya Layanan
+- Menambah atau menghapus user
 
 ### Admin
 
-- Kelola user dan role
 - Kelola stok barang, status barang, dan publikasi barang
-- Kelola bahan baku, data satuan, modal penjualan, biaya layanan, biaya operasional, dan pengeluaran biaya
-- Lihat dashboard transaksi, status pesanan, top barang, omzet, laporan penjualan, dan breakdown pembayaran
-- Ubah settings aplikasi termasuk payment methods dan receipt
+- Kelola bahan baku, data satuan
+- Lihat dashboard transaksi, status pesanan, top barang, omzet, dan breakdown pembayaran
 
 ### Manajer
 
@@ -160,6 +162,10 @@ FRONTEND_URL=http://localhost:5173
 CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
 ENABLE_DEBUG_TOKEN_LOGGER=false
 BACKEND_URL=https://xxx.ngrok-free.app 
+MODE=ON/OFF # Pilih satu
+RATE_LIMIT_WINDOW_MS=900000 # Lama Waktu dalam (ms)
+RATE_LIMIT_MAX=600 # Max request dalam waktu RATE_LIMIT_WINDOW_MS
+
 ```
 
 Catatan:
@@ -241,7 +247,8 @@ Catatan kondisi keamanan saat ini:
 
 ## Role Akses
 
-- `admin`: akses penuh ke dashboard, settings, user, stok, laporan, biaya, dan master data
+- `super-admin`: akses laporan penjualan, kelola biaya, konfigurasi aplikasi, CRUD user
+- `admin`: akses Omzet, Top Barang, Breakdown pembayaran, Menambahkan Stok, bahan baku, monitoring proses masak
 - `manajer`: akses monitoring operasional, stok, riwayat, laporan, dan sebagian settings
 - `kasir`: akses transaksi dan pesanan
 - `chef`: akses produksi dan bahan baku
