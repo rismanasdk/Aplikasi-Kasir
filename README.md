@@ -373,5 +373,5 @@ Catatan kondisi keamanan saat ini:
 
 ## License
 
-Lihat [LICENSE](LICENSE) untuk details lebih lanjut tentang license.
+Lihat [LICENSE](LICENCE) untuk detail lebih lanjut tentang license.
 
