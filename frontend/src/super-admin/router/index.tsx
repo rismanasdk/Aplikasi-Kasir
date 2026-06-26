@@ -8,6 +8,8 @@ import SuperAdminBiayaLayanan from '../pages/BiayaLayanan';
 import SuperAdminUsersPage from '../pages/Users';
 import SuperAdminSettingsPage from '../pages/Settings';
 import SuperAdminAsetTetap from '../pages/asset-tetap';
+import SuperAdminLiabilitas from '../pages/liabilitas';
+import SuperAdminNeraca from '../pages/neraca';
 import SuperAdmin404 from '../pages/404notfound';
 
 const SuperAdminRouter: React.FC = () => {
@@ -19,6 +21,9 @@ const SuperAdminRouter: React.FC = () => {
         
         {/* Laporan Keuangan Route */}
         <Route path="laporan-keuangan" element={<SuperAdminLaporanKeuangan />} />
+
+        {/* Neraca Route */}
+        <Route path="neraca" element={<SuperAdminNeraca />} />
         
         {/* Modal Utama Route */}
         <Route path="modal-utama" element={<SuperAdminModalUtama />} />
@@ -28,6 +33,9 @@ const SuperAdminRouter: React.FC = () => {
 
         {/* Aset Tetap Route */}
         <Route path="aset-tetap" element={<SuperAdminAsetTetap />} />
+
+        {/* Liabilitas Route */}
+        <Route path="liabilitas" element={<SuperAdminLiabilitas />} />
         
         {/* Users Route */}
         <Route path="users" element={<SuperAdminUsersPage />} />

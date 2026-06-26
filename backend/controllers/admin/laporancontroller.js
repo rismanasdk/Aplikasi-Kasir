@@ -2,6 +2,10 @@ import Laporan from "../../models/datalaporan.js";
 import BiayaOperasional from "../../models/biayaoperasional.js"; 
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Transaksi from "../../models/datatransaksi.js";
+import ModalUtama from "../../models/modalutama.js";
+import Barang from "../../models/databarang.js";
+import BahanBaku from "../../models/bahanbaku.js";
+import Kewajiban from "../../models/kewajiban.js";
 
 
 // Ambil semua laporan
@@ -368,6 +372,140 @@ export const getLaporanById = async (req, res) => {
   } catch (err) {
     console.error("Gagal mengambil laporan:", err);
     res.status(500).json({ message: "Gagal mengambil laporan bulanan" });
+  }
+};
+
+export const getNeraca = async (req, res) => {
+  try {
+    const tanggal = req.query.tanggal ? new Date(String(req.query.tanggal)) : new Date();
+    const asOf = Number.isNaN(tanggal.getTime()) ? new Date() : tanggal;
+
+    const [
+      modal,
+      persediaanBarangAgg,
+      persediaanBahanAgg,
+      kewajibanAgg,
+      kewajibanPerKategori,
+      labaAgg,
+      pengeluaranAgg,
+    ] = await Promise.all([
+      ModalUtama.findOne(),
+      Barang.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $multiply: [
+                  { $toDouble: { $ifNull: ["$harga_beli", 0] } },
+                  { $toDouble: { $ifNull: ["$stok", 0] } },
+                ],
+              },
+            },
+          },
+        },
+      ]),
+      BahanBaku.aggregate([
+        { $group: { _id: null, total: { $sum: { $toDouble: { $ifNull: ["$total_harga", 0] } } } } },
+      ]),
+      Kewajiban.aggregate([
+        { $match: { status: { $in: ["belum_lunas", "sebagian"] } } },
+        { $group: { _id: null, total: { $sum: "$sisa_jumlah" } } },
+      ]),
+      Kewajiban.aggregate([
+        { $match: { status: { $in: ["belum_lunas", "sebagian"] } } },
+        { $group: { _id: "$kategori", total: { $sum: "$sisa_jumlah" } } },
+        { $project: { nama: "$_id", total: 1, _id: 0 } },
+        { $sort: { nama: 1 } },
+      ]),
+      Transaksi.aggregate([
+        { $match: { status: "selesai" } },
+        {
+          $facet: {
+            pendapatan: [
+              { $group: { _id: null, total_pendapatan: { $sum: "$total_harga" } } },
+            ],
+            hpp: [
+              { $unwind: { path: "$barang_dibeli", preserveNullAndEmptyArrays: true } },
+              {
+                $group: {
+                  _id: null,
+                  total_hpp: {
+                    $sum: {
+                      $multiply: [
+                        { $toDouble: { $ifNull: ["$barang_dibeli.harga_beli", 0] } },
+                        { $toDouble: { $ifNull: ["$barang_dibeli.jumlah", 0] } },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ]),
+      PengeluaranBiaya.aggregate([
+        { $group: { _id: null, total: { $sum: "$jumlah" } } },
+      ]),
+    ]);
+
+    const kas = Number(modal?.saldo_kas || 0);
+    const asetTetap = Number(modal?.total_aset_tetap || 0);
+    const persediaanBarang = Number(persediaanBarangAgg?.[0]?.total || 0);
+    const persediaanBahanBaku = Number(persediaanBahanAgg?.[0]?.total || 0);
+    const totalAset = kas + persediaanBarang + persediaanBahanBaku + asetTetap;
+
+    const totalLiabilitas = Number(kewajibanAgg?.[0]?.total || 0);
+    const totalEkuitas = totalAset - totalLiabilitas;
+
+    const labaData = labaAgg?.[0] || {};
+    const totalPendapatan = Number(labaData.pendapatan?.[0]?.total_pendapatan || 0);
+    const totalHpp = Number(labaData.hpp?.[0]?.total_hpp || 0);
+    const totalBeban = Number(pengeluaranAgg?.[0]?.total || 0);
+    const labaBerjalan = totalPendapatan - totalHpp - totalBeban;
+    const modalDisetor = Number(modal?.sisa_modal || modal?.total_modal || 0);
+    const penyesuaianEkuitas = totalEkuitas - modalDisetor - labaBerjalan;
+
+    return res.json({
+      tanggal: asOf,
+      aset: {
+        lancar: [
+          { nama: "Kas", total: kas },
+          { nama: "Persediaan Barang", total: persediaanBarang },
+          { nama: "Persediaan Bahan Baku", total: persediaanBahanBaku },
+        ],
+        tetap: [
+          { nama: "Aset Tetap", total: asetTetap },
+        ],
+        total_aset_lancar: kas + persediaanBarang + persediaanBahanBaku,
+        total_aset_tetap: asetTetap,
+        total_aset: totalAset,
+      },
+      liabilitas: {
+        detail: kewajibanPerKategori,
+        total_liabilitas: totalLiabilitas,
+      },
+      ekuitas: {
+        detail: [
+          { nama: "Modal Disetor / Sisa Modal", total: modalDisetor },
+          { nama: "Laba Berjalan", total: labaBerjalan },
+          { nama: "Penyesuaian Ekuitas", total: penyesuaianEkuitas },
+        ],
+        total_ekuitas: totalEkuitas,
+      },
+      kontrol: {
+        total_liabilitas_dan_ekuitas: totalLiabilitas + totalEkuitas,
+        selisih: totalAset - (totalLiabilitas + totalEkuitas),
+      },
+      catatan: [
+        "Neraca ini memakai snapshot data saat ini.",
+        "Ekuitas dihitung sebagai total aset dikurangi total liabilitas agar neraca tetap balance.",
+        "Penyesuaian ekuitas menampung selisih data historis yang belum dicatat sebagai jurnal akuntansi lengkap.",
+      ],
+    });
+  } catch (error) {
+    console.error("Gagal mengambil neraca:", error);
+    return res.status(500).json({ message: "Gagal mengambil neraca", error: error.message });
   }
 };
 
