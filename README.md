@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)](LICENSE)
 
-Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, kemanan server, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, dan update real-time via `Socket.IO`.
+Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, keamanan server, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, update real-time via `Socket.IO`, serta pondasi laporan keuangan seperti HPP/laba, modal, aset tetap, liabilitas, dan neraca.
 
 ## Ringkasan Fitur
 
@@ -14,49 +14,69 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Integrasi Midtrans untuk pembuatan pembayaran dan callback update status transaksi
 - Sinkronisasi stok real-time memakai `Socket.IO` dan transaksi atomik di `Firebase RTDB`
 - Manajemen produk, kategori, stok barang, bahan baku, produksi, data satuan, modal utama
+- Pengelolaan modal utama, saldo kas, tambah modal, prive, aset tetap, dan riwayat kas
+- Pengelolaan kategori biaya operasional dan pencatatan pengeluaran biaya yang memotong saldo kas
+- Pengelolaan data kewajiban/liabilitas, termasuk utang supplier yang bisa terhubung ke pembelian bahan baku
 - Dashboard admin untuk omzet, top barang, transaksi, breakdown pembayaran, laporan penjualan, dan input penjualan
 - Dashboard manajer untuk monitoring stok, riwayat, laporan HPP/laba, dan settings terbatas
 - Panel chef untuk bahan baku tersedia, pengambilan bahan baku, dan update status produksi
+- Laporan HPP, laba kotor, laba bersih, rekap metode pembayaran, cash flow kasir, dan neraca
 - Pengaturan toko: informasi toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon global, service charge, low stock alert, bahasa, format tanggal
 - Upload gambar produk, logo toko, logo channel pembayaran, dan foto profil
 - Export laporan ke `PDF`, `Excel`, dan sebagian area ke `CSV`
 - Block IP address otomatis ketika terkena trap routes
-- Log server
-- Real-time alerts
+- Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
 
 ## Fitur Per Area
 
 ### Super Admin 
 
 - Kelola Modal Utama
-- Kelola Laporan Penjualan
+- Kelola tambah modal, prive, saldo kas, riwayat kas, aset tetap, bahan baku modal, dan biaya operasional modal
+- Kelola Laporan Penjualan, ringkasan laba, detail laba, rekap metode pembayaran, dan neraca
 - Mengatur pengaturan aplikasi 
 - Mengatur Biaya Layanan
 - Menambah atau menghapus user
+- Kelola master biaya operasional dan pengeluaran biaya
+- Kelola Data Kewajiban/liabilitas, termasuk pembayaran kewajiban
+- Kelola Neraca berbasis aset, liabilitas, dan ekuitas
 
 ### Admin
 
 - Kelola stok barang, status barang, dan publikasi barang
-- Kelola bahan baku, data satuan
+- Kelola bahan baku, data satuan, kategori produk, produksi, dan status produksi
 - Lihat dashboard transaksi, status pesanan, top barang, omzet, dan breakdown pembayaran
+- Kelola kategori biaya operasional dan pengeluaran biaya
+- Lihat laporan penjualan, HPP harian, ringkasan HPP, laba, rekap pembayaran, dan neraca
+- Kelola status pesanan: approve, cancel, dan update status manual
+- Kelola riwayat transaksi
 
 ### Manajer
 
 - Pantau dashboard operasional
 - Lihat stok barang, riwayat transaksi, laporan HPP/laba, dan biaya operasional
 - Akses sebagian settings yang relevan untuk operasional
+- Lihat rekap metode pembayaran, tanggal laporan harian, dan total penjualan
 
 ### Kasir
 
 - Membuat transaksi dan memantau status pembayaran
 - Mengelola pesanan aktif
 - Mendapat assignment kasir otomatis jika transaksi dibuat tanpa memilih kasir
+- Melihat laporan cash flow harian/rentang, rekap metode pembayaran, dan item terlaris
 
 ### Chef
 
 - Melihat daftar produksi
 - Melihat bahan baku tersedia
 - Mengambil bahan baku dan mengubah status produksi
+
+### Security
+
+- Memantau Log Server
+- Melakukan Block IP Address
+- Memantau kesehatan server 
+- Melihat suspicious activities, statistik IP, detail blocked IP, dan real-time alerts
 
 ### User / Pelanggan
 
@@ -66,11 +86,6 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Checkout dan bayar secara online
 - Cek status transaksi publik dan riwayat pesanan pribadi
 
-### Security
-
-- Memantau Log Server
-- Melakukan Block IP Address
-- Memantau kesehatan server 
 
 ## Algoritma Dan Logika Bisnis
 
@@ -84,10 +99,35 @@ Repo ini tidak memakai algoritma kompleks seperti machine learning, tetapi ada b
   saat transaksi dibuat, stok dikurangi melalui `Firebase RTDB transaction` agar bentrok update stok lebih aman ketika ada beberapa client aktif sekaligus.
 - Perhitungan HPP dan laba harian:
   backend mengakumulasi HPP per item, pendapatan, laba kotor, total beban, dan laba bersih per tanggal.
+- Perhitungan neraca:
+  backend menghitung aset dari kas, persediaan barang, persediaan bahan baku, dan aset tetap; liabilitas dari kewajiban aktif; ekuitas sebagai penyeimbang `aset - liabilitas`.
+- Pencatatan kewajiban:
+  kewajiban menyimpan `jumlah_awal`, `sisa_jumlah`, status pelunasan, jatuh tempo, riwayat pembayaran, dan bisa terhubung ke `BahanBaku` untuk skenario utang supplier.
+- Pembayaran kewajiban:
+  pembayaran liabilitas mengurangi `saldo_kas` di Modal Utama dan menambahkan riwayat pengeluaran kas.
+- Pengeluaran biaya:
+  pencatatan pengeluaran operasional mengurangi `saldo_kas`, masuk ke riwayat kas, dan ikut memengaruhi perhitungan laba bersih/HPP harian.
+- Modal dan aset tetap:
+  tambah modal menambah kas, prive mengurangi kas dan sisa modal, pembelian aset tetap mengurangi kas dan menambah daftar aset tetap.
 - Validasi metode pembayaran:
   metode dan channel pembayaran divalidasi terhadap data settings, sehingga hanya metode/channel aktif yang terdaftar yang bisa dipakai.
 - Mapping callback pembayaran:
   notifikasi Midtrans dipetakan kembali ke metode seperti `Virtual Account`, `QRIS`, atau `E-Wallet` agar status transaksi konsisten di aplikasi.
+
+## Modul Backend Utama
+
+- Auth: register, login manual, Google OAuth, token/session bridge
+- Transaksi: create, cancel, delete, update status, cek status publik, Midtrans callback
+- Barang dan stok: CRUD barang, publish barang, decrement stok, kategori, data satuan
+- Bahan baku dan produksi: CRUD bahan baku, sinkron ke modal utama, produksi, approval/publish, pengambilan bahan oleh chef
+- Modal utama: saldo kas, tambah modal, prive, bahan baku modal, biaya operasional modal, aset tetap
+- Biaya dan pengeluaran: master kategori biaya operasional, pengeluaran biaya, biaya layanan
+- Kewajiban/liabilitas: CRUD kewajiban, ringkasan, pembayaran, relasi opsional ke bahan baku
+- Laporan: penjualan, laba, detail laba, HPP harian/summary, rekap metode pembayaran, neraca
+- Kasir analytics: daily cash flow, cash flow range, payment methods summary, best selling items
+- Security: logs, suspicious activities, IP statistics, blocked IP management, alerts, system health
+- Settings: toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon, service charge, default profile picture
+- Profile dan cart: profil user, foto profil, keranjang belanja
 
 ## Struktur Project
 
@@ -212,6 +252,63 @@ npm run lint
 npm run preview
 ```
 
+## API Penting
+
+Prefix role dilindungi oleh kombinasi token dan `authorize()` sesuai area masing-masing.
+
+### Public / User
+
+- `POST /auth/register` dan `POST /auth/login`
+- `GET /api/barang`
+- `POST /api/transaksi`
+- `GET /api/transaksi/public/status/:order_id`
+- `GET /api/cart`, `POST /api/cart`, `DELETE /api/cart/:barangId`, `DELETE /api/cart`
+- `PUT /api/update-profile/user/:id`
+
+### Admin
+
+- `GET /api/admin/dashboard/omzet`
+- `GET /api/admin/dashboard/top-barang`
+- `GET /api/admin/dashboard/breakdown-pembayaran`
+- `GET /api/admin/stok-barang`, `POST /api/admin/stok-barang`
+- `POST /api/admin/stok-barang/production`
+- `GET /api/admin/bahan-baku`, `POST /api/admin/bahan-baku`
+- `GET /api/admin/laporan/ringkasan`
+- `GET /api/admin/laporan/laba`
+- `GET /api/admin/laporan/detail-laba`
+- `GET /api/admin/laporan/neraca`
+- `GET /api/admin/hpp-total` dan `GET /api/admin/hpp-total/summary`
+- `GET /api/admin/kewajiban`, `POST /api/admin/kewajiban`, `POST /api/admin/kewajiban/:id/bayar`
+- `GET /api/admin/pengeluaran-biaya`, `POST /api/admin/pengeluaran-biaya`
+
+### Super Admin
+
+- `GET /api/super-admin/dashboard/omzet`
+- `GET /api/super-admin/laporan/neraca`
+- `GET /api/super-admin/modal-utama`
+- `POST /api/super-admin/modal-utama/tambah-modal`
+- `POST /api/super-admin/modal-utama/prive`
+- `POST /api/super-admin/modal-utama/aset-tetap`
+- `GET /api/super-admin/kewajiban`
+- `GET /api/super-admin/kewajiban/ringkasan`
+- `POST /api/super-admin/kewajiban/:id/bayar`
+- `GET /api/super-admin/settings`
+- `GET /api/super-admin/users`
+
+### Manajer, Kasir, Chef, Security
+
+- `GET /api/manager/dashboard`
+- `GET /api/manager/laporan/laba`
+- `GET /api/manager/stok-barang`
+- `GET /api/kasir/analytics/daily-cash-flow`
+- `GET /api/kasir/analytics/cash-flow-range`
+- `GET /api/chef/productions`
+- `POST /api/chef/bahan-baku/ambil`
+- `PUT /api/chef/productions/:id/status`
+- `GET /api/security/logs`
+- `GET /api/security/blocked-ips`
+- `POST /api/security/blocked-ips`
+
 ## Keamanan Server
 
 Beberapa lapisan keamanan yang sudah ada di repo:
@@ -244,22 +341,27 @@ Catatan kondisi keamanan saat ini:
 - Perubahan stok disiarkan ke client terkait memakai `Socket.IO`.
 - Status pembayaran online diperbarui dari callback Midtrans.
 - Settings aplikasi menjadi sumber konfigurasi untuk pajak, diskon, service charge, receipt, payment methods, dan channel pembayaran.
+- Modal utama menjadi sumber saldo kas, sisa modal, aset tetap, dan riwayat arus kas internal.
+- Kewajiban aktif menjadi sumber liabilitas untuk neraca.
+- Neraca saat ini memakai snapshot data berjalan, bukan sistem jurnal akuntansi double-entry penuh.
 
 ## Role Akses
 
-- `super-admin`: akses laporan penjualan, kelola biaya, konfigurasi aplikasi, CRUD user
-- `admin`: akses Omzet, Top Barang, Breakdown pembayaran, Menambahkan Stok, bahan baku, monitoring proses masak
+- `super-admin`: akses dashboard, laporan penjualan, neraca, modal utama, aset tetap, liabilitas, biaya, konfigurasi aplikasi, CRUD user
+- `admin`: akses omzet, top barang, breakdown pembayaran, stok, bahan baku, kategori, data satuan, HPP, laporan, neraca, kewajiban, pengeluaran biaya, status pesanan, dan monitoring proses masak
 - `manajer`: akses monitoring operasional, stok, riwayat, laporan, dan sebagian settings
-- `kasir`: akses transaksi dan pesanan
+- `kasir`: akses transaksi, pesanan, dan analytics cash flow
 - `chef`: akses produksi dan bahan baku
 - `user`: akses halaman publik, checkout, riwayat pribadi, dan profil
-- `security` : akses log server dan block ip address
+- `security` : akses log server, suspicious activity, statistik IP, block/unblock IP, alerts, dan system health
 
 ## Catatan Pengembangan
 
 - Struktur repo masih memiliki beberapa file lama / duplikat, terutama di area auth dan transaksi frontend.
 - Penamaan `manajer` dan `manager` dipakai bersamaan di beberapa bagian untuk kompatibilitas role.
 - Dokumentasi backend tambahan juga ada di `backend/readme.md`, tetapi README utama ini sekarang menjadi ringkasan repo yang lebih lengkap.
+- Laporan neraca sudah tersedia sebagai snapshot posisi keuangan, tetapi belum memakai jurnal double-entry penuh.
+- Beberapa route kosong/legacy masih ada, seperti `backend/routes/chef/dashboard.js`, `backend/routes/security/dashboard.js`, dan `backend/routes/LaporanRoutes.js`.
 
 ## Checklist Setup Cepat
 
