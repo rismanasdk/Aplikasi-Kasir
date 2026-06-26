@@ -549,7 +549,7 @@ const MenegerRiwayatPage = () => {
                             <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            {trx.tanggal}
+                            {trx.tanggal} 
                           </div>
                           
                           <div className="flex items-center">
@@ -630,7 +630,11 @@ const MenegerRiwayatPage = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                               {trx.detail.map((barang, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
+                                <tr key={index}
+                                    className={`transition-colors hover:bg-gray-50 ${
+                                    index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                                  }`}
+                                >                             
                                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                                     <div className="flex items-center">
                                       <BarangImage url={barang.gambar_url} name={barang.nama_barang} />

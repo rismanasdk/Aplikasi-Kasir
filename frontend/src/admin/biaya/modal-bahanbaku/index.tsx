@@ -69,7 +69,7 @@ const ModalBahanBaku: React.FC = () => {
   const [editBahanData, setEditBahanData] = useState<Bahan>({ nama: '', satuan: '', harga: 0, jumlah: 1 });
   const [activeTab, setActiveTab] = useState<string>('BahanBaku');
   const [showAddSatuanForm, setShowAddSatuanForm] = useState<boolean>(false);
-  const pageTitle = activeTab === 'BahanBaku' ? 'Modal Bahan Baku' : 'Data Satuan';
+  const pageTitle = activeTab === 'BahanBaku' ? 'Tab Bahan Baku' : 'Tab Data Satuan';
   const isFormVisible = activeTab === 'BahanBaku' ? showAddForm : showAddSatuanForm;
   const buttonText = isFormVisible ? 'Batal' : `Tambah ${activeTab === 'BahanBaku' ? 'Bahan Baku' : 'Satuan'}`;
   // Fungsi untuk mendapatkan token dari localStorage
@@ -380,11 +380,11 @@ const ModalBahanBaku: React.FC = () => {
   return (
     <div className="p-6">
       {/* Tambahkan komponen Tabs di sini */}
-      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        <h1 className="text-2xl font-bold">{pageTitle}</h1>
       
       <div className="flex justify-between items-center mb-6">
         {/* Gunakan variabel pageTitle */}
-        <h1 className="text-2xl font-bold">{pageTitle}</h1>
+      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
         <button 
           onClick={handleButtonClick}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition flex items-center"

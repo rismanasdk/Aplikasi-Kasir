@@ -7,10 +7,10 @@ import {
   Home,
   BarChart3,
   ChevronDown,
-  Store,
   CogIcon,
   Circle,
   TrendingUp,
+  CircleDollarSign,
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -123,17 +123,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     {
       name: 'Modal Utama',
       path: '/super-admin/modal-utama',
-      icon: <Store size={20} />,
-    },
-    {
-      name: 'Biaya Layanan',
-      path: '/super-admin/biaya-layanan',
-      icon: <CogIcon size={20} />,
+      icon: <CircleDollarSign size={20} />,
     },
     {
       name: 'Aset Tetap',
       path: '/super-admin/aset-tetap',
       icon: <Building2 size={20} />,
+    },
+    {
+      name: 'Biaya Layanan',
+      path: '/super-admin/biaya-layanan',
+      icon: <CogIcon size={20} />,
     },
     {
       name: 'User Management',

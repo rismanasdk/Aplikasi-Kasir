@@ -10,13 +10,13 @@ const LoadingSpinner = () => {
   useEffect(() => {
     if (spinnerRef.current) {
       spinnerInstance.current = new Spinner({
-        lines: 13,
-        length: 30,
-        width: 10,
-        radius: 30,
-        scale: 1.0,
+        lines: 15,
+        length: 15,
+        width: 5,
+        radius: 20,
+        scale: 0.9,
         corners: 1,
-        color: "#3b82f6",
+        color: "#000000",
         fadeColor: "transparent",
         animation: "spinner-line-fade-quick",
         rotate: 0,

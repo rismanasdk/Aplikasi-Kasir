@@ -297,8 +297,11 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {data.map((item) => (
-                  <tr key={item._id}>
+                {data.map((item, index) => (
+                    <tr 
+                    key={item._id} 
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                    >
                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                       {item.nama}
                     </td>

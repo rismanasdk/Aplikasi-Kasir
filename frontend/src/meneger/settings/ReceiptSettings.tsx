@@ -15,11 +15,6 @@ export default function ReceiptSettings({ receiptHeader, receiptFooter }: Receip
         {/* Receipt Header */}
         <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-6 rounded-xl border border-purple-100 shadow-sm">
           <div className="flex items-center mb-4">
-            <div className="bg-purple-100 p-3 rounded-lg mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
             <h3 className="text-xl font-medium text-gray-800">Header Struk</h3>
           </div>
           <div className="mt-2">
@@ -72,11 +67,6 @@ export default function ReceiptSettings({ receiptHeader, receiptFooter }: Receip
         {/* Receipt Footer */}
         <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-100 shadow-sm">
           <div className="flex items-center mb-4">
-            <div className="bg-indigo-100 p-3 rounded-lg mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
             <h3 className="text-xl font-medium text-gray-800">Footer Struk</h3>
           </div>
           <div className="mt-2">

@@ -23,16 +23,13 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
         <div className="flex items-center mb-6">
           <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3"></div>
-          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Harga</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Biaya</h2>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pajak */}
           <div className="group">
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5 5.5l4.9 4.9M12 12l4.5-4.5M12 12l-4.5 4.5" />
-              </svg>
               Pajak (%)
             </label>
             <div className="relative">
@@ -56,9 +53,6 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
           {/* Diskon Global */}
           <div className="group">
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5 5.5l4.9 4.9M12 12l4.5-4.5M12 12l-4.5 4.5" />
-              </svg>
               Diskon Global (%)
             </label>
             <div className="relative">
@@ -82,9 +76,6 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
           {/* Biaya Operasional */}
           <div className="group">
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v1m0 6v1m0-1v1" />
-              </svg>
               Biaya Operasional (%)
             </label>
             <div className="relative">
@@ -111,14 +102,11 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
         <div className="flex items-center mb-6">
           <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
-          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Inventaris</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Inventaris Produk</h2>
         </div>
         
         <div className="max-w-md">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
             Peringatan Stok Rendah
           </label>
           <div className="relative">

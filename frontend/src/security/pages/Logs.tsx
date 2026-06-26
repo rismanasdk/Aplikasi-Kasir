@@ -197,8 +197,13 @@ const Logs: React.FC = () => {
                     </td>
                   </tr>
                 ) : logs.length > 0 ? (
-                  logs.map((log) => (
-                    <tr key={log._id} className="hover:bg-gray-50">
+                  logs.map((log, index) => (
+                      <tr 
+                        key={log._id || index} 
+                        className={`transition-colors hover:bg-gray-50 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                        }`}
+                      >
                       <td className="px-6 py-3 text-sm text-gray-900 whitespace-nowrap">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>

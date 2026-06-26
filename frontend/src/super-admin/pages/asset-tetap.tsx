@@ -6,11 +6,13 @@ import AsetTetapSection from './component-asset-tetap/Assettetapsection';
 import { API_URL } from './../../config/api';
 import { getStoredToken } from './../../auth/storage';
 import type { ModalUtama } from './utils-modal/types';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 export default function SuperAdminAsetTetap() {
   const [modalData, setModalData] = useState<ModalUtama | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const getAuthHeaders = () => {
     const token = getStoredToken();
@@ -31,6 +33,7 @@ export default function SuperAdminAsetTetap() {
       );
 
       setModalData(response.data);
+      setLoading(false);
     };
 
     fetchData();
@@ -62,6 +65,16 @@ export default function SuperAdminAsetTetap() {
       ? parseInt(numericString, 10)
       : 0;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">

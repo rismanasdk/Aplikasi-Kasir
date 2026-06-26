@@ -745,7 +745,7 @@ const LaporanPenjualan: React.FC = () => {
                       <tr 
                         key={item._id || index} 
                         className={`transition-colors hover:bg-gray-50 ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                          index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
                         }`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">

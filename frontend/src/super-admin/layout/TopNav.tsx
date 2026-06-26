@@ -63,7 +63,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuToggle }) => {
               aria-haspopup="true"
               disabled={isLoggingOut}
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-600 to-yellow-400 flex items-center justify-center text-white font-bold shadow-md">
                 {getInitial()}
               </div>
               <div className="hidden md:block text-left">
