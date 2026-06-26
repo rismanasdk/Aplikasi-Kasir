@@ -6,7 +6,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 
 ## Ringkasan Fitur
 
-- Multi-role login: `admin`, `manajer`, `kasir`, `chef`, `user`, `security`
+- Multi-role login: `super admin`, `admin`, `manajer`, `kasir`, `chef`, `user`, `security`
 - Login manual berbasis JWT dan login dengan Google OAuth
 - Dashboard publik / pelanggan untuk lihat produk, checkout, dan riwayat pesanan
 - Keranjang belanja, checkout, dan proses transaksi dengan status pesanan
@@ -46,8 +46,6 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Kelola stok barang, status barang, dan publikasi barang
 - Kelola bahan baku, data satuan, kategori produk, produksi, dan status produksi
 - Lihat dashboard transaksi, status pesanan, top barang, omzet, dan breakdown pembayaran
-- Kelola kategori biaya operasional dan pengeluaran biaya
-- Lihat laporan penjualan, HPP harian, ringkasan HPP, laba, rekap pembayaran, dan neraca
 - Kelola status pesanan: approve, cancel, dan update status manual
 - Kelola riwayat transaksi
 
@@ -78,7 +76,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Memantau kesehatan server 
 - Melihat suspicious activities, statistik IP, detail blocked IP, dan real-time alerts
 
-### User / Pelanggan
+### Users
 
 - Register dan login
 - Login via Google
@@ -347,13 +345,13 @@ Catatan kondisi keamanan saat ini:
 
 ## Role Akses
 
-- `super-admin`: akses dashboard, laporan penjualan, neraca, modal utama, aset tetap, liabilitas, biaya, konfigurasi aplikasi, CRUD user
-- `admin`: akses omzet, top barang, breakdown pembayaran, stok, bahan baku, kategori, data satuan, HPP, laporan, neraca, kewajiban, pengeluaran biaya, status pesanan, dan monitoring proses masak
+- `super-admin`: akses dashboard meliputi (omzet, modal utama, ringkasan pendapatan, status user per role), laporan penjualan, neraca, modal utama, aset tetap, liabilitas, biaya, konfigurasi aplikasi, CRUD management user
+- `admin`: akses omzet, top barang, breakdown pembayaran, stok, bahan baku, kategori, data satuan, HPP, status pesanan, dan monitoring proses masak
 - `manajer`: akses monitoring operasional, stok, riwayat, laporan, dan sebagian settings
 - `kasir`: akses transaksi, pesanan, dan analytics cash flow
 - `chef`: akses produksi dan bahan baku
-- `user`: akses halaman publik, checkout, riwayat pribadi, dan profil
 - `security` : akses log server, suspicious activity, statistik IP, block/unblock IP, alerts, dan system health
+- `user`: akses halaman publik, checkout, riwayat pribadi, dan profil
 
 ## Catatan Pengembangan
 
@@ -372,3 +370,8 @@ Catatan kondisi keamanan saat ini:
 5. Jalankan frontend
 6. Pastikan `VITE_API_URL` cocok dengan URL backend
 7. Pastikan `CORS_ORIGIN` backend mengizinkan origin frontend
+
+## License
+
+Lihat [LICENSE](LICENSE) untuk details lebih lanjut tentang license.
+
