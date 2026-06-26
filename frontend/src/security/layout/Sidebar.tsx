@@ -8,9 +8,7 @@ import {
   Shield,
   Settings,
   TrendingUp,
-  Eye,
   ChevronDown,
-  Circle,
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -109,21 +107,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       path: '/security/dashboard',
     },
     {
-      name: 'Monitoring',
-      icon: <Eye size={20} />,
-      submenu: [
-        { name: 'Server Logs', path: '/security/logs', icon: <Database size={16} /> },
-        { name: 'Real-time Alerts', path: '/security/alerts', icon: <AlertCircle size={16} /> },
-        { name: 'System Health', path: '/security/system-health', icon: <TrendingUp size={16} /> },
-      ],
+      name: 'Server Logs',
+      path: '/security/logs',
+      icon: <Database size={20} />,
     },
     {
-      name: 'IP Management',
+      name: 'Alerts',
+      path: '/security/alerts',
+      icon: <AlertCircle size={20} />,
+    },
+    {
+      name: 'System Health',
+      path: 'security/system-health',
+      icon: <TrendingUp size={20} />,
+    },
+    {
+      name: 'Blocked IP',
+      path: '/security/blocked-ips',
       icon: <Shield size={20} />,
-      submenu: [
-        { name: 'Blocked IPs', path: '/security/blocked-ips', icon: <Circle size={16} /> },
-        { name: 'IP Statistics', path: '/security/ip-statistics', icon: <TrendingUp size={16} /> },
-      ],
+    },
+    {
+      name: 'IP Statistics',
+      path: '/security/ip-statistics',
+      icon: <TrendingUp size={20} />,
     },
     {
       name: 'Settings',

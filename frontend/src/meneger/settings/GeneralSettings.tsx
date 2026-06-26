@@ -15,11 +15,6 @@ export default function GeneralSettings({ taxRate, globalDiscount }: GeneralSett
         {/* Tax Rate */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm">
           <div className="flex items-center mb-4">
-            <div className="bg-blue-100 p-3 rounded-lg mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-            </div>
             <h3 className="text-xl font-medium text-gray-800">Pajak</h3>
           </div>
           <div className="mt-2">
@@ -46,11 +41,6 @@ export default function GeneralSettings({ taxRate, globalDiscount }: GeneralSett
         {/* Global Discount */}
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100 shadow-sm">
           <div className="flex items-center mb-4">
-            <div className="bg-green-100 p-3 rounded-lg mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-              </svg>
-            </div>
             <h3 className="text-xl font-medium text-gray-800">Diskon Global</h3>
           </div>
           <div className="mt-2">

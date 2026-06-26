@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TableDataItem {
   id: string;
@@ -188,7 +188,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             <div className="flex items-center">
-                              <Package className="h-5 w-5 text-blue-500 mr-2" />
                               {item.nama_produk}
                             </div>
                           </div>

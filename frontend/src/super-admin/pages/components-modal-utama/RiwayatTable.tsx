@@ -116,9 +116,12 @@ export default function RiwayatTable({
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Setelah</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.map((item) => (
-                  <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+              <tbody className="divide-y divide-gray-200">
+                {currentItems.map((item, index) => (
+                  <tr 
+                    key={item._id} 
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(item.tanggal)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keterangan}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">

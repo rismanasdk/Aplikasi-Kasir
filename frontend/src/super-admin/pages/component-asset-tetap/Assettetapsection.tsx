@@ -120,14 +120,9 @@ export default function AsetTetapSection({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-              <Building2 className="h-5 w-5 mr-2 text-slate-600" />
               Aset Tetap
             </h2>
             <p className="text-sm text-gray-600 mt-1">Pembelian aset tetap akan mengurangi saldo kas</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Total Nilai Aset</p>
-            <p className="text-2xl font-bold text-slate-700">{formatCurrency(totalNilaiAset)}</p>
           </div>
         </div>
       </div>
@@ -300,18 +295,18 @@ export default function AsetTetapSection({
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {asetList.map((aset) => (
-                  <tr key={aset._id} className="hover:bg-gray-50 transition-colors">
+                {asetList.map((aset, index) => (
+                  <tr 
+                    key={aset._id} 
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       <div className="flex items-center">
-                        <div className="rounded-full bg-slate-100 p-1.5 mr-3 flex-shrink-0">
-                          <Building2 className="h-4 w-4 text-slate-500" />
-                        </div>
                         {aset.nama}
                       </div>
                     </td>
@@ -325,7 +320,7 @@ export default function AsetTetapSection({
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Hapus
+                        
                       </button>
                     </td>
                   </tr>

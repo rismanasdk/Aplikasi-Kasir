@@ -214,7 +214,11 @@ const BahanBakuTable: React.FC<BahanBakuTableProps> = ({
                     {Array.isArray(selectedProduk.bahan) && selectedProduk.bahan.map((bahan, bahanIndex) => {
                       
                       return (
-                        <tr key={bahan._id || bahan.nama}>
+                        <tr key={bahan._id || bahan.nama || bahanIndex} 
+                        className={`transition-colors hover:bg-gray-50 ${
+                          bahanIndex % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                        }`}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{bahan.nama}</div>
                           </td>

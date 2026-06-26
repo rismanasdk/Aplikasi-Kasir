@@ -165,8 +165,11 @@ const Productions: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.map((prod) => (
-                  <tr key={prod._id} className="hover:bg-gray-50">
+                {currentItems.map((prod, index) => (
+                  <tr key={prod._id || index} className={`transition-colors hover:bg-gray-50 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                      }`}
+                      >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {prod.bahan_baku_id ? (
@@ -191,20 +194,33 @@ const Productions: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {prod.waktu_mulai ? new Date(prod.waktu_mulai).toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {prod.status === 'pending' ? (
                         <button
                           onClick={() => updateStatus(prod._id, 'approved')}
-                          className="text-green-600 hover:text-green-900 font-medium"
+                          className="px-4 py-2 bg-yellow-50 border border-yellow-200 text-black hover:bg-green-100 hover:border-yellow-400 font-medium rounded-lg flex items-center gap-2 transition-all"
                         >
+                          {/* Tambahin icon centang biar lebih keren (opsional) */}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
                           Approve
                         </button>
                       ) : prod.status === 'approved' ? (
-                        <span className="text-green-600">Approved - Menunggu Admin</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border-green-200">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Approved - Menunggu Admin
+                        </span>
                       ) : prod.status === 'completed' ? (
-                        <span className="text-blue-600">Selesai</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          Selesai
+                        </span>
                       ) : (
-                        <span className="text-red-600">Dibatalkan</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          Dibatalkan
+                        </span>
                       )}
                     </td>
                   </tr>

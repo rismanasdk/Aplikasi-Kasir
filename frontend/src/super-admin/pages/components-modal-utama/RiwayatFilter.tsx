@@ -48,6 +48,7 @@ export default function RiwayatFilter({
           <option value="pemasukan">Pemasukan</option>
           <option value="pengeluaran">Pengeluaran</option>
           <option value="prive">Prive</option>
+          <option value="pembatalan_pengeluaran">Pembatalan Pengeluaran</option>
         </select>
       </div>
 

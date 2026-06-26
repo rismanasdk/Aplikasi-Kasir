@@ -197,19 +197,12 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {categories.map((c, index) => (
-                        <tr 
+                         <tr 
                           key={c._id} 
-                          className={`transition-all duration-200 ${
-                            index % 2 === 0 
-                              ? 'bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50' 
-                              : 'bg-gradient-to-r from-orange-25 to-amber-25 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50'
-                          } group`}
-                        >
+                          className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                          >
                           <td className="px-6 py-4">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center mr-4 group-hover:from-blue-200 group-hover:to-indigo-200 transition-colors duration-200">
-                                <FolderOpen className="w-5 h-5 text-blue-600" />
-                              </div>
                               <div>
                                 <div className="text-sm font-semibold text-gray-900">{c.nama}</div>
                                 <div className="text-xs text-gray-500 mt-0.5">Kategori Biaya Operasional</div>

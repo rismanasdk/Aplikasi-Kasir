@@ -283,12 +283,15 @@ const InputBiaya: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredHistory.map(h => {
+                  {filteredHistory.map((h, index) => {
                     const kategoriNama = getKategoriNama(h.kategoriId);
                     const isKategoriNotFound = !h.kategoriId;
                     
                     return (
-                      <tr key={h._id} className="hover:bg-gray-50 transition-colors duration-150">
+                        <tr 
+                            key={h._id} 
+                            className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                        >
                         <td className="py-3">{new Date(h.tanggal).toLocaleDateString('id-ID')}</td>
                         <td className="py-3">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

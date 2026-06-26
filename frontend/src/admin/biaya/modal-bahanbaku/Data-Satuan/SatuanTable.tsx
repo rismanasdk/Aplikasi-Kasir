@@ -42,8 +42,12 @@ const SatuanTable: React.FC<Props> = ({ loading, data, onEdit, onDelete, onToggl
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.map((d) => (
-            <tr key={d._id} className="hover:bg-gray-50 transition-colors duration-150">
+          {data.map((d, index) => (
+            <tr key={d._id || index} 
+                className={`transition-colors hover:bg-gray-50 ${
+                index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                }`}
+              >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{d.nama}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{d.kode}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><span className="capitalize">{d.tipe}</span></td>

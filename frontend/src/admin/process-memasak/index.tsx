@@ -189,7 +189,7 @@ const ProcessMemasak = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Process Memasak</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Monitoring Proses Memasak</h1>
 
       {/* Filter Section dengan Dropdown */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,8 +253,12 @@ const ProcessMemasak = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {productions.map((prod) => (
-              <tr key={prod._id} className="hover:bg-gray-50">
+            {productions.map((prod, index) => (
+              <tr key={prod._id || index}
+                   className={`transition-colors hover:bg-gray-50 ${
+                   index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                  }`}
+                >    
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
                     {prod.bahan_baku_id ? (
