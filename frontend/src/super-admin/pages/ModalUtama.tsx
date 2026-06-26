@@ -20,9 +20,17 @@ const PenjualanPage: React.FC = () => {
     jumlah: '',
     keterangan: '',
   });
+  const [withdrawFormData, setWithdrawFormData] = useState({
+    jumlah: '',
+    keterangan: '',
+  });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('semua');
@@ -119,6 +127,30 @@ const PenjualanPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleWithdrawInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'jumlah') {
+      setWithdrawFormData(prev => ({ ...prev, [name]: formatNumberWithDots(value) }));
+      return;
+    }
+
+    setWithdrawFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const openWithdrawModal = () => {
+    setWithdrawSuccess(false);
+    setWithdrawError(null);
+    setIsWithdrawModalOpen(true);
+  };
+
+  const closeWithdrawModal = () => {
+    if (withdrawLoading) return;
+    setIsWithdrawModalOpen(false);
+    setWithdrawSuccess(false);
+    setWithdrawError(null);
+    setWithdrawFormData({ jumlah: '', keterangan: '' });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -145,6 +177,38 @@ const PenjualanPage: React.FC = () => {
       console.error(err);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWithdrawLoading(true);
+    setWithdrawSuccess(false);
+    setWithdrawError(null);
+
+    try {
+      const response = await axios.post<AddModalResponse>(
+        `${API_URL}/api/admin/modal-utama/prive`,
+        {
+          jumlah: parseFormattedNumber(withdrawFormData.jumlah),
+          keterangan: withdrawFormData.keterangan,
+        },
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      setModalData(response.data.modal);
+      setWithdrawSuccess(true);
+      setWithdrawFormData({ jumlah: '', keterangan: '' });
+      setIsWithdrawModalOpen(false);
+    } catch (err) {
+      const responseError = err as { response?: { data?: { message?: string } } };
+      const message = responseError.response?.data?.message || 'Gagal mengambil modal';
+      setWithdrawError(message);
+      console.error(err);
+    } finally {
+      setWithdrawLoading(false);
     }
   };
 
@@ -179,7 +243,7 @@ const PenjualanPage: React.FC = () => {
     .filter(item => item.tipe === 'pemasukan')
     .reduce((sum, item) => sum + item.jumlah, 0);
   const totalPengeluaran = filteredRiwayat
-    .filter(item => item.tipe === 'pengeluaran')
+    .filter(item => item.tipe === 'pengeluaran' || item.tipe === 'prive')
     .reduce((sum, item) => sum + item.jumlah, 0);
 
   // ✅ Pagination handlers — sebelumnya gak ada
@@ -241,11 +305,20 @@ const PenjualanPage: React.FC = () => {
 
       <TambahModalForm
         formData={formData}
+        withdrawFormData={withdrawFormData}
         submitLoading={submitLoading}
         submitSuccess={submitSuccess}
         submitError={submitError}
+        withdrawLoading={withdrawLoading}
+        withdrawSuccess={withdrawSuccess}
+        withdrawError={withdrawError}
+        isWithdrawModalOpen={isWithdrawModalOpen}
         onInputChange={handleInputChange}
+        onWithdrawInputChange={handleWithdrawInputChange}
         onSubmit={handleSubmit}
+        onWithdrawSubmit={handleWithdrawSubmit}
+        onOpenWithdrawModal={openWithdrawModal}
+        onCloseWithdrawModal={closeWithdrawModal}
       />
 
       {/* ✅ Hanya render RiwayatTable — filter sudah include di dalamnya */}

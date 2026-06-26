@@ -23,7 +23,7 @@ export default function SuperAdminAsetTetap() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await axios.get(
+      const response = await axios.get<ModalUtama>(
         `${API_URL}/api/admin/modal-utama`,
         {
           headers: getAuthHeaders(),
