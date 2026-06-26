@@ -9,5 +9,6 @@ export {
   getDaftarBulanLaporan,
   getLaporanById,
   getDetailLaba,
-  getRekapMetodePembayaranRealtime
+  getRekapMetodePembayaranRealtime,
+  getNeraca
 } from "../admin/laporancontroller.js";

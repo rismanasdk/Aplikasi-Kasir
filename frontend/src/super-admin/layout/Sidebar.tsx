@@ -11,6 +11,8 @@ import {
   Circle,
   TrendingUp,
   CircleDollarSign,
+  Scale,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -121,6 +123,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: <BarChart3 size={20} />,
     },
     {
+      name: 'Neraca',
+      path: '/super-admin/neraca',
+      icon: <FileSpreadsheet size={20} />,
+    },
+    {
       name: 'Modal Utama',
       path: '/super-admin/modal-utama',
       icon: <CircleDollarSign size={20} />,
@@ -129,6 +136,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       name: 'Aset Tetap',
       path: '/super-admin/aset-tetap',
       icon: <Building2 size={20} />,
+    },
+    {
+      name: 'Liabilitas',
+      path: '/super-admin/liabilitas',
+      icon: <Scale size={20} />,
     },
     {
       name: 'Biaya Layanan',

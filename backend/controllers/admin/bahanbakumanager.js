@@ -1,5 +1,6 @@
 import BahanBaku from "../../models/bahanbaku.js";
 import Barang from "../../models/databarang.js";
+import Kewajiban from "../../models/kewajiban.js";
 
 // Get all bahan baku
 export const getAllBahanBaku = async (req, res) => {
@@ -14,7 +15,16 @@ export const getAllBahanBaku = async (req, res) => {
 // Create bahan baku baru
 export const createBahanBaku = async (req, res) => {
   try {
-    const { nama_produk, bahan } = req.body;
+    const {
+      nama_produk,
+      bahan,
+      metode_pembelian,
+      buat_kewajiban,
+      supplier,
+      jatuh_tempo,
+      keterangan_kewajiban,
+    } = req.body;
+    const isPembelianUtang = metode_pembelian === "utang" || buat_kewajiban === true || buat_kewajiban === "true";
 
     // Validasi input
     if (!nama_produk) {
@@ -76,8 +86,8 @@ export const createBahanBaku = async (req, res) => {
           });
         }
 
-        // Jika ada saldo kas, kurangi sesuai total harga bahan (jika cukup)
-        if (modalUtama.saldo_kas >= totalHargaBahan && totalHargaBahan > 0) {
+        // Jika pembelian tempo, jangan kurangi kas; kewajibannya dicatat setelah BahanBaku tersimpan.
+        if (!isPembelianUtang && modalUtama.saldo_kas >= totalHargaBahan && totalHargaBahan > 0) {
           modalUtama.saldo_kas -= totalHargaBahan;
           modalUtama.riwayat.push({
             keterangan: `Tambah bahan baku via manager: ${nama_produk}`,
@@ -85,7 +95,7 @@ export const createBahanBaku = async (req, res) => {
             jumlah: totalHargaBahan,
             saldo_setelah: modalUtama.saldo_kas,
           });
-        } else if (totalHargaBahan > 0) {
+        } else if (!isPembelianUtang && totalHargaBahan > 0) {
           console.warn(`Saldo kas tidak cukup atau tidak ada; tidak mengurangi kas untuk produk ${nama_produk}`);
         }
       }
@@ -94,6 +104,21 @@ export const createBahanBaku = async (req, res) => {
     } catch (err) {
       console.warn("Gagal sinkronisasi ke ModalUtama:", err.message);
       // Jangan throw error, tetap response sukses karena BahanBaku sudah berhasil dibuat
+    }
+
+    if (isPembelianUtang && bahanBaku.total_harga > 0) {
+      await Kewajiban.create({
+        kategori: "utang_supplier",
+        nama: `Utang supplier bahan baku: ${nama_produk}`,
+        pihak: supplier ? String(supplier).trim() : "",
+        jumlah_awal: bahanBaku.total_harga,
+        sisa_jumlah: bahanBaku.total_harga,
+        tanggal: new Date(),
+        jatuh_tempo: jatuh_tempo ? new Date(jatuh_tempo) : null,
+        sumber: "pembelian_bahan_baku",
+        bahan_baku_id: bahanBaku._id,
+        keterangan: keterangan_kewajiban || `Pembelian bahan baku tempo untuk ${nama_produk}`,
+      });
     }
 
     // Sinkronkan harga_beli pada Data-Barang: set harga_beli = modal_per_porsi

@@ -30,12 +30,14 @@ import adminhpptotal from "./routes/admin/hpptotal.js"
 import adminBahanBaku from "./routes/admin/bahanbaku.js";
 import adminDataSatuan from "./routes/admin/datasatuanRoutes.js";
 import adminPengeluaranBiaya from "./routes/admin/pengeluaran-biaya.js";
+import adminKewajiban from "./routes/admin/kewajiban.js";
 import superAdminDashboardRoutes from "./routes/super-admin/dashboard.js";
 import superAdminLaporanRoutes from "./routes/super-admin/laporan.js";
 import superAdminSettingsRoutes from "./routes/super-admin/settings.js";
 import superAdminUsersRoutes from "./routes/super-admin/user.js";
 import superAdminBiayaLayananRoutes from "./routes/super-admin/biayalayanan.js";
 import superAdminModalUtamaRoutes from "./routes/super-admin/modalutama.js";
+import superAdminKewajiban from "./routes/super-admin/kewajiban.js";
 import chefRoutes from "./routes/chef/chef.js";
 import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
@@ -286,6 +288,7 @@ app.use("/api/admin/hpp-total", verifyToken, authorize(["admin"]), adminhpptotal
 app.use("/api/admin/bahan-baku", adminBahanBaku)
 app.use("/api/admin/data-satuan", verifyToken, authorize(["admin"]), adminDataSatuan)
 app.use("/api/admin/pengeluaran-biaya", verifyToken, authorize(["admin"]), adminPengeluaranBiaya);
+app.use("/api/admin/kewajiban", verifyToken, authorize(["admin"]), adminKewajiban);
 
 // super-admin
 app.use("/api/super-admin/dashboard", verifyToken, authorize(["super-admin"]), superAdminDashboardRoutes);
@@ -296,6 +299,7 @@ app.use("/api/super-admin/biaya-layanan", verifyToken, authorize(["super-admin"]
 app.use("/api/super-admin/modal-utama", verifyToken, authorize(["super-admin"]), superAdminModalUtamaRoutes);
 app.use("/api/super-admin/biaya-operasional", verifyToken, authorize(["super-admin"]), adminbiayaoperasional);
 app.use("/api/super-admin/pengeluaran-biaya", verifyToken, authorize(["super-admin"]), adminPengeluaranBiaya);
+app.use("/api/super-admin/kewajiban", verifyToken, authorize(["super-admin"]), superAdminKewajiban);
 
 
 // chef
