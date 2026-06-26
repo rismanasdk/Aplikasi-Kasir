@@ -66,7 +66,7 @@ export const exportToPDF = ({ modalData, startDate, endDate }: ExportPdfData) =>
     .reduce((sum, item) => sum + item.jumlah, 0);
 
   const totalPengeluaran = filteredRiwayat
-    .filter(item => item.tipe === 'pengeluaran')
+    .filter(item => item.tipe === 'pengeluaran' || item.tipe === 'prive')
     .reduce((sum, item) => sum + item.jumlah, 0);
   
   // Tampilkan Total Pemasukan dan Pengeluaran di atas

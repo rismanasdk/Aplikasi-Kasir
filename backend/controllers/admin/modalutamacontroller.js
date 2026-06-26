@@ -470,19 +470,24 @@ export const hapusAsetTetap = async (req, res) => {
 export const tambahModalBaru = async (req, res) => {
   try {
     const { jumlah, keterangan } = req.body;
+    const nominal = Number(jumlah);
 
     const modal = await ModalUtama.findOne();
     if (!modal) {
       return res.status(404).json({ message: "Modal utama belum dibuat." });
     }
 
-    modal.total_modal += jumlah;
-    modal.saldo_kas += jumlah;
+    if (!Number.isFinite(nominal) || nominal <= 0) {
+      return res.status(400).json({ message: "Jumlah modal harus lebih dari 0." });
+    }
+
+    modal.total_modal += nominal;
+    modal.saldo_kas += nominal;
 
     modal.riwayat.push({
       keterangan: keterangan || "Penambahan modal baru",
       tipe: "pemasukan",
-      jumlah,
+      jumlah: nominal,
       saldo_setelah: modal.saldo_kas,
     });
 
@@ -500,33 +505,33 @@ export const tambahModalBaru = async (req, res) => {
 export const ambilPrive = async (req, res) => {
   try {
     const { jumlah, keterangan } = req.body;
+    const nominal = Number(jumlah);
 
     const modal = await ModalUtama.findOne();
     if (!modal) {
       return res.status(404).json({ message: "Modal utama belum dibuat." });
     }
 
-    if (!jumlah || jumlah <= 0) {
-      return res.status(400).json({ message: "Jumlah prive harus lebih dari 0." });
+    if (!Number.isFinite(nominal) || nominal <= 0) {
+      return res.status(400).json({ message: "Jumlah pengambilan modal harus lebih dari 0." });
     }
 
-    if (modal.saldo_kas < jumlah) {
-      return res.status(400).json({ message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${jumlah}.` });
+    if (modal.saldo_kas < nominal) {
+      return res.status(400).json({ message: `Saldo kas tidak cukup. Saldo kas: ${modal.saldo_kas}, dibutuhkan: ${nominal}.` });
     }
 
-    modal.saldo_kas -= jumlah;
-    modal.total_modal -= jumlah;
+    modal.saldo_kas -= nominal;
 
     modal.riwayat.push({
-      keterangan: keterangan || "Prive (penarikan owner)",
+      keterangan: keterangan || "Pengambilan modal",
       tipe: "prive",
-      jumlah,
+      jumlah: nominal,
       saldo_setelah: modal.saldo_kas,
     });
 
     await modal.save();
 
-    res.json({ message: "Prive berhasil diproses", modal });
+    res.json({ message: "Pengambilan modal berhasil diproses", modal });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

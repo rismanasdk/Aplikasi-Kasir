@@ -40,7 +40,7 @@ export const exportToExcel = ({ modalData, startDate, endDate }: ExportExcelData
     .reduce((sum, item) => sum + item.jumlah, 0);
 
   const totalPengeluaran = filteredRiwayat
-    .filter(item => item.tipe === 'pengeluaran')
+    .filter(item => item.tipe === 'pengeluaran' || item.tipe === 'prive')
     .reduce((sum, item) => sum + item.jumlah, 0);
 
   // Buat workbook
@@ -86,6 +86,7 @@ export const exportToExcel = ({ modalData, startDate, endDate }: ExportExcelData
     ['JUMLAH TRANSAKSI PER TIPE'],
     ['Pemasukan', filteredRiwayat.filter(item => item.tipe === 'pemasukan').length],
     ['Pengeluaran', filteredRiwayat.filter(item => item.tipe === 'pengeluaran').length],
+    ['Prive', filteredRiwayat.filter(item => item.tipe === 'prive').length],
     [],
     ['TOTAL PER TIPE'],
     ['Total Pemasukan', totalPemasukan],
