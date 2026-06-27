@@ -3,7 +3,7 @@ import cloudinary from "../../../config/cloudinary.js";
 
 export const updateStoreInfo = async (req, res) => {
   try {
-    const { storeName, storeAddress, storePhone } = req.body;
+    const { storeName, ownerName, emailOwner, storeAddress, storePhone } = req.body;
     let storeLogo;
     if (req.file) {
       const uploadResult = await new Promise((resolve, reject) => {
@@ -22,12 +22,16 @@ export const updateStoreInfo = async (req, res) => {
     if (!settings) {
       settings = await Settings.create({
         storeName,
+        ownerName,
+        emailOwner,
         defaultUser,
         storeAddress,
         storePhone,
       });
     } else {
       if (storeName !== undefined) settings.storeName = storeName;
+      if (ownerName !== undefined) settings.ownerName = ownerName;
+      if (emailOwner !== undefined) settings.emailOwner = emailOwner;
       if (storeLogo !== undefined) settings.storeLogo = storeLogo;
       if (storeAddress !== undefined) settings.storeAddress = storeAddress;
       if (storePhone !== undefined) settings.storePhone = storePhone;
