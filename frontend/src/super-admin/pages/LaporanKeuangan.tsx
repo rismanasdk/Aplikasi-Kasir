@@ -7,6 +7,8 @@ import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
+import { exportLaporanKeuanganProfesional, exportLaporanKeuanganExcelProfesional } from '../../services/exportIntegrations';
+
 // Interfaces
 interface ProdukApi {
   nama_produk: string;
@@ -381,11 +383,11 @@ const LaporanPenjualan: React.FC = () => {
     
     // PERBAIKAN: Buat objek biayaOperasional dengan struktur yang benar untuk export
     const biayaOperasionalExport: BiayaOperasionalExport = {
-      _id: biayaOperasional._id || new Date().toISOString(), // Pastikan _id selalu string
+      _id: biayaOperasional._id || new Date().toISOString(),
       rincian_biaya: biayaOperasional.rincian_biaya.map(item => ({
         nama: item.nama,
         jumlah: item.jumlah,
-        _id: item._id || new Date().toISOString() // Pastikan _id selalu string
+        _id: item._id || new Date().toISOString()
       })),
       total: biayaOperasional.total || 0,
       createdAt: biayaOperasional.createdAt || new Date().toISOString(),
@@ -431,6 +433,39 @@ const LaporanPenjualan: React.FC = () => {
       exportExcel(exportData);
     }
   }, [data, biayaOperasional, totalLabaKotor, labaBersih, produkTerlarisHariIni, pieData, totalPendapatan, totalBarangTerjualHariIni, totalHpp, totalBebanPerbulan, totalBebanPerhari]);
+
+  // Professional export
+  const handleProfessionalExport = useCallback(async (type: 'pdf' | 'excel') => {
+    if (!data) return;
+    
+    const laporanData = {
+      periode: {
+        start: data.data?.[0]?.tanggal || new Date().toISOString(),
+        end: data.data?.[data.data.length - 1]?.tanggal || new Date().toISOString()
+      },
+      totalPendapatan,
+      totalHpp,
+      totalLabaKotor,
+      totalBeban: totalBebanPerbulan,
+      labaBersih,
+      totalBarangTerjual: totalBarangTerjualHariIni,
+      biayaOperasional: biayaOperasional.rincian_biaya.map(b => ({ nama: b.nama, jumlah: b.jumlah })),
+      produkTerlaris: produkTerlarisHariIni.map(p => ({
+        produk: p.produk,
+        jumlahTerjual: p.jumlahTerjual,
+        hppPerPorsi: p.harga_beli,
+        pendapatan: p.harga_jual * p.jumlahTerjual,
+        labaKotor: p.totalLaba
+      })),
+      metodePembayaran: pieData.map(p => ({ metode: p.name, total: p.value }))
+    };
+    
+    if (type === 'pdf') {
+      await exportLaporanKeuanganProfesional(laporanData);
+    } else {
+      await exportLaporanKeuanganExcelProfesional(laporanData);
+    }
+  }, [data, totalPendapatan, totalHpp, totalLabaKotor, totalBebanPerbulan, labaBersih, totalBarangTerjualHariIni, biayaOperasional, produkTerlarisHariIni, pieData]);
 
   // Custom tooltip for pie chart
   const CustomTooltip: React.FC<TooltipProps> = ({ active, payload }) => {
@@ -536,10 +571,10 @@ const LaporanPenjualan: React.FC = () => {
             </select>
           </div>
           
-          <div className="flex space-x-2 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button 
               onClick={() => handleExport('pdf')}
-              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center w-full sm:w-auto"
+              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
@@ -548,13 +583,31 @@ const LaporanPenjualan: React.FC = () => {
             </button>
             <button 
               onClick={() => handleExport('excel')}
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-md hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center justify-center w-full sm:w-auto"
+              className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-md hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
               Export Excel
             </button>
+            <div className="flex gap-2 ml-2 pl-2 border-l border-gray-300">
+              <button 
+                onClick={() => handleProfessionalExport('pdf')}
+                disabled={!data}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-md hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md flex items-center justify-center disabled:opacity-50"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Profesional PDF
+              </button>
+              <button 
+                onClick={() => handleProfessionalExport('excel')}
+                disabled={!data}
+                className="px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-md hover:from-violet-600 hover:to-violet-700 transition-all shadow-md flex items-center justify-center disabled:opacity-50"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Profesional Excel
+              </button>
+            </div>
           </div>
         </div>
       </div>

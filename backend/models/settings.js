@@ -2,6 +2,8 @@ import {Schema, model} from "mongoose";
 
 const settingsSchema = new Schema({
   storeName: { type: String, default: "Aplikasi Kasir" },
+  ownerName: { type: String, default: "Super Admin" },
+  emailOwner: { type: String, default: "SuperAdmin@gmail.com" },
   storeLogo: { type: String},
   storeAddress: { type: String, default: "" },
   storePhone: { type: String, default: "" },

@@ -17,6 +17,8 @@ interface PaymentMethod {
 
 interface FormData {
   storeName: string;
+  ownerName: string;
+  emailOwner: string;
   storeAddress: string;
   storePhone: string;
   storeLogo: string;

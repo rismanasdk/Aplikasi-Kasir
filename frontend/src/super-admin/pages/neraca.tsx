@@ -13,6 +13,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { exportNeracaProfesional, exportNeracaExcelProfesional } from '../../services/exportIntegrations';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -341,6 +342,26 @@ const Neraca: React.FC = () => {
               <FileSpreadsheet className="h-4 w-4" />
               Excel
             </button>
+            <div className="flex gap-2 ml-2 pl-2 border-l border-slate-200">
+              <button
+                type="button"
+                onClick={() => data && exportNeracaProfesional(data)}
+                disabled={!data}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FileText className="h-4 w-4" />
+                Profesional PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => data && exportNeracaExcelProfesional(data)}
+                disabled={!data}
+                className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Profesional Excel
+              </button>
+            </div>
           </div>
         </div>
 

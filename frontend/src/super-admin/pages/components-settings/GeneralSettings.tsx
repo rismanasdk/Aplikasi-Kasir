@@ -14,6 +14,8 @@ interface PaymentMethod {
 
 interface FormData {
   storeName: string;
+  ownerName: string;
+  emailOwner: string;
   storeAddress: string;
   storePhone: string;
   storeLogo: string;
@@ -129,6 +131,28 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Owner</label>
+            <input
+              type="text"
+              name="ownerName"
+              value={formData.ownerName}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Owner</label>
+            <input
+              type="email"
+              name="emailOwner"
+              value={formData.emailOwner}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
             <input
               type="text"
@@ -139,7 +163,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Toko</label>
             <textarea
               name="storeAddress"
               value={formData.storeAddress}

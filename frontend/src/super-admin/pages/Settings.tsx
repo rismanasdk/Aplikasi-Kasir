@@ -32,6 +32,8 @@ interface PaymentMethod {
 
 interface FormData {
   storeName: string;
+  ownerName: string;
+  emailOwner: string;
   storeAddress: string;
   storePhone: string;
   storeLogo: string;
@@ -60,6 +62,8 @@ const SettingsPage: React.FC = () => {
   const [defaultProfilePictureUrl, setDefaultProfilePictureUrl] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
     storeName: '',
+    ownerName: '',
+    emailOwner: '',
     storeAddress: '',
     storePhone: '',
     storeLogo: '',
@@ -109,6 +113,8 @@ const SettingsPage: React.FC = () => {
       
       setFormData({
         storeName: data.storeName,
+        ownerName: data.ownerName,
+        emailOwner: data.emailOwner,
         storeAddress: data.storeAddress,
         storePhone: data.storePhone,
         storeLogo: data.storeLogo,
@@ -181,6 +187,8 @@ const SettingsPage: React.FC = () => {
           showBarcode: getBool('showBarcode', prev.showBarcode),
           showCashierName: getBool('showCashierName', prev.showCashierName),
           storeName: getStr('storeName', prev.storeName),
+          ownerName: getStr('ownerName', prev.ownerName),
+          emailOwner: getStr('emailOwner', prev.emailOwner),
           storeAddress: getStr('storeAddress', prev.storeAddress),
           storePhone: getStr('storePhone', prev.storePhone),
           storeLogo: getStr('storeLogo', prev.storeLogo),
@@ -737,6 +745,8 @@ const SettingsPage: React.FC = () => {
       
       const storeFormData = new FormData();
       storeFormData.append('storeName', formData.storeName);
+      storeFormData.append('ownerName', formData.ownerName);
+      storeFormData.append('emailOwner', formData.emailOwner);
       storeFormData.append('storeAddress', formData.storeAddress);
       storeFormData.append('storePhone', formData.storePhone);
       
