@@ -250,6 +250,10 @@ npm run lint
 npm run preview
 ```
 
+## Cara Bikin Produk
+
+![workflow](preview/Create-Product.png)
+
 ## API Penting
 
 Prefix role dilindungi oleh kombinasi token dan `authorize()` sesuai area masing-masing.
