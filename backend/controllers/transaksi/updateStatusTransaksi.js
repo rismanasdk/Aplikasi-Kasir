@@ -29,6 +29,13 @@ export const updateStatusTransaksi = async (req, res) => {
     await transaksi.save();
 
     io.emit("statusUpdated", transaksi);
+    io.emit("dashboard:omzet-updated", {
+      transactionId: transaksi._id?.toString(),
+      orderId: transaksi.order_id || transaksi.nomor_transaksi,
+      status: transaksi.status,
+      total_harga: transaksi.total_harga,
+      tanggal_transaksi: transaksi.tanggal_transaksi,
+    });
 
     if (status === "selesai") {
       await processCompletedTransaction(transaksi);

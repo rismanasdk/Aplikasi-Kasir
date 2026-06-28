@@ -11,6 +11,7 @@ import SuperAdminAsetTetap from '../pages/asset-tetap';
 import SuperAdminLiabilitas from '../pages/liabilitas';
 import SuperAdminNeraca from '../pages/neraca';
 import SuperAdmin404 from '../pages/404notfound';
+import SuperAdminDashboardAnalytics from '../pages/DashboardAnalytics';
 
 const SuperAdminRouter: React.FC = () => {
   return (
@@ -18,6 +19,9 @@ const SuperAdminRouter: React.FC = () => {
       <Routes>
         {/* Dashboard Route */}
         <Route path="dashboard" element={<SuperAdminDashboard />} />
+
+        {/** Laporan Keuangan Route */}
+        <Route path="dashboard-analytics" element={<SuperAdminDashboardAnalytics />} />
         
         {/* Laporan Keuangan Route */}
         <Route path="laporan-keuangan" element={<SuperAdminLaporanKeuangan />} />
