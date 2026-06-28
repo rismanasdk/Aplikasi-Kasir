@@ -21,8 +21,13 @@ export const getDashboardOmzet = async (req, res) => {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
+    // Range bulan ini
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    // Range tahun ini (1 Januari - 31 Desember)
+    const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
     const trx = await Transaksi.find({ status: "selesai" });
 
@@ -35,11 +40,16 @@ export const getDashboardOmzet = async (req, res) => {
     const omzetBulanan = trx
       .filter(t => t.tanggal_transaksi >= startOfMonth && t.tanggal_transaksi <= endOfMonth)
       .reduce((sum, t) => sum + t.total_harga, 0);
+    const omzetTahunan = trx
+      .filter(t => t.tanggal_transaksi >= startOfYear && t.tanggal_transaksi <= endOfYear)
+      .reduce((sum, t) => sum + t.total_harga, 0);
+
     res.json({
       omzet: {
         hari_ini: omzetHarian,
         minggu_ini: omzetMingguan,
-        bulan_ini: omzetBulanan
+        bulan_ini: omzetBulanan,
+        tahun_ini: omzetTahunan
       }
     });
   } catch (error) {

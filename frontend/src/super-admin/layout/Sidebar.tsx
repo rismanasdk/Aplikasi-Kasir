@@ -13,6 +13,7 @@ import {
   CircleDollarSign,
   Scale,
   FileSpreadsheet,
+  ChartNoAxesCombined
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -116,6 +117,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       name: 'Dashboard', 
       path: '/super-admin/dashboard',
       icon: <Home size={20} />,
+    },
+    {
+      name: 'Grafik Omzet',
+      path: '/super-admin/dashboard-analytics',
+      icon: <ChartNoAxesCombined size={20} />,
     },
     {
       name: 'Laporan Keuangan',

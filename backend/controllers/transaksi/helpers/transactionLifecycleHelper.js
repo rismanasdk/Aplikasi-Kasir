@@ -202,5 +202,12 @@ export const processCompletedTransaction = async (transaksi) => {
   await syncCompletedTransaction(transaksi);
   transaksi.completion_processed = true;
   await transaksi.save();
+  io.emit("dashboard:omzet-updated", {
+    transactionId: transaksi._id?.toString(),
+    orderId: transaksi.order_id || transaksi.nomor_transaksi,
+    status: transaksi.status,
+    total_harga: transaksi.total_harga,
+    tanggal_transaksi: transaksi.tanggal_transaksi,
+  });
   return true;
 };
