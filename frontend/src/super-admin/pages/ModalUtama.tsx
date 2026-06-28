@@ -8,9 +8,12 @@ import { getStoredToken } from './../../auth/storage';
 import ModalSummaryCards from './components-modal-utama/ModalSummaryCards';
 import RiwayatTable from './components-modal-utama/RiwayatTable';
 import TambahModalForm from './components-modal-utama/TambahModalForm';
+import ChartLine from './chartline';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 const ITEMS_PER_PAGE = 10;
+
+type FilterPeriod = 'custom' | 'bulanan' | 'tahunan';
 
 const PenjualanPage: React.FC = () => {
   const [modalData, setModalData] = useState<ModalUtama | null>(null);
@@ -36,6 +39,14 @@ const PenjualanPage: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('semua');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+
+  // ✅ Filter periode baru — untuk trend cash flow per bulan / per tahun
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('bulanan');
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const getAuthHeaders = () => {
     const token = getStoredToken();
@@ -67,11 +78,20 @@ const PenjualanPage: React.FC = () => {
     fetchModalData();
   }, []);
 
+  // ✅ Sinkronisasi startDate / endDate berdasarkan filterPeriod
   useEffect(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    setStartDate(todayStr);
-    setEndDate(todayStr);
-  }, []);
+    if (filterPeriod === 'bulanan' && selectedMonth) {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
+    } else if (filterPeriod === 'tahunan') {
+      setStartDate(`${selectedYear}-01-01`);
+      setEndDate(`${selectedYear}-12-31`);
+    }
+    // filterPeriod === 'custom' → tidak override, user manual
+  }, [filterPeriod, selectedMonth, selectedYear]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -212,6 +232,19 @@ const PenjualanPage: React.FC = () => {
     }
   };
 
+  // ✅ Generate daftar tahun yang tersedia dari data riwayat
+  const availableYears = React.useMemo(() => {
+    if (!modalData || modalData.riwayat.length === 0) {
+      const currentYear = new Date().getFullYear();
+      return [currentYear];
+    }
+    const years = new Set<number>();
+    modalData.riwayat.forEach(item => {
+      years.add(new Date(item.tanggal).getFullYear());
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [modalData]);
+
   const filteredRiwayat = modalData
     ? modalData.riwayat
         .filter(item => {
@@ -246,7 +279,7 @@ const PenjualanPage: React.FC = () => {
     .filter(item => item.tipe === 'pengeluaran' || item.tipe === 'prive')
     .reduce((sum, item) => sum + item.jumlah, 0);
 
-  // ✅ Pagination handlers — sebelumnya gak ada
+  // ✅ Pagination handlers
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
   const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
   const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
@@ -303,6 +336,14 @@ const PenjualanPage: React.FC = () => {
         formatCurrency={formatCurrency}
       />
 
+      <ChartLine
+        filteredRiwayat={filteredRiwayat}
+        filterPeriod={filterPeriod}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        formatCurrency={formatCurrency}
+      />
+
       <TambahModalForm
         formData={formData}
         withdrawFormData={withdrawFormData}
@@ -321,7 +362,7 @@ const PenjualanPage: React.FC = () => {
         onCloseWithdrawModal={closeWithdrawModal}
       />
 
-      {/* ✅ Hanya render RiwayatTable — filter sudah include di dalamnya */}
+      {/* ✅ Render RiwayatTable dengan props filter periode baru */}
       <RiwayatTable
         modalData={modalData}
         currentItems={currentItems}
@@ -334,10 +375,17 @@ const PenjualanPage: React.FC = () => {
         filterType={filterType}
         startDate={startDate}
         endDate={endDate}
+        filterPeriod={filterPeriod}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        availableYears={availableYears}
         onSearchChange={setSearchTerm}
         onFilterTypeChange={setFilterType}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
+        onFilterPeriodChange={setFilterPeriod}
+        onSelectedMonthChange={setSelectedMonth}
+        onSelectedYearChange={setSelectedYear}
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         onPrevPage={prevPage}
