@@ -12,6 +12,7 @@ import SuperAdminLiabilitas from '../pages/liabilitas';
 import SuperAdminNeraca from '../pages/neraca';
 import SuperAdmin404 from '../pages/404notfound';
 import SuperAdminDashboardAnalytics from '../pages/DashboardAnalytics';
+import SuperAdminProducts from '../pages/products';
 
 const SuperAdminRouter: React.FC = () => {
   return (
@@ -25,6 +26,9 @@ const SuperAdminRouter: React.FC = () => {
         
         {/* Laporan Keuangan Route */}
         <Route path="laporan-keuangan" element={<SuperAdminLaporanKeuangan />} />
+
+        {/* Products Route */}
+        <Route path="products" element={<SuperAdminProducts />} />
 
         {/* Neraca Route */}
         <Route path="neraca" element={<SuperAdminNeraca />} />

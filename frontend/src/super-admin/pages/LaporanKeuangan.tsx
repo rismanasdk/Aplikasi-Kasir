@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, type PieLabel } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, type PieLabel } from 'recharts';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { exportPdf, exportExcel } from '../utils';
 import { Landmark, Wallet, TrendingUp, CreditCard, Package, DollarSign, ShoppingCart, TrendingDown } from 'lucide-react';
@@ -146,13 +146,13 @@ const LaporanPenjualan: React.FC = () => {
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [daftarBulan, setDaftarBulan] = useState<DaftarBulan[]>([]);
   const [selectedBulan, setSelectedBulan] = useState<string>('');
-  const [loadingBulan, setLoadingBulan] = useState<boolean>(true);
+  const [loadingBulan, setLoadingBulan] = useState(false);
   const [biayaOperasional, setBiayaOperasional] = useState<BiayaOperasionalData>({
     rincian_biaya: [],
     total: 0,
   });
+  const [biayaPerbulan, setbiayaPerbulan] = useState<Array<{ bulan: string; nama_bulan: string; total: number; total_hpp: number }>>([]);
   const [loadingBiayaOperasional, setLoadingBiayaOperasional] = useState<boolean>(true);
-
   // Constants
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#EF4444', '#14B8A6', '#F97316'];
 
@@ -377,6 +377,82 @@ const LaporanPenjualan: React.FC = () => {
     }).format(amount);
   }, []);
 
+const fetchbiayaPerbulan = useCallback(async () => {
+  if (daftarBulan.length === 0) return;
+
+  setLoadingBulan(true);
+
+  try {
+    const token = getStoredToken();
+    if (!token) throw new Error('Sesi login tidak ditemukan');
+
+    const authHeaders: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+      ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+    };
+
+    // Ambil 6 bulan terakhir
+    const bulanToFetch = daftarBulan.slice(0, 12);
+
+    const results = await Promise.all(
+      bulanToFetch.map(async (b) => {
+        const yyyy = String(b.tahun);
+        const mm = String(b.bulan).padStart(2, '0');
+
+        const startDate = `${yyyy}-${mm}-01`;
+        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+        const endDate = `${yyyy}-${mm}-${String(lastDay).padStart(2, '0')}`;
+
+        try {
+          const resp = await fetch(
+            `${API_URL}/api/super-admin/laporan/ringkasan?start=${startDate}&end=${endDate}`,
+            {
+              headers: authHeaders,
+            }
+          );
+
+          if (!resp.ok) {
+            return {
+              bulan: b.id,
+              nama_bulan: b.nama_bulan,
+              total: 0,
+              total_hpp: 0,
+            };
+          }
+
+          const json = await resp.json();
+
+          return {
+            bulan: b.id,
+            nama_bulan: b.nama_bulan,
+            total: Number(json?.ringkasan?.total_biaya_operasional || 0),
+            total_hpp: Number(json?.ringkasan?.total_hpp || 0),
+          };
+        } catch {
+          return {
+            bulan: b.id,
+            nama_bulan: b.nama_bulan,
+            total: 0,
+            total_hpp: 0,
+          };
+        }
+      })
+    );
+
+    setbiayaPerbulan(results); // sesuaikan dengan state kamu
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoadingBulan(false);
+  }
+}, [daftarBulan]);
+
+useEffect(() => {
+  if (daftarBulan.length > 0) {
+    fetchbiayaPerbulan();
+  }
+}, [daftarBulan, fetchbiayaPerbulan]);
+
   // Export functions
   const handleExport = useCallback((type: 'pdf' | 'excel') => {
     if (!data) return;
@@ -533,6 +609,51 @@ const LaporanPenjualan: React.FC = () => {
     daftarBulan.find(b => b.id === selectedBulan)?.nama_bulan || 'Semua Periode', 
     [daftarBulan, selectedBulan]
   );
+
+  const biayaBulananIni = useMemo(() => {
+    const current = biayaPerbulan.find(b => b.bulan === selectedBulan);
+    return current?.total ?? biayaOperasional.total ?? 0;
+}, [biayaPerbulan, selectedBulan, biayaOperasional.total]);
+
+const perbandinganBulanLalu = useMemo(() => {
+  if (biayaPerbulan.length < 2) return null;
+  const currentIndex = biayaPerbulan.findIndex(b => b.bulan === selectedBulan);
+  if (currentIndex < 0) return null;
+  const prevIndex = currentIndex + 1;
+  if (prevIndex >= biayaPerbulan.length) return null;
+
+  const bulanIni = biayaPerbulan[currentIndex].total;
+  const bulanLalu = biayaPerbulan[prevIndex].total;
+  const selisih = bulanIni - bulanLalu;
+  const persentase = bulanLalu > 0 ? (selisih / bulanLalu) * 100 : 0;
+
+  return {
+    bulanIni,
+    bulanLalu,
+    selisih,
+    persentase,
+    namaBulanLalu: biayaPerbulan[prevIndex].nama_bulan,
+    naik: selisih > 0,
+  };
+}, [biayaPerbulan, selectedBulan]);
+
+const biayaChartData = useMemo(() => {
+  return biayaPerbulan.map(b => ({
+    name: b.nama_bulan.split(' ')[0], // ambil "Juni" dari "Juni 2025"
+    fullName: b.nama_bulan,
+    total: b.total,
+  }));
+}, [biayaPerbulan]);
+
+const hppChartData = useMemo(() => {
+  // Reverse biar kronologis (terlama → terbaru) untuk line chart
+  return [...biayaPerbulan].reverse().map(b => ({
+    name: b.nama_bulan.split(' ')[0],
+    fullName: b.nama_bulan,
+    total_hpp: b.total_hpp,
+  }));
+}, [biayaPerbulan]);
+
 
   if (loadingBulan) {
     return (
@@ -758,6 +879,191 @@ const LaporanPenjualan: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Kartu Summary Bulan Ini */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 lg:col-span-1 flex flex-col justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Biaya Operasional Bulan Ini</p>
+                <p className="text-3xl font-bold text-gray-900">{formatRupiah(biayaBulananIni)}</p>
+              </div>
+              {perbandinganBulanLalu && (
+                <div className="mt-4">
+                  {perbandinganBulanLalu.naik ? (
+                    <div className="flex items-center gap-1.5 text-red-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                      </svg>
+                      <span className="text-sm font-semibold">Naik {formatRupiah(Math.abs(perbandinganBulanLalu.selisih))} (+{perbandinganBulanLalu.persentase.toFixed(2)}%)</span>
+                    </div>
+                  ) : perbandinganBulanLalu.selisih < 0 ? (
+                    <div className="flex items-center gap-1.5 text-green-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <span className="text-sm font-semibold">Turun {formatRupiah(Math.abs(perbandinganBulanLalu.selisih))} ({perbandinganBulanLalu.persentase.toFixed(2)}%)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                      </svg>
+                      <span className="text-sm font-medium">Tidak ada perubahan (0,00%)</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">dibanding {perbandinganBulanLalu.namaBulanLalu}</p>
+                </div>
+              )}
+              {(!perbandinganBulanLalu && !biayaBulananIni) && (
+                <p className="text-xs text-gray-400 mt-4">Belum ada data bulan lalu untuk dibandingkan</p>
+              )}
+              {loadingBulan && (
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500"></div>
+                  <span className="text-xs text-gray-400">Memuat perbandingan...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Grafik Batang */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 lg:col-span-2 min-h-[300px]">
+              <h2 className="text-lg font-semibold text-gray-800 mb-1">Perbandingan Biaya Operasional</h2>
+              <p className="text-xs text-gray-500 mb-4">6 bulan terakhir</p>
+              {loadingBulan ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-500"></div>
+                </div>
+              ) : biayaChartData.length > 0 ? (
+                  <div className="w-full h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={biayaChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
+                      axisLine={{ stroke: '#E5E7EB' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(val) => {
+                        if (val >= 1000000) return `${(val / 1000000).toFixed(1)}jt`;
+                        if (val >= 1000) return `${(val / 1000).toFixed(0)}rb`;
+                        return val;
+                      }}
+                      tick={{ fontSize: 11, fill: '#6B7280' }}
+                      axisLine={{ stroke: '#E5E7EB' }}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value: number | string) => [formatRupiah(Number(value)), 'Biaya Operasional']}
+                      labelFormatter={(label, payload) => {
+                        if (payload?.length && payload[0]?.payload?.fullName) {
+                          return payload[0].payload.fullName;
+                        }
+
+                        return label;
+                      }}  
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid #E5E7EB',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                    <Bar
+                      dataKey="total"
+                      fill="#3B82F6"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={50}
+                    >
+                      {biayaChartData.map((entry, idx) => {
+                        // Highlight bulan yang sedang dipilih
+                        const isSelected = entry.fullName === daftarBulan.find(b => b.id === selectedBulan)?.nama_bulan;
+                        return (
+                          <Cell
+                            key={idx}
+                            fill={isSelected ? '#1D4ED8' : '#93C5FD'}
+                          />
+                        );
+                      })}
+                    </Bar>
+                  </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+              ) : (
+                <div className="flex justify-center items-center h-64 text-gray-400">
+                  <p className="text-sm">Belum ada data</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trend Total HPP */}
+<div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                Trend Total HPP (1 Tahun Terakhir)
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Pergerakan Harga Pokok Penjualan per bulan</p>
+            </div>
+            <div className="p-6">
+              {loadingBulan ? (
+                <div className="flex justify-center items-center h-64">
+                  <LoadingSpinner />
+                </div>
+              ) : hppChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={hppChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
+                      axisLine={{ stroke: '#E5E7EB' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#6B7280' }}
+                      axisLine={{ stroke: '#E5E7EB' }}
+                      tickLine={false}
+                      tickFormatter={(value: number) => {
+                        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`;
+                        if (value >= 1000) return `${(value / 1000).toFixed(0)}rb`;
+                        return String(value);
+                      }}
+                    />
+                    <Tooltip
+                      formatter={(value: number | string) => [formatRupiah(Number(value)), 'Total HPP']}
+                      labelFormatter={(label, payload) => {
+                        if (payload?.length && payload[0]?.payload?.fullName) {
+                          return payload[0].payload.fullName;
+                        }
+                        return String(label);
+                      }}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid #E5E7EB',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="total_hpp"
+                      stroke="#10B981"
+                      strokeWidth={3}
+                      dot={{ r: 5, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
+                      activeDot={{ r: 7, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex justify-center items-center h-64 text-gray-400">
+                  <p className="text-sm">Belum ada data HPP</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Detail Biaya Operasional */}
           <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
@@ -791,6 +1097,9 @@ const LaporanPenjualan: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Jumlah
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Persentase
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -807,6 +1116,9 @@ const LaporanPenjualan: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{formatRupiah(item.jumlah)}</div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{((item.jumlah / biayaOperasional.total) * 100).toFixed(2)}%</div>
+                        </td>
                       </tr>
                     ))}
                     <tr className="bg-gray-100 border-t-2 border-gray-300">
@@ -815,6 +1127,9 @@ const LaporanPenjualan: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-bold text-gray-900">{formatRupiah(biayaOperasional.total)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">100.00%</div>
                       </td>
                     </tr>
                   </tbody>
@@ -868,9 +1183,9 @@ const LaporanPenjualan: React.FC = () => {
                 </svg>
                 Distribusi Metode Pembayaran
               </h2>
-              <div className="h-80 w-full">
+              <div className="h-80">
                 {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={300}>
                     <PieChart width={400} height={300}>
                       <Pie
                         data={pieData}

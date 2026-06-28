@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import cloudinary from "../../config/cloudinary.js";
 import { kurangiModalUtama } from "./utils/updatemodalutama.js";
 import Production from "../../models/production.js";
+import Transaksi from "./../../models/datatransaksi.js";
 
 // Fungsi helper untuk menghitung status berdasarkan stok
 const calculateStatus = (stok, stokMinimal) => {
@@ -17,6 +18,92 @@ const calculateStatus = (stok, stokMinimal) => {
   if (currentStok === 0) return "habis";
   if (currentStok <= minStok) return "hampir habis";
   return "aman";
+};
+
+export const getSalesStats = async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    // ===== AGGREGATION PIPELINE =====
+    // 1. Filter transaksi yang selesai dalam periode
+    // 2. Unwind array barang_dibeli
+    // 3. Group per kode_barang, sum jumlah terjual
+    // 4. Lookup ke koleksi Barang untuk dapatkan _id (MongoDB ObjectId)
+    // 5. Project hasil akhir
+    const salesStats = await Transaksi.aggregate([
+      // --- Step 1: Filter transaksi ---
+      {
+        $match: {
+          tanggal_transaksi: { $gte: startDate },
+          status: "selesai",
+        },
+      },
+
+      // --- Step 2: Unwind array barang_dibeli ---
+      {
+        $unwind: "$barang_dibeli",
+      },
+
+      // --- Step 3: Group per kode_barang, hitung total terjual ---
+      {
+        $group: {
+          _id: "$barang_dibeli.kode_barang",
+          nama_barang: { $first: "$barang_dibeli.nama_barang" },
+          total_sold: { $sum: "$barang_dibeli.jumlah" },
+        },
+      },
+
+      // --- Step 4: Lookup ke koleksi Barang untuk dapatkan _id ---
+      //     Karena frontend memakai Barang._id sebagai key,
+      //     tapi Transaksi hanya simpan kode_barang (string)
+      {
+        $lookup: {
+          from: "Data-Barang", // nama koleksi Barang (sesuaikan jika beda)
+          localField: "_id",    // kode_barang dari group
+          foreignField: "kode_barang",
+          as: "barang_info",
+        },
+      },
+
+      // --- Step 5: Unwrap lookup result & project final ---
+      {
+        $unwind: {
+          path: "$barang_info",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          barang_id: { $toString: "$barang_info._id" },
+          nama_barang: 1,
+          total_sold: 1,
+        },
+      },
+
+      // --- Step 6: Sort ascending (paling sedikit dulu) ---
+      { $sort: { total_sold: 1 } },
+    ]);
+
+    // ===== HANDLE PRODUK YG SUDAH DIHAPUS DARI DB BARANG =====
+    // Jika lookup tidak menemukan barang (sudah dihapus),
+    // barang_info akan kosong. Filter ini memastikan hanya
+    // produk yang masih ada di DB yang dikembalikan.
+    const validStats = salesStats.filter(
+      (item) => item.barang_id && item.barang_id !== "null" && item.barang_id !== "undefined"
+    );
+
+    return res.status(200).json(validStats);
+  } catch (error) {
+    console.error("Error getSalesStats:", error);
+    return res.status(500).json({
+      message: "Gagal mengambil data penjualan",
+      error: error.message,
+    });
+  }
 };
 
 // Helper global: hitung harga jual berdasarkan TRUE margin
