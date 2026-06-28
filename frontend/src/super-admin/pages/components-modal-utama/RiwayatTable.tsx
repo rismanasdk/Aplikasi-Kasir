@@ -14,10 +14,17 @@ interface RiwayatTableProps {
   filterType: string;
   startDate: string;
   endDate: string;
+  filterPeriod: 'custom' | 'bulanan' | 'tahunan';
+  selectedMonth: string;
+  selectedYear: number;
+  availableYears: number[];
   onSearchChange: (value: string) => void;
   onFilterTypeChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
+  onFilterPeriodChange: (value: 'custom' | 'bulanan' | 'tahunan') => void;
+  onSelectedMonthChange: (value: string) => void;
+  onSelectedYearChange: (value: number) => void;
   formatDate: (dateString: string) => string;
   formatCurrency: (amount: number) => string;
   onPrevPage: () => void;
@@ -72,10 +79,17 @@ export default function RiwayatTable({
   filterType,
   startDate,
   endDate,
+  filterPeriod,
+  selectedMonth,
+  selectedYear,
+  availableYears,
   onSearchChange,
   onFilterTypeChange,
   onStartDateChange,
   onEndDateChange,
+  onFilterPeriodChange,
+  onSelectedMonthChange,
+  onSelectedYearChange,
 }: RiwayatTableProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
@@ -88,17 +102,24 @@ export default function RiwayatTable({
         <p className="text-sm text-gray-600 mt-1">Daftar semua transaksi modal</p>
       </div>
 
-      {/* Filter Section — pakai komponen RiwayatFilter */}
+      {/* Filter Section — pakai komponen RiwayatFilter dengan props baru */}
       <div className="p-6 border-b border-gray-200">
         <RiwayatFilter
           searchTerm={searchTerm}
           filterType={filterType}
           startDate={startDate}
           endDate={endDate}
+          filterPeriod={filterPeriod}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          availableYears={availableYears}
           onSearchChange={onSearchChange}
           onFilterTypeChange={onFilterTypeChange}
           onStartDateChange={onStartDateChange}
           onEndDateChange={onEndDateChange}
+          onFilterPeriodChange={onFilterPeriodChange}
+          onSelectedMonthChange={onSelectedMonthChange}
+          onSelectedYearChange={onSelectedYearChange}
         />
       </div>
 
@@ -220,7 +241,7 @@ export default function RiwayatTable({
           </p>
           <p className="text-sm text-gray-400 mt-1">
             {modalData && modalData.riwayat.length > 0
-              ? 'Coba ubah kriteria pencarian atau rentang tanggal'
+              ? 'Coba ubah kriteria pencarian atau periode filter'
               : 'Transaksi akan muncul di sini setelah ada penambahan modal'}
           </p>
         </div>
