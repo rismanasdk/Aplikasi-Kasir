@@ -19,6 +19,7 @@ const BiayaLayanan: React.FC = () => {
   const [globalDiscount, setGlobalDiscount] = useState<number>(0);
   const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [lowStockAlert, setLowStockAlert] = useState<number>(0);
+  const [kasWarning, setkasWarning] = useState<number>(0);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const BASE_API_URL = `${API_URL}/api/admin/settings`;
@@ -56,6 +57,7 @@ const BiayaLayanan: React.FC = () => {
         if (typeof data.globalDiscount === 'number') setGlobalDiscount(data.globalDiscount);
         if (typeof data.serviceCharge === 'number') setServiceCharge(data.serviceCharge);
         if (typeof data.lowStockAlert === 'number') setLowStockAlert(data.lowStockAlert);
+        if (typeof data.kasWarning === 'number') setkasWarning(data.kasWarning);
       }
     } catch (error) {
       SweetAlert.error('Gagal memuat data pengaturan');
@@ -79,12 +81,14 @@ const BiayaLayanan: React.FC = () => {
       else if (name === 'globalDiscount') setGlobalDiscount(checked ? 1 : 0);
       else if (name === 'serviceCharge') setServiceCharge(checked ? 1 : 0);
       else if (name === 'lowStockAlert') setLowStockAlert(checked ? 1 : 0);
+      else if (name === 'kasWarning') setkasWarning(checked ? 1: 0);
     } else {
       // Update state sesuai dengan nama field
       if (name === 'taxRate') setTaxRate(parseFloat(value) || 0);
       else if (name === 'globalDiscount') setGlobalDiscount(parseFloat(value) || 0);
       else if (name === 'serviceCharge') setServiceCharge(parseFloat(value) || 0);
       else if (name === 'lowStockAlert') setLowStockAlert(parseFloat(value) || 0);
+      else if (name === 'kasWarning') setkasWarning(parseFloat(value) || 0);
     }
   };
 
@@ -149,6 +153,18 @@ const handleSaveSettings = async () => {
       console.error('Server error:', errorData);
       throw new Error(errorData.message || 'Gagal menyimpan peringatan stok rendah');
     }
+
+    const alertkasWarning = await fetch(`${BASE_API_URL}/general`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ kasWarning })
+    })
+
+    if (!alertkasWarning.ok) {
+      const errorData = await alertkasWarning.json();
+      console.error('Server error:', errorData);
+      throw new Error(errorData.message || 'Gagal menyimpan Peringatan Kas');
+    }
     
     SweetAlert.close();
     
@@ -197,6 +213,7 @@ const handleSaveSettings = async () => {
               globalDiscount={globalDiscount}
               serviceCharge={serviceCharge}
               lowStockAlert={lowStockAlert}
+              kasWarning={kasWarning}
               totalBiayaOperasional={totalBiayaOperasional}
               onInputChange={handleInputChange}
             />

@@ -39,6 +39,7 @@ const settingsSchema = new Schema({
 
 
   lowStockAlert: { type: Number, default: 10 },
+  kasWarning: {type: Number, default: 50000},
   currency: { type: String, default: "IDR" },
   dateFormat: { type: String, default: "DD/MM/YYYY" },
   language: { type: String, default: "id" }

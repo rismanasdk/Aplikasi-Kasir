@@ -4,7 +4,7 @@ import { io } from "../../../server.js";
 
 export const updateGeneralSettings = async (req, res) => {
   try {
-    const { lowStockAlert, currency, dateFormat, language } = req.body;
+    const { lowStockAlert, currency, dateFormat, language, kasWarning } = req.body;
     console.log('>>> Menerima permintaan updateGeneralSettings dengan data:', req.body);
 
     let settings = await Settings.findOne();
@@ -15,6 +15,7 @@ export const updateGeneralSettings = async (req, res) => {
         currency,
         dateFormat,
         language,
+        kasWarning,
       });
     } else {
       console.log('>>> Memperbarui pengaturan yang ada');
@@ -25,6 +26,7 @@ export const updateGeneralSettings = async (req, res) => {
       if (currency !== undefined) settings.currency = currency;
       if (dateFormat !== undefined) settings.dateFormat = dateFormat;
       if (language !== undefined) settings.language = language;
+      if (kasWarning !== undefined) settings.kasWarning = kasWarning;
       await settings.save();
       console.log('>>> Pengaturan berhasil disimpan');
 

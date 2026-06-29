@@ -10,6 +10,7 @@ import {
   addPaymentMethod,
   addChannelToMethod,
   updateChannelName,
+  updateGeneralSettings,
   togglePaymentMethod,
   updateChannelLogo,
   deleteChannelFromMethod,
@@ -36,5 +37,6 @@ router.put("/payment-methods/channel-logo", upload.single("logo"), updateChannel
 router.patch("/payment-methods/channel-toggle", toggleChannelStatus);
 router.delete("/payment-methods/channel", deleteChannelFromMethod);
 router.put("/payment-methods/channel-name", updateChannelName);
+router.put("/general", updateGeneralSettings);
 
 export default router;
