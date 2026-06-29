@@ -21,8 +21,8 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Upload gambar produk, logo toko, logo channel pembayaran, dan foto profil
 - Export laporan ke `PDF`, `Excel`, dan sebagian area ke `CSV`
 - Block IP address otomatis ketika terkena trap routes
-- Log server
-- Real-time alerts
+- Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
+- Smart Notifikasi pada role super-admin yang meliputi `Uang Kas`, `Liabilitas`, `Stok Barang/Produk`
 
 ## Fitur Per Area
 
