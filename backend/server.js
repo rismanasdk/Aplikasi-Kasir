@@ -56,7 +56,7 @@ import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import BlockedIP from "./models/blockedIP.js";
-
+import aiBiRoutes from "./routes/aiBiRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -254,6 +254,9 @@ app.use(async (req, res, next) => {
     next(); // Continue even if there's an error
   }
 });
+
+// ai-service (BI) — proxy ke Python FastAPI
+app.use("/api/bi", aiBiRoutes);
 
 // pelanggan, kasir
 app.use("/api/auth/google", googleAuthRoutes);
