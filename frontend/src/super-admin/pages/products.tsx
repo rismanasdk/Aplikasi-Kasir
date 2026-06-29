@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import BarangTable from "./component-products/BarangTable";
 import ModalBarang, { type BahanBakuItem } from "./component-products/ModalBarang";
 import ModalCategory from "./component-products/ModalCategory";
@@ -7,9 +7,10 @@ import type { BarangFormData } from "./component-products/ModalBarang";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { SweetAlert } from "../../components/SweetAlert";
 import io, { Socket } from 'socket.io-client';
-import { ChevronLeft, ChevronRight, TrendingDown, Ban } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingDown, Ban, AlertTriangle, PackageCheck } from "lucide-react";
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
+import { useSearchParams } from "react-router-dom";  
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 
@@ -90,7 +91,6 @@ export interface BahanBakuFormData {
   }>;
 }
 
-// ===== TAMBAHAN: Tipe untuk sales stats API =====
 interface SalesStatsItem {
   barang_id: string;
   nama_barang: string;
@@ -142,11 +142,20 @@ const SuperAdminProducts: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [bahanBakuList, setBahanBakuList] = useState<BahanBakuItem[]>([]);
-
-  // ===== TAMBAHAN: State untuk fitur Slow Moving & Never Sold =====
   const [salesFilter, setSalesFilter] = useState<"all" | "slow-moving" | "never-sold">("all");
   const [salesData, setSalesData] = useState<Map<string, number>>(new Map());
   const [salesLoading, setSalesLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [stockFilter, setStockFilter] = useState<"all" | "low-stock" | "available">(
+    () => (searchParams.get('filter') === 'low-stock' ? 'low-stock' : 'all')
+  );
+
+  // Tambahkan useEffect ini untuk membersihkan URL setelah state terbaca
+  useEffect(() => {
+    if (searchParams.get('filter')) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const getAuthHeaders = (json = false): HeadersInit => {
     const token = getStoredToken();
@@ -252,7 +261,6 @@ const SuperAdminProducts: React.FC = () => {
     fetchSettings();
   }, [fetchSettings]);
 
-  // ===== TAMBAHAN: Fetch sales stats dari backend =====
   const fetchSalesStats = useCallback(async () => {
     setSalesLoading(true);
     try {
@@ -459,7 +467,6 @@ const SuperAdminProducts: React.FC = () => {
     };
   }, [setDataBarang, lowStockAlert, settingsLoaded, fetchBarang]);
 
-  // ===== TAMBAHAN: fetchSalesStats di sini juga =====
   useEffect(() => {
     if (settingsLoaded) {
       fetchBarang();
@@ -469,14 +476,14 @@ const SuperAdminProducts: React.FC = () => {
     }
   }, [fetchBarang, fetchKategori, fetchBahanBaku, fetchSalesStats, settingsLoaded]);
 
-  // ===== MODIFIKASI: Reset page saat ganti filter termasuk salesFilter =====
+  // ===== Reset page saat ganti filter =====
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, kategoriFilter, salesFilter]);
+  }, [searchTerm, kategoriFilter, salesFilter, stockFilter]);
 
-  // ===== MODIFIKASI: Filter logic dengan Slow Moving & Never Sold =====
+  // ===== Filter logic =====
   const filteredBarang = (() => {
-    // Step 1: Filter pencarian & kategori dulu
+    // Step 1: Filter pencarian & kategori
     let result = dataBarang.filter(
       (item) =>
         (item.nama ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -486,26 +493,34 @@ const SuperAdminProducts: React.FC = () => {
       (item) => kategoriFilter === "" || item.kategori === kategoriFilter
     );
 
-    // Step 2: Filter berdasarkan penjualan (slow-moving / never-sold)
+    // Step 2: Filter berdasarkan status stok (BARU)
+    if (stockFilter === "low-stock") {
+      result = result.filter((item) => {
+        return item.status === "hampir habis" || item.status === "habis" ||
+               (item.stok <= (item.stokMinimal || lowStockAlert));
+      });
+    } else if (stockFilter === "available") {
+      result = result.filter((item) => {
+        return item.status === "aman" && item.stok > (item.stokMinimal || lowStockAlert);
+      });
+    }
+
+    // Step 3: Filter berdasarkan penjualan
     if (salesFilter === "never-sold") {
-      // Produk yang tidak pernah terjual (total_sold = 0 atau tidak ada di salesData)
       result = result.filter((item) => {
         const sold = salesData.get(item._id);
         return sold === undefined || sold === 0;
       });
     } else if (salesFilter === "slow-moving") {
-      // Ambil produk yang terjual selama 30 hari, urutkan dari paling sedikit
       const productsWithSales = result
         .map((item) => ({
           ...item,
           totalSold: salesData.get(item._id) ?? 0,
         }))
-        .filter((item) => item.totalSold > 0); // Hanya yang pernah terjual
+        .filter((item) => item.totalSold > 0);
 
-      // Urutkan ascending (paling sedikit di atas)
       productsWithSales.sort((a, b) => a.totalSold - b.totalSold);
 
-      // Ambil 20% terbawah
       const bottomCount = Math.max(1, Math.ceil(productsWithSales.length * 0.2));
       const bottomProducts = new Set(
         productsWithSales.slice(0, bottomCount).map((p) => p._id)
@@ -751,6 +766,28 @@ const SuperAdminProducts: React.FC = () => {
     }
   };
 
+  // Helper: hitung jumlah per status untuk badge
+  const stockCounts = useMemo(() => {
+    const base = dataBarang.filter(
+      (item) =>
+        (item.nama ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.kode ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.kategori ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+    ).filter(
+      (item) => kategoriFilter === "" || item.kategori === kategoriFilter
+    );
+
+    return {
+      lowStock: base.filter((item) =>
+        item.status === "hampir habis" || item.status === "habis" ||
+        item.stok <= (item.stokMinimal || lowStockAlert)
+      ).length,
+      available: base.filter((item) =>
+        item.status === "aman" && item.stok > (item.stokMinimal || lowStockAlert)
+      ).length,
+    };
+  }, [dataBarang, searchTerm, kategoriFilter, lowStockAlert]);
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {actionLoading && (
@@ -761,10 +798,10 @@ const SuperAdminProducts: React.FC = () => {
 
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Daftar Barang</h1>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-800">Daftar Barang</h1>
             </div>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
             <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
               <div className="flex gap-2">
                 <select
@@ -789,8 +826,53 @@ const SuperAdminProducts: React.FC = () => {
                   disabled={actionLoading}
                 />
               </div>
-              <div className="flex gap-2 items-center">
-                {/* ===== FILTER SALES PERFORMANCE (BARU) ===== */}
+              <div className="flex gap-2 items-center flex-wrap">
+                {/* ===== FILTER STOK STATUS (BARU) ===== */}
+                <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+                  <button
+                    onClick={() => setStockFilter("all")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      stockFilter === "all"
+                        ? "bg-white text-gray-800 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Semua
+                  </button>
+                  <button
+                    onClick={() => setStockFilter("low-stock")}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      stockFilter === "low-stock"
+                        ? "bg-yellow-500 text-white shadow-sm"
+                        : "text-gray-500 hover:text-yellow-600"
+                    }`}
+                    title="Produk dengan stok di bawah batas minimum"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Hampir Habis</span>
+                    <span className="sm:hidden">Low</span>
+                    {stockCounts.lowStock > 0 && stockFilter !== "low-stock" && (
+                      <span className="ml-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[9px] font-bold text-yellow-700 bg-yellow-100 rounded-full">
+                        {stockCounts.lowStock > 9 ? '9+' : stockCounts.lowStock}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setStockFilter("available")}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      stockFilter === "available"
+                        ? "bg-green-500 text-white shadow-sm"
+                        : "text-gray-500 hover:text-green-600"
+                    }`}
+                    title="Produk dengan stok di atas batas minimum"
+                  >
+                    <PackageCheck className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Tersedia</span>
+                    <span className="sm:hidden">Ok</span>
+                  </button>
+                </div>
+
+                {/* ===== FILTER SALES PERFORMANCE ===== */}
                 <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
                   <button
                     onClick={() => setSalesFilter("all")}
@@ -874,32 +956,59 @@ const SuperAdminProducts: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* ===== INFO BADGE FILTER AKTIF (BARU) ===== */}
-              {salesFilter !== "all" && (
-                <div className={`mb-4 px-4 py-3 rounded-lg flex items-center gap-2 ${
-                  salesFilter === "slow-moving"
-                    ? "bg-amber-50 border border-amber-200"
-                    : "bg-red-50 border border-red-200"
-                }`}>
-                  {salesFilter === "slow-moving" ? (
-                    <>
-                      <TrendingDown className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                      <span className="text-sm text-amber-700">
-                        Menampilkan <strong>Slow Moving</strong> — 20% produk dengan penjualan paling sedikit dalam 30 hari terakhir
-                        ({filteredBarang.length} produk)
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Ban className="w-5 h-5 text-red-500 flex-shrink-0" />
-                      <span className="text-sm text-red-700">
-                        Menampilkan <strong>Never Sold</strong> — produk yang tidak terjual sama sekali dalam 30 hari terakhir
-                        ({filteredBarang.length} produk)
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
+              {/* ===== INFO BADGE FILTER AKTIF ===== */}
+              <div className="flex flex-col gap-2 mb-4">
+                {stockFilter !== "all" && (
+                  <div className={`px-4 py-3 rounded-lg flex items-center gap-2 ${
+                    stockFilter === "low-stock"
+                      ? "bg-yellow-50 border border-yellow-200"
+                      : "bg-green-50 border border-green-200"
+                  }`}>
+                    {stockFilter === "low-stock" ? (
+                      <>
+                        <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                        <span className="text-sm text-yellow-700">
+                          Menampilkan <strong>Hampir Habis</strong> — produk dengan stok di bawah batas minimum
+                          ({filteredBarang.length} produk)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <PackageCheck className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm text-green-700">
+                          Menampilkan <strong>Tersedia</strong> — produk dengan stok aman di atas batas minimum
+                          ({filteredBarang.length} produk)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+                {salesFilter !== "all" && (
+                  <div className={`px-4 py-3 rounded-lg flex items-center gap-2 ${
+                    salesFilter === "slow-moving"
+                      ? "bg-amber-50 border border-amber-200"
+                      : "bg-red-50 border border-red-200"
+                  }`}>
+                    {salesFilter === "slow-moving" ? (
+                      <>
+                        <TrendingDown className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                        <span className="text-sm text-amber-700">
+                          Menampilkan <strong>Slow Moving</strong> — 20% produk dengan penjualan paling sedikit dalam 30 hari terakhir
+                          ({filteredBarang.length} produk)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Ban className="w-5 h-5 text-red-500 flex-shrink-0" />
+                        <span className="text-sm text-red-700">
+                          Menampilkan <strong>Never Sold</strong> — produk yang tidak terjual sama sekali dalam 30 hari terakhir
+                          ({filteredBarang.length} produk)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <BarangTable
                 data={currentItems}
