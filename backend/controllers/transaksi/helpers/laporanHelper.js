@@ -5,6 +5,8 @@ import Laporan from "../../../models/datalaporan.js";
 import Barang from "../../../models/databarang.js";
 import BiayaOperasional from "../../../models/biayaoperasional.js";
 import ModalUtama from "../../../models/modalutama.js";
+import BiRingkasan from "../../../models/biRingkasan.js";
+import Settings from "../../../models/settings.js";
 
 const getOmzetKeterangan = (nomorTransaksi) => `Omzet penjualan: ${nomorTransaksi}`;
 
@@ -195,7 +197,71 @@ export const addOmzetToModalUtama = async (transaksi) => {
   }
 };
 
+export const persistBiRingkasanSnapshot = async (transaksi) => {
+  try {
+    const date = transaksi?.tanggal_transaksi ? new Date(transaksi.tanggal_transaksi) : new Date();
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    const settingsDoc = await Settings.findOne();
+    console.log("settingsDoc:", settingsDoc); // cek di sini dulu
+    console.log("DEBUG target dari settings:", settingsDoc?.targetOmzetBulanan);
+    const target = settingsDoc?.targetOmzetBulanan ?? 0;
+    console.log("target:", target);
+    const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+    const params = new URLSearchParams({
+      start: start.toISOString().slice(0, 10),
+      end: end.toISOString().slice(0, 10),
+    });
+
+    const targetUrl = `${aiServiceUrl}/bi/ringkasan?${params}`;
+    const response = await fetch(targetUrl, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`AI service error ${response.status}: ${text}`);
+    }
+
+    const payload = await response.json();
+    const doc = await BiRingkasan.findOneAndUpdate(
+      { key: "latest" },
+      {
+        $set: {
+          key: "latest",
+          periode: { start, end },
+          source: `ai-service:${aiServiceUrl}`,
+          payload,
+          pendapatan: (payload && payload.summary && payload.summary.pendapatan) || 0,
+          hpp: (payload && payload.summary && payload.summary.hpp) || 0,
+          laba_kotor: (payload && payload.summary && payload.summary.laba_kotor) || 0,
+          laba_bersih: (payload && payload.summary && payload.summary.laba_bersih) || 0,
+          total_pengeluaran: (payload && payload.pengeluaran && payload.pengeluaran.total) || 0,
+          target,
+          target_progress_pct: (payload && payload.summary && payload.summary.target_progress_pct) || 0,
+          metode_pembayaran: (payload && payload.metode_pembayaran) || [],
+          top_produk: (payload && payload.produk && payload.produk.top) || [],
+          bottom_produk: (payload && payload.produk && payload.produk.bottom) || [],
+          cashflow: (payload && payload.cashflow) || {},
+          stock: (payload && payload.persediaan && payload.persediaan.stock) || {},
+          inventory_value: (payload && payload.persediaan && payload.persediaan.inventory_value) || 0,
+          aset_tetap: (payload && payload.aset_tetap && payload.aset_tetap.items) || [],
+          narrative: (payload && payload.narrative) || "",
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return doc;
+  } catch (error) {
+    console.warn("Gagal menyimpan snapshot bi-ringkasan setelah transaksi selesai:", error.message);
+    return null;
+  }
+};
+
 export const syncCompletedTransaction = async (transaksi) => {
   await addTransaksiToLaporan(transaksi);
   await addOmzetToModalUtama(transaksi);
+  await persistBiRingkasanSnapshot(transaksi);
 };

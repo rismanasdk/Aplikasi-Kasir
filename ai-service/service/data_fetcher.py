@@ -1,217 +1,115 @@
-# ai-service/service/data_fetcher.py
-"""
-Semua query ke MongoDB centralised di sini.
-Mengembalikan list of dict (bisa langsung ke DataFrame).
-"""
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-import database
+from datetime import datetime
+from typing import Any
+
 import config
+from database import get_collection
 
 
-TZ = ZoneInfo("Asia/Jakarta")
+def _parse_datetime(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            if len(value) == 10 and value.count("-") == 2:
+                return datetime.fromisoformat(value + "T00:00:00")
+            return datetime.fromisoformat(value)
+        except ValueError:
+            try:
+                return datetime.fromisoformat(value.replace(" ", "T"))
+            except ValueError:
+                return None
+    return None
 
 
-def _dt(date_str: str) -> datetime:
-    """Parse YYYY-MM-DD string ke datetime aware Jakarta."""
-    dt = datetime.strptime(date_str, "%Y-%m-%d")
-    return dt.replace(tzinfo=TZ)
+def _normalize_range(start: Any, end: Any) -> tuple[datetime, datetime]:
+    now = datetime.now()
+    start_date = _parse_datetime(start) if start is not None else None
+    end_date = _parse_datetime(end) if end is not None else None
+
+    if start_date is None and end_date is None:
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
+    elif start_date is None and end_date is not None:
+        start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif end_date is None and start_date is not None:
+        end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    return start_date, end_date
 
 
-def _today() -> datetime:
-    return datetime.now(TZ).replace(hour=0, minute=0, second=0, microsecond=0)
-
-
-# ============================================================
-#  Transaksi
-# ============================================================
-def fetch_transaksi(
-    start: datetime | None = None,
-    end: datetime | None = None,
-    status: str | list[str] | None = None,
-) -> list[dict]:
-    """
-    Ambil transaksi dengan filter opsional.
-    start/end bisa datetime atau YYYY-MM-DD string.
-    """
-    coll = database.get_collection(config.COLLECTION_TRANSAKSI)
-    match: dict = {}
-
-    # Tanggal
-    if start or end:
-        date_match: dict = {}
-        if start:
-            date_match["$gte"] = start if isinstance(start, datetime) else _dt(start)
-        if end:
-            dt_end = end if isinstance(end, datetime) else _dt(end)
-            date_match["$lte"] = dt_end.replace(hour=23, minute=59, second=59, microsecond=999999)
-        match["tanggal_transaksi"] = date_match
-
-    # Status
-    if status:
-        if isinstance(status, list):
-            match["status"] = {"$in": status}
-        else:
-            match["status"] = status
-
-    if match:
-        cursor = coll.find(match, {"__v": 0})
-    else:
-        cursor = coll.find({}, {"__v": 0})
-
-    return list(cursor)
-
-
-def fetch_transaksi_selesai(start: datetime, end: datetime) -> list[dict]:
-    """Shortcut: transaksi status selesai saja."""
-    return fetch_transaksi(start, end, status="selesai")
-
-
-# ============================================================
-#  Pengeluaran Biaya
-# ============================================================
-def fetch_pengeluaran(start: datetime, end: datetime) -> list[dict]:
-    coll = database.get_collection(config.COLLECTION_PENGELUARAN)
-    cursor = coll.find(
-        {
-            "tanggal": {"$gte": start, "$lte": end},
-        },
-        {"__v": 0},
-    )
-    result = list(cursor)
-
-    # Enrich dengan nama kategori dari BiayaOperasional
-    kategori_coll = database.get_collection(config.COLLECTION_BIAYA_OPERASIONAL)
-    for item in result:
-        kat_id = item.get("kategoriId")
-        if kat_id:
-            kat = kategori_coll.find_one({"_id": kat_id})
-            if kat:
-                item["nama_kategori"] = kat.get("nama", "Lainnya")
-            else:
-                item["nama_kategori"] = "Lainnya"
-        else:
-            item["nama_kategori"] = "Lainnya"
-
-    return result
-
-
-# ============================================================
-#  Barang
-# ============================================================
-def fetch_barang_all() -> list[dict]:
-    coll = database.get_collection(config.COLLECTION_BARANG)
-    return list(coll.find({}, {"__v": 0}))
-
-
-# ============================================================
-#  Modal Utama
-# ============================================================
-def fetch_modal_utama() -> dict | None:
-    coll = database.get_collection(config.COLLECTION_MODAL_UTAMA)
-    return coll.find_one({}, {"__v": 0})
-
-
-# ============================================================
-#  Kewajiban
-# ============================================================
-def fetch_kewajiban_aktif() -> list[dict]:
-    coll = database.get_collection(config.COLLECTION_KEWAJIBAN)
-    return list(
-        coll.find(
-            {"status": {"$in": ["belum_lunas", "sebagian"]}},
-            {"__v": 0},
-        )
-    )
-
-
-def fetch_kewajiban_jatuh_tempo(hari_ke_depan: int = 30) -> list[dict]:
-    coll = database.get_collection(config.COLLECTION_KEWAJIBAN)
-    now = datetime.now(TZ)
-    batas = now + timedelta(days=hari_ke_depan)
-    return list(
-        coll.find(
-            {
-                "status": {"$in": ["belum_lunas", "sebagian"]},
-                "jatuh_tempo": {"$lte": batas, "$gte": now},
-            },
-            {"__v": 0},
-        ).sort("jatuh_tempo", 1)
-    )
-
-
-# ============================================================
-#  Settings
-# ============================================================
-def fetch_settings() -> dict:
-    coll = database.get_collection(config.COLLECTION_SETTINGS)
-    doc = coll.find_one({}, {"__v": 0})
-    return doc or {}
-
-
-# ============================================================
-#  Riwayat Modal (untuk cash flow)
-# ============================================================
-def fetch_riwayat_modal(start: datetime, end: datetime) -> list[dict]:
-    modal = fetch_modal_utama()
-    if not modal:
+def _find_documents(collection_name: str, query: dict | None = None) -> list[dict]:
+    try:
+        collection = get_collection(collection_name)
+        if collection is None:
+            return []
+        return list(collection.find(query or {}))
+    except Exception:
         return []
 
-    riwayat = modal.get("riwayat", [])
-    filtered = []
-    for r in riwayat:
-        tgl = r.get("tanggal")
-        if tgl:
-            if isinstance(tgl, str):
-                tgl = datetime.fromisoformat(tgl)
-            if isinstance(tgl, datetime):
-                tgl = tgl.replace(tzinfo=TZ) if tgl.tzinfo is None else tgl
-                if start <= tgl <= end:
-                    filtered.append(r)
 
-    return filtered
+def _find_one_document(collection_name: str, query: dict | None = None) -> dict | None:
+    try:
+        collection = get_collection(collection_name)
+        if collection is None:
+            return None
+        return collection.find_one(query or {})
+    except Exception:
+        return None
 
 
-# ============================================================
-#  Helper: rentang tanggal standar
-# ============================================================
-def get_range_hari_ini() -> tuple[datetime, datetime]:
-    now = _today()
-    end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-    return now, end
+def get_period(start: Any = None, end: Any = None) -> tuple[datetime, datetime]:
+    return _normalize_range(start, end)
 
 
-def get_range_minggu_ini() -> tuple[datetime, datetime]:
-    now = datetime.now(TZ)
-    hari = now.weekday()  # Senin=0
-    senin = (now - timedelta(days=hari)).replace(hour=0, minute=0, second=0, microsecond=0)
-    minggu = (senin + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
-    return senin, minggu
+def fetch_transactions(start: datetime | None = None, end: datetime | None = None) -> list[dict]:
+    query = {"status": "selesai"}
+    if start is not None or end is not None:
+        range_query: dict[str, datetime] = {}
+        if start is not None:
+            range_query["$gte"] = start
+        if end is not None:
+            range_query["$lte"] = end
+        query["tanggal_transaksi"] = range_query
+    return _find_documents(config.COLLECTION_TRANSAKSI, query)
 
 
-def get_range_bulan_ini() -> tuple[datetime, datetime]:
-    now = datetime.now(TZ)
-    awal = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    # Akhir bulan
-    if now.month == 12:
-        akhir = now.replace(year=now.year + 1, month=1, day=1) - timedelta(microseconds=1)
-    else:
-        akhir = now.replace(month=now.month + 1, day=1) - timedelta(microseconds=1)
-    return awal, akhir
+def fetch_pengeluaran(start: datetime | None = None, end: datetime | None = None) -> list[dict]:
+    query: dict[str, Any] = {}
+    if start is not None or end is not None:
+        range_query: dict[str, datetime] = {}
+        if start is not None:
+            range_query["$gte"] = start
+        if end is not None:
+            range_query["$lte"] = end
+        query["tanggal"] = range_query
+    return _find_documents(config.COLLECTION_PENGELUARAN, query)
 
 
-def get_range_periode_lalu(bulan: int = 1) -> tuple[datetime, datetime]:
-    """Bulan lalu default."""
-    now = datetime.now(TZ)
-    target_bulan = now.month - bulan
-    target_tahun = now.year
-    while target_bulan <= 0:
-        target_bulan += 12
-        target_tahun -= 1
+def fetch_settings() -> dict:
+    result = _find_one_document(config.COLLECTION_SETTINGS, {})
+    return result if result is not None else {}
 
-    awal = datetime(target_tahun, target_bulan, 1, tzinfo=TZ)
-    if target_bulan == 12:
-        akhir = datetime(target_tahun + 1, 1, 1, tzinfo=TZ) - timedelta(microseconds=1)
-    else:
-        akhir = datetime(target_tahun, target_bulan + 1, 1, tzinfo=TZ) - timedelta(microseconds=1)
-    return awal, akhir
+
+def fetch_modal_utama() -> dict:
+    result = _find_one_document(config.COLLECTION_MODAL_UTAMA, {})
+    return result if result is not None else {}
+
+
+def fetch_barang() -> list[dict]:
+    return _find_documents(config.COLLECTION_BARANG)
+
+
+def fetch_bahan_baku() -> list[dict]:
+    return _find_documents(config.COLLECTION_BAHAN_BAKU)
+
+
+def fetch_kewajiban() -> list[dict]:
+    return _find_documents(config.COLLECTION_KEWAJIBAN)

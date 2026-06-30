@@ -2,8 +2,6 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
-# Load .env dari root project (1 level di atas ai-service)
 _env_path = Path(__file__).resolve().parent.parent / ".env"
 if _env_path.exists():
     load_dotenv(_env_path)

@@ -6,9 +6,9 @@ import ModalUtama from "../../models/modalutama.js";
 import Barang from "../../models/databarang.js";
 import BahanBaku from "../../models/bahanbaku.js";
 import Kewajiban from "../../models/kewajiban.js";
+import BiRingkasan from "../../models/biRingkasan.js";
+import Settings from "../../models/settings.js";
 
-
-// Ambil semua laporan
 export const getAllLaporan = async (req, res) => {
   try {
     const laporan = await Laporan.find().sort({ createdAt: -1 });
@@ -18,7 +18,6 @@ export const getAllLaporan = async (req, res) => {
   }
 };
 
-// Ambil laporan berdasarkan periode
 export const getLaporanByPeriode = async (req, res) => {
   try {
     const { start, end } = req.query;
@@ -27,7 +26,6 @@ export const getLaporanByPeriode = async (req, res) => {
       return res.status(400).json({ message: "Harap sertakan parameter start dan end" });
     }
 
-    // Cari laporan yang periode-nya beririsan dengan rentang yang diminta
     const startDate = new Date(start);
     const endDate = new Date(end);
 
@@ -106,6 +104,9 @@ export const getRingkasanPenjualan = async (req, res) => {
     const total_pendapatan = Number(pendapatanObj.total_pendapatan || 0);
     const total_hpp = Number(itemsObj.total_hpp || 0);
     const total_barang_terjual = Number(itemsObj.total_barang_terjual || 0);
+    const targetOmzet = await Settings.findOne();
+    const target = targetOmzet?.targetOmzetBulanan ?? 0;
+
 
     // Pengeluaran biaya operasional dalam rentang
     const pengeluaranAgg = await PengeluaranBiaya.aggregate([
@@ -124,12 +125,92 @@ export const getRingkasanPenjualan = async (req, res) => {
         total_laba_kotor,
         total_biaya_operasional,
         total_laba_bersih,
-        total_barang_terjual
+        total_barang_terjual,
+        target,
       }
     });
   } catch (error) {
     console.error('Error getRingkasanPenjualan realtime:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const refreshBiRingkasanByPeriod = async (start, end) => {
+  const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+  const params = new URLSearchParams();
+
+  if (start) params.set("start", String(start));
+  if (end) params.set("end", String(end));
+
+  const targetUrl = `${aiServiceUrl}/bi/ringkasan${params.toString() ? `?${params}` : ""}`;
+  const response = await fetch(targetUrl, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`AI service returned an error ${response.status}: ${errorBody}`);
+  }
+
+  const payload = await response.json();
+  const settingsDoc = await Settings.findOne();
+  const target = settingsDoc?.targetOmzetBulanan ?? 0;
+  const startDate = start ? new Date(String(start)) : null;
+  const endDate = end ? new Date(String(end)) : null;
+
+  const doc = await BiRingkasan.findOneAndUpdate(
+    { key: "latest" },
+    {
+      $set: {
+        key: "latest",
+        periode: {
+          start: startDate,
+          end: endDate,
+        },
+        source: `ai-service:${aiServiceUrl}`,
+        payload,
+        pendapatan: payload.pendapatan || 0,
+        hpp: payload.hpp || 0,
+        laba_kotor: payload.laba_kotor || 0,
+        laba_bersih: payload.laba_bersih_estimasi || 0,
+        total_pengeluaran: payload.pengeluaran || 0,
+        target,
+        target_progress_pct: payload.target_progress_pct || 0,
+        metode_pembayaran: payload.metode_pembayaran || [],
+        top_produk: payload.top_produk || [],
+        bottom_produk: payload.bottom_produk || [],
+        cashflow: payload.cashflow || {},
+        stock: payload.stock || {},
+        inventory_value: payload.inventory_value || 0,
+        aset_tetap: payload.aset_tetap || [],
+        narrative: payload.narrative || "",
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return doc;
+};
+
+export const storeBiRingkasan = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const doc = await refreshBiRingkasanByPeriod(start, end);
+    return res.status(201).json({ message: "Bi-ringkasan tersimpan", data: doc });
+  } catch (error) {
+    console.error("Error storeBiRingkasan:", error);
+    return res.status(500).json({ message: "Gagal menyimpan bi-ringkasan", error: error.message });
+  }
+};
+
+export const getSavedBiRingkasan = async (req, res) => {
+  try {
+    const saved = await BiRingkasan.find({ key: "latest" }).sort({ updatedAt: -1 }).limit(1);
+    return res.json({ data: saved });
+  } catch (error) {
+    console.error("Error getSavedBiRingkasan:", error);
+    return res.status(500).json({ message: "Gagal mengambil data bi-ringkasan", error: error.message });
   }
 };
 

@@ -9,6 +9,7 @@ export {
   updateServiceCharge,
   updateStoreInfo,
   updateGeneralSettings,
+  getRekomendasiTargetOmzet,
   addPaymentMethod,
   addChannelToMethod,
   updateChannelName,

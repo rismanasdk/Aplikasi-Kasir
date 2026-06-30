@@ -4,6 +4,8 @@ import {
     getAllLaporan,
     getLaporanByPeriode,
     getRingkasanPenjualan,
+    storeBiRingkasan,
+    getSavedBiRingkasan,
     getRekapMetodePembayaran,
     getLaba,
     getDaftarBulanLaporan,
@@ -23,6 +25,8 @@ router.get("/periode", getLaporanByPeriode);
 
 // Admin ACC pesanan (pending -> selesai)
 router.get("/ringkasan", getRingkasanPenjualan);
+router.post("/bi-ringkasan", storeBiRingkasan);
+router.get("/bi-ringkasan", getSavedBiRingkasan);
 
 router.get("/bulan", getDaftarBulanLaporan);
 router.get("/metode-pembayaran", getRekapMetodePembayaran);

@@ -1,8 +1,9 @@
-import { Router } from "express";
-import { proxyBI } from "../controllers/ai-proxy-controller.js";
+import express from "express";
+import { proxyBI } from "../controllers/ai-proxi-controller.js";
 
-const router = Router();
-router.get("/*", proxyBI);
-router.post("/*", proxyBI);
+const router = express.Router();
+
+// Tangkap semua request yang masuk ke router ini
+router.use(proxyBI);
 
 export default router;

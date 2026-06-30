@@ -11,6 +11,7 @@ import {
   addChannelToMethod,
   updateChannelName,
   updateGeneralSettings,
+  getRekomendasiTargetOmzet,
   togglePaymentMethod,
   updateChannelLogo,
   deleteChannelFromMethod,
@@ -37,6 +38,7 @@ router.put("/payment-methods/channel-logo", upload.single("logo"), updateChannel
 router.patch("/payment-methods/channel-toggle", toggleChannelStatus);
 router.delete("/payment-methods/channel", deleteChannelFromMethod);
 router.put("/payment-methods/channel-name", updateChannelName);
+router.get("/rekomendasi-target-omzet", getRekomendasiTargetOmzet);
 router.put("/general", updateGeneralSettings);
 
 export default router;
