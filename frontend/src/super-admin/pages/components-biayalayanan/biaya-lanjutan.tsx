@@ -8,8 +8,12 @@ interface BiayaLanjutanProps {
   lowStockAlert: number;
   kasWarning: number;
   totalBiayaOperasional: number;
+  targetOmzetBulanan: number;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onGunakanRekomendasi?: () => void; 
+  loadingRekomendasi?: boolean;
 }
+
 
 const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({ 
   taxRate, 
@@ -17,7 +21,10 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
   serviceCharge, 
   lowStockAlert,
   kasWarning,
-  onInputChange
+  targetOmzetBulanan,
+  onInputChange,
+  onGunakanRekomendasi,
+  loadingRekomendasi,
 }) => {
   return (
     <div className="space-y-8">
@@ -99,99 +106,82 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Pengaturan Inventaris Section */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
-  <div className="flex items-center mb-6">
-    <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
-    <h2 className="text-2xl font-bold text-gray-900">
-      Pengaturan Inventaris
-    </h2>
-  </div>
-
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    {/* Peringatan Stok Rendah */}
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-3">
-        Peringatan Stok Rendah
-      </label>
-
-      <div className="relative">
-        <input
-          type="number"
-          name="lowStockAlert"
-          value={lowStockAlert}
-          onChange={onInputChange}
-          min="0"
-          className="w-full px-4 py-3 pr-16 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-        />
-
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-          <span className="text-gray-500 text-sm font-medium">
-            item
-          </span>
+        <div className="flex items-center mb-6">
+          <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-600 rounded-full mr-3"></div>
+          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Inventaris</h2>
         </div>
-      </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              Peringatan Stok Rendah
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                name="lowStockAlert"
+                value={lowStockAlert}
+                onChange={onInputChange}
+                min="0"
+                max="100"
+                step="0.1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white group-hover:border-gray-300"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <span className="text-gray-500 text-sm font-medium">%</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Notifikasi akan muncul ketika stok mencapai angka ini.</p>
+          </div>
 
-      <p className="text-xs text-gray-500 mt-2 flex items-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3 mr-1 text-orange-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Notifikasi akan muncul ketika stok mencapai angka ini.
-      </p>
-    </div>
-
-    {/* Peringatan Uang Kas Rendah */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
               Peringatan Uang Kas Rendah
             </label>
-
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                <span className="text-gray-500 text-sm font-medium">
-                  Rp
-                </span>
-              </div>
-
               <input
                 type="number"
                 name="kasWarning"
                 value={kasWarning}
                 onChange={onInputChange}
                 min="0"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                max="100"
+                step="0.1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white group-hover:border-gray-300"
               />
             </div>
+            <p className="text-xs text-gray-500 mt-2">Notifikasi akan muncul ketika uang kas mencapai nominal ini.</p>
+          </div>
 
-            <p className="text-xs text-gray-500 mt-2 flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3 w-3 mr-1 text-orange-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Notifikasi akan muncul ketika uang kas mencapai nominal ini.
+          {/* Biaya Operasional */}
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              Target Omzet Bulanan
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                name="targetOmzetBulanan"
+                value={targetOmzetBulanan}
+                onChange={onInputChange}
+                min="0"
+                max="100"
+                step="0.1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white group-hover:border-gray-300"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Bisa diisi manual, atau gunakan rekomendasi otomatis dari rata-rata omzet 90 hari terakhir.
             </p>
+            <button
+              type="button"
+              onClick={onGunakanRekomendasi}
+              disabled={loadingRekomendasi}
+              className="mt-2 text-xs font-medium text-orange-600 hover:text-orange-700 underline disabled:opacity-50"
+            >
+              {loadingRekomendasi ? "Menghitung..." : "Gunakan rekomendasi otomatis"}
+            </button>
           </div>
         </div>
       </div>

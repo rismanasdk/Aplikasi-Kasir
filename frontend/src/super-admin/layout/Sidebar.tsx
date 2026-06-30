@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   ChartNoAxesCombined,
   Package,
+  ChartColumnBig
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -128,6 +129,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       name: 'Produk',
       path: '/super-admin/products',
       icon: <Package size={20} />,
+    },
+    {
+      name: 'Bi Dashboard',
+      path: '/super-admin/bi-dashboard',
+      icon: <ChartColumnBig size={20} />,
     },
     {
       name: 'Laporan Keuangan',

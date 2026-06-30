@@ -283,7 +283,7 @@ app.use("/api/admin/status-pesanan", verifyToken, authorize(["admin"]), adminSta
 app.use("/api/admin/riwayat", verifyToken, authorize(["admin"]), adminRiwayat);
 app.use("/api/admin/stok-barang", adminStok);
 app.use("/api/admin/kategori", verifyToken, authorize(["admin", "super-admin"]), adminKategori)
-app.use("/api/admin/laporan", verifyToken, authorize(["admin", "manajer", "manager"]), adminLaporan);
+app.use("/api/admin/laporan", verifyToken, authorize(["admin", "manajer", "manager", "super-admin"]), adminLaporan);
 app.use("/api/admin/users", verifyToken, authorize(["super-admin"]), adminUsers);
 app.use("/api/admin/settings", verifyToken, authorize(["super-admin"]), adminSettingsRoutes);
 app.use("/api/admin/biaya-operasional", verifyToken, authorize(["admin"]), adminbiayaoperasional);

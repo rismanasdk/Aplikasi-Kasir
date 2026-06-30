@@ -20,7 +20,9 @@ const BiayaLayanan: React.FC = () => {
   const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [lowStockAlert, setLowStockAlert] = useState<number>(0);
   const [kasWarning, setkasWarning] = useState<number>(0);
+  const [targetOmzetBulanan, settargetOmzetBulanan] = useState<number>(0);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [loadingRekomendasi, setLoadingRekomendasi] = useState(false);
 
   const BASE_API_URL = `${API_URL}/api/admin/settings`;
   const API_KEY = `${ApiKey}`;
@@ -29,6 +31,32 @@ const BiayaLayanan: React.FC = () => {
   // Fungsi untuk mendapatkan token dari localStorage
   const getToken = () => {
     return getStoredToken();
+  };
+
+  const handleGunakanRekomendasi = async () => {
+    try {
+      setLoadingRekomendasi(true);
+      const token = getToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        headers['x-api-key'] = API_KEY;
+      }
+
+      const res = await fetch(`${API_URL}/api/super-admin/settings/rekomendasi-target-omzet`, { headers });
+      if (!res.ok) throw new Error('Gagal mengambil rekomendasi');
+      const data = await res.json();
+
+      // pakai handleInputChange yang SUDAH ADA, bukan onInputChange
+      handleInputChange({
+        target: { name: "targetOmzetBulanan", value: String(data.rekomendasiTargetOmzetBulanan) },
+      } as React.ChangeEvent<HTMLInputElement>);
+    } catch (err) {
+      SweetAlert.error('Gagal mengambil rekomendasi target omzet');
+      console.error("Gagal mengambil rekomendasi:", err);
+    } finally {
+      setLoadingRekomendasi(false);
+    }
   };
 
   const fetchSettings = useCallback(async () => {
@@ -58,6 +86,7 @@ const BiayaLayanan: React.FC = () => {
         if (typeof data.serviceCharge === 'number') setServiceCharge(data.serviceCharge);
         if (typeof data.lowStockAlert === 'number') setLowStockAlert(data.lowStockAlert);
         if (typeof data.kasWarning === 'number') setkasWarning(data.kasWarning);
+        if (typeof data.targetOmzetBulanan === 'number') settargetOmzetBulanan(data.targetOmzetBulanan);
       }
     } catch (error) {
       SweetAlert.error('Gagal memuat data pengaturan');
@@ -82,6 +111,7 @@ const BiayaLayanan: React.FC = () => {
       else if (name === 'serviceCharge') setServiceCharge(checked ? 1 : 0);
       else if (name === 'lowStockAlert') setLowStockAlert(checked ? 1 : 0);
       else if (name === 'kasWarning') setkasWarning(checked ? 1: 0);
+      else if (name === 'targetOmzetBulanan') settargetOmzetBulanan(checked ? 1 : 0);
     } else {
       // Update state sesuai dengan nama field
       if (name === 'taxRate') setTaxRate(parseFloat(value) || 0);
@@ -89,6 +119,7 @@ const BiayaLayanan: React.FC = () => {
       else if (name === 'serviceCharge') setServiceCharge(parseFloat(value) || 0);
       else if (name === 'lowStockAlert') setLowStockAlert(parseFloat(value) || 0);
       else if (name === 'kasWarning') setkasWarning(parseFloat(value) || 0);
+      else if (name === 'targetOmzetBulanan') settargetOmzetBulanan(parseFloat(value) || 0);
     }
   };
 
@@ -165,6 +196,18 @@ const handleSaveSettings = async () => {
       console.error('Server error:', errorData);
       throw new Error(errorData.message || 'Gagal menyimpan Peringatan Kas');
     }
+
+    const alerttargetOmzetBulanan = await fetch(`${BASE_API_URL}/general`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ targetOmzetBulanan })
+    })
+
+    if (!alerttargetOmzetBulanan.ok) {
+      const errorData = await alerttargetOmzetBulanan.json();
+      console.error('Server error:', errorData);
+      throw new Error(errorData.message || 'Gagal menyimpan Target Omzet');
+    }
     
     SweetAlert.close();
     
@@ -214,7 +257,10 @@ const handleSaveSettings = async () => {
               serviceCharge={serviceCharge}
               lowStockAlert={lowStockAlert}
               kasWarning={kasWarning}
+              targetOmzetBulanan={targetOmzetBulanan}
               totalBiayaOperasional={totalBiayaOperasional}
+              onGunakanRekomendasi={handleGunakanRekomendasi}
+              loadingRekomendasi={loadingRekomendasi}
               onInputChange={handleInputChange}
             />
           )}

@@ -5,7 +5,6 @@ import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Barang from "../../models/databarang.js";
 import Settings from "../../models/settings.js";
 
-const DEFAULT_TARGET_OMZET_BULANAN = 15000000;
 const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
 // --- KATEGORI (MASTER) CRUD ---
@@ -71,10 +70,6 @@ export const updateAllBarangHargaFinal = async () => {
   const totalBiayaOperasional = (agg && agg[0] && agg[0].total) ? agg[0].total : 0;
 
   const allBarang = await Barang.find();
-
-  if (settings.targetOmzetBulanan === undefined || settings.targetOmzetBulanan === null) {
-    settings.targetOmzetBulanan = DEFAULT_TARGET_OMZET_BULANAN;
-  }
 
   const targetOmzetBulanan = Number(settings.targetOmzetBulanan) || 0;
 

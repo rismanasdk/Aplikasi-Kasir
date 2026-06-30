@@ -13,6 +13,7 @@ import SuperAdminNeraca from '../pages/neraca';
 import SuperAdmin404 from '../pages/404notfound';
 import SuperAdminDashboardAnalytics from '../pages/DashboardAnalytics';
 import SuperAdminProducts from '../pages/products';
+import BIDashboard from '../bi/BIDashboard';
 
 const SuperAdminRouter: React.FC = () => {
   return (
@@ -23,6 +24,9 @@ const SuperAdminRouter: React.FC = () => {
 
         {/** Laporan Keuangan Route */}
         <Route path="dashboard-analytics" element={<SuperAdminDashboardAnalytics />} />
+
+        {/** BI Dashboard Route */}
+        <Route path="bi-dashboard" element={<BIDashboard />} />
         
         {/* Laporan Keuangan Route */}
         <Route path="laporan-keuangan" element={<SuperAdminLaporanKeuangan />} />
