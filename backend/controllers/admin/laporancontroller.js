@@ -8,6 +8,7 @@ import BahanBaku from "../../models/bahanbaku.js";
 import Kewajiban from "../../models/kewajiban.js";
 import BiRingkasan from "../../models/biRingkasan.js";
 import Settings from "../../models/settings.js";
+import { buildAiUrl, fetchWithTimeout, parseAiServiceResponse } from "../../services/aiService.js";
 
 export const getAllLaporan = async (req, res) => {
   try {
@@ -136,24 +137,15 @@ export const getRingkasanPenjualan = async (req, res) => {
 };
 
 export const refreshBiRingkasanByPeriod = async (start, end) => {
-  const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
-  const params = new URLSearchParams();
-
-  if (start) params.set("start", String(start));
-  if (end) params.set("end", String(end));
-
-  const targetUrl = `${aiServiceUrl}/bi/ringkasan${params.toString() ? `?${params}` : ""}`;
-  const response = await fetch(targetUrl, {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
+  const targetUrl = buildAiUrl("/bi/ringkasan", { start, end });
+  const response = await fetchWithTimeout(targetUrl, { method: "GET", headers: { Accept: "application/json" } });
 
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`AI service returned an error ${response.status}: ${errorBody}`);
   }
 
-  const payload = await response.json();
+  const payload = await parseAiServiceResponse(response);
   const settingsDoc = await Settings.findOne();
   const target = settingsDoc?.targetOmzetBulanan ?? 0;
   const startDate = start ? new Date(String(start)) : null;
