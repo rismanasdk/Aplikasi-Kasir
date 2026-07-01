@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     AI_API_KEY: str = ""
     AI_MODEL: str = "gpt-4.1-mini"
     AI_TEMPERATURE: float = 0.2
-    AI_MAX_TOKENS: int = 1500
-    AI_TIMEOUT: int = 30
+    AI_MAX_TOKENS: int = 3000
+    AI_TIMEOUT: int = 60
 
     HOST: str = "0.0.0.0"
     PORT: int = 8000

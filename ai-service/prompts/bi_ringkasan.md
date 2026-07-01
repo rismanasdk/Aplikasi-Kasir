@@ -32,5 +32,7 @@ Rules:
 
 IMPORTANT: Return ONLY the JSON object above. Do NOT wrap the JSON in markdown or code fences (no `, `json, or other wrappers), do NOT include any explanatory text, and do NOT include comments.
 
+- If the response would be truncated, continue until the JSON object is complete and the final characters are a closing `}`.
+
 Data:
 {data_json}

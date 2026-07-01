@@ -7,6 +7,7 @@ import BiayaOperasional from "../../../models/biayaoperasional.js";
 import ModalUtama from "../../../models/modalutama.js";
 import BiRingkasan from "../../../models/biRingkasan.js";
 import Settings from "../../../models/settings.js";
+import { AI_SERVICE_URL, buildAiUrl, fetchWithTimeout, parseAiServiceResponse } from "../../../services/aiService.js";
 
 const getOmzetKeterangan = (nomorTransaksi) => `Omzet penjualan: ${nomorTransaksi}`;
 
@@ -207,14 +208,11 @@ export const persistBiRingkasanSnapshot = async (transaksi) => {
     console.log("DEBUG target dari settings:", settingsDoc?.targetOmzetBulanan);
     const target = settingsDoc?.targetOmzetBulanan ?? 0;
     console.log("target:", target);
-    const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
-    const params = new URLSearchParams({
+    const targetUrl = buildAiUrl("/bi/ringkasan", {
       start: start.toISOString().slice(0, 10),
       end: end.toISOString().slice(0, 10),
     });
-
-    const targetUrl = `${aiServiceUrl}/bi/ringkasan?${params}`;
-    const response = await fetch(targetUrl, {
+    const response = await fetchWithTimeout(targetUrl, {
       method: "GET",
       headers: { Accept: "application/json" },
     });
@@ -224,14 +222,14 @@ export const persistBiRingkasanSnapshot = async (transaksi) => {
       throw new Error(`AI service error ${response.status}: ${text}`);
     }
 
-    const payload = await response.json();
+    const payload = await parseAiServiceResponse(response);
     const doc = await BiRingkasan.findOneAndUpdate(
       { key: "latest" },
       {
         $set: {
           key: "latest",
           periode: { start, end },
-          source: `ai-service:${aiServiceUrl}`,
+          source: `ai-service:${AI_SERVICE_URL}`,
           payload,
           pendapatan: (payload && payload.summary && payload.summary.pendapatan) || 0,
           hpp: (payload && payload.summary && payload.summary.hpp) || 0,
