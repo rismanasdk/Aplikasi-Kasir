@@ -159,6 +159,46 @@ export const refreshBiRingkasanByPeriod = async (start, end) => {
   const startDate = start ? new Date(String(start)) : null;
   const endDate = end ? new Date(String(end)) : null;
 
+  // Defensive number resolver: AI responses may return numbers or objects like { total: 0 }
+  const resolveNumber = (v) => {
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+      const cleaned = v.replace(/[^0-9.\-]/g, '');
+      const n = Number(cleaned);
+      return Number.isNaN(n) ? 0 : n;
+    }
+    if (typeof v === 'object') {
+      if (v.total != null) return resolveNumber(v.total);
+      if (v.value != null) return resolveNumber(v.value);
+      // if object has numeric properties, try to find one
+      for (const key of Object.keys(v)) {
+        const candidate = v[key];
+        if (typeof candidate === 'number') return candidate;
+        if (typeof candidate === 'string') {
+          const n = Number(candidate.replace(/[^0-9.\-]/g, ''));
+          if (!Number.isNaN(n)) return n;
+        }
+      }
+      return 0;
+    }
+    return 0;
+  };
+
+  const pickNumber = (obj, keys) => {
+    for (const k of keys) {
+      if (obj && Object.prototype.hasOwnProperty.call(obj, k)) {
+        const v = obj[k];
+        const n = resolveNumber(v);
+        if (n !== 0) return n;
+      }
+    }
+    return 0;
+  };
+
+  // debug log to inspect AI payload structure when issues occur
+  console.debug('AI payload for bi-ringkasan:', JSON.stringify(payload));
+
   const doc = await BiRingkasan.findOneAndUpdate(
     { key: "latest" },
     {
@@ -170,19 +210,19 @@ export const refreshBiRingkasanByPeriod = async (start, end) => {
         },
         source: `ai-service:${aiServiceUrl}`,
         payload,
-        pendapatan: payload.pendapatan || 0,
-        hpp: payload.hpp || 0,
-        laba_kotor: payload.laba_kotor || 0,
-        laba_bersih: payload.laba_bersih_estimasi || 0,
-        total_pengeluaran: payload.pengeluaran || 0,
+        pendapatan: pickNumber(payload, ['pendapatan', 'total_pendapatan', 'total'] ),
+        hpp: pickNumber(payload, ['hpp', 'total_hpp', 'total_hpp'] ),
+        laba_kotor: pickNumber(payload, ['laba_kotor', 'total_laba_kotor'] ),
+        laba_bersih: pickNumber(payload, ['laba_bersih_estimasi', 'total_laba_bersih', 'laba_bersih'] ),
+        total_pengeluaran: pickNumber(payload, ['pengeluaran', 'total_pengeluaran', 'total'] ),
         target,
-        target_progress_pct: payload.target_progress_pct || 0,
+        target_progress_pct: pickNumber(payload, ['target_progress_pct', 'target_progress_pct'] ),
         metode_pembayaran: payload.metode_pembayaran || [],
         top_produk: payload.top_produk || [],
         bottom_produk: payload.bottom_produk || [],
         cashflow: payload.cashflow || {},
         stock: payload.stock || {},
-        inventory_value: payload.inventory_value || 0,
+        inventory_value: pickNumber(payload, ['inventory_value', 'inventory_value'] ),
         aset_tetap: payload.aset_tetap || [],
         narrative: payload.narrative || "",
       },
