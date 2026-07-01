@@ -295,6 +295,15 @@ export default function RingkasanBisnis() {
               </div>
               
               <div className="space-y-5">
+                {aiSummary.status && (
+                  <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                      <h4 className="text-sm font-semibold text-amber-900">Status</h4>
+                    </div>
+                    <p className="text-sm font-semibold text-amber-950">{aiSummary.status}</p>
+                  </div>
+                )}
                 {aiSummary.insight && aiSummary.insight.length > 0 && (
                   <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                     <div className="mb-3 flex items-center gap-2">
