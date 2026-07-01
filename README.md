@@ -27,6 +27,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Block IP address otomatis ketika terkena trap routes
 - Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
 - Smart Notifikasi pada role super-admin yang meliputi Uang Kas, Liabilitas, Stok Barang/Produk
+- Business Intelligence dengan mengimplementasikan model AI `Gemini, GPT` kedalam analis data 
 
 ## Fitur Per Area
 
@@ -41,7 +42,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Kelola master biaya operasional dan pengeluaran biaya
 - Kelola Data Kewajiban/liabilitas, termasuk pembayaran kewajiban
 - Kelola Neraca berbasis aset, liabilitas, dan ekuitas
-
+- Akses dashboard Business Intelligence
 ### Admin
 
 - Kelola stok barang, status barang, dan publikasi barang
