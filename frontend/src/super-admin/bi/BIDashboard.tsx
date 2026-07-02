@@ -8,6 +8,7 @@ const CashflowAnalysis = lazy(() => import('./components/CashflowAnalysis'));
 const TABS = [
   { id: 'ringkasan', label: 'Ringkasan Bisnis' },
   { id: 'cashflow', label: 'Cash Flow' },
+  { id: 'produk', label: 'Produk' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -15,6 +16,7 @@ type TabId = typeof TABS[number]['id'];
 const PanelMap: Record<TabId, React.LazyExoticComponent<React.ComponentType>> = {
   ringkasan: RingkasanBisnis,
   cashflow: CashflowAnalysis,
+  produk: lazy(() => import('./components/ProdukAnalysis')),
 };
 
 const BIDashboard: React.FC = () => {

@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from clients.ai_client import AIClient, build_ai_client
 from config import get_settings
-from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse
+from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse, ProdukRequest, ProdukResponse
 from utils.prompt_renderer import PromptRenderer
 import logging
 import re
@@ -18,6 +18,7 @@ class BusinessIntelligenceService:
         self.ai_client = ai_client or build_ai_client(self.settings)
         self.ringkasan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "ringkasan.md")
         self.cashflow_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "cashflow.md")
+        self.produk_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "produk.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -78,6 +79,64 @@ class BusinessIntelligenceService:
                 return self._parse_cashflow_response(retry_response)
             except ValueError:
                 return self._build_fallback_cashflow_response(payload)
+
+    async def analyze_produk(self, payload: ProdukRequest) -> ProdukResponse:
+        prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump())})
+        raw_response = await self.ai_client.generate(prompt)
+
+        try:
+            return self._parse_produk_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump()), "retry": True})
+            retry_response = await self.ai_client.generate(fallback_prompt)
+            try:
+                return self._parse_produk_response(retry_response)
+            except ValueError:
+                return self._build_fallback_produk_response(payload)
+
+    def _build_fallback_produk_response(self, payload: ProdukRequest) -> ProdukResponse:
+        produk = payload.produk
+        total_produk = int(produk.total_produk or 0)
+        produk_aktif = int(produk.produk_aktif or 0)
+        produk_stagnan = int(produk.produk_stagnan or 0)
+
+        status = "sehat" if produk_aktif / (total_produk or 1) > 0.6 else "waspada"
+        score = 80 if status == "sehat" else 60
+
+        insight = [
+            f"Total produk: {total_produk} (aktif: {produk_aktif}, stagnan: {produk_stagnan}).",
+            f"Total produk terjual: {produk.total_produk_terjual} dengan omzet {produk.total_omzet}.",
+        ]
+
+        rekomendasi = [
+            "Evaluasi produk stagnan: promosi atau hentikan pembelian.",
+            "Prioritaskan restock untuk produk top-selling yang stoknya menipis.",
+        ]
+
+        return ProdukResponse(
+            status=status,
+            score=score,
+            insight=insight,
+            warning=[],
+            rekomendasi=rekomendasi,
+            narasi="Analisis produk fallback: data ringkasan tersedia tetapi AI tidak merespon dengan benar."
+        )
+
+    def _parse_produk_response(self, raw_response: str) -> ProdukResponse:
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Produk AI response did not contain a JSON object.") from exc
+
+        return ProdukResponse.model_validate(parsed)
 
     def _build_fallback_cashflow_response(self, payload: CashflowRequest) -> CashflowResponse:
         """Build fallback response when AI analysis fails"""
