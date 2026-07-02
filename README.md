@@ -43,6 +43,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Kelola Data Kewajiban/liabilitas, termasuk pembayaran kewajiban
 - Kelola Neraca berbasis aset, liabilitas, dan ekuitas
 - Akses dashboard Business Intelligence
+
 ### Admin
 
 - Kelola stok barang, status barang, dan publikasi barang

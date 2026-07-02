@@ -94,6 +94,45 @@ export const getCashflow = (start?: string, end?: string) => {
   });
 };
 
+export const getProduk = (start?: string, end?: string) => {
+  const fallback = defaultMonthRange();
+  return biFetch('/produk', {
+    start: start ?? fallback.start,
+    end: end ?? fallback.end,
+  });
+};
+
+export const generateAiProduk = async (payload: { produk: any }) => {
+  const res = await fetch(`${AI_BASE}/produk`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = responsePayload?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: any) => item?.msg || JSON.stringify(item)).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      responsePayload?.message ||
+      responsePayload?.error ||
+      detailMessage ||
+      'Gagal menghasilkan analisis produk.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};
+
 export const generateAiCashflow = async (payload: {
   cashflow: {
     kas: number;

@@ -45,3 +45,39 @@ class CashflowResponse(BaseModel):
     rekomendasi: List[str]
     narasi: str
 
+
+class ProdukDetail(BaseModel):
+    kode_barang: str
+    nama_barang: str
+    kategori: str | None = None
+    stok: int = Field(..., ge=0)
+    jumlah_terjual: int = Field(..., ge=0)
+    omzet: float = Field(..., ge=0)
+    kontribusi_persen: float = Field(..., ge=0)
+    last_sold_date: str | None = None
+
+
+class ProdukInput(BaseModel):
+    total_produk: int = Field(..., ge=0)
+    produk_aktif: int = Field(..., ge=0)
+    produk_stagnan: int = Field(..., ge=0)
+    total_produk_terjual: int = Field(..., ge=0)
+    total_omzet: float = Field(..., ge=0)
+    top_selling: List[ProdukDetail]
+    bottom_selling: List[ProdukDetail]
+    stagnan_produk: List[ProdukDetail]
+    semua_produk: List[ProdukDetail]
+
+
+class ProdukRequest(BaseModel):
+    produk: ProdukInput
+
+
+class ProdukResponse(BaseModel):
+    status: str
+    score: int = Field(..., ge=0, le=100)
+    insight: List[str]
+    warning: List[str]
+    rekomendasi: List[str]
+    narasi: str
+

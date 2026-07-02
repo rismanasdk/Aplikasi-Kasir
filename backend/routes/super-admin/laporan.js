@@ -31,6 +31,8 @@ router.get("/neraca", getNeraca);
 // Cashflow analytics
 router.get("/cashflow/balance", getCashBalance);
 router.get("/cashflow", getCashflowSummary);
+import { getProdukSummary } from "../../controllers/super-admin/produkController.js";
+router.get("/produk", getProdukSummary);
 router.get("/:id", getLaporanById);
 
 export default router;
