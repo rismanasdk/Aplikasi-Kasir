@@ -81,3 +81,43 @@ class ProdukResponse(BaseModel):
     rekomendasi: List[str]
     narasi: str
 
+
+class PersediaanDetail(BaseModel):
+    kode_barang: str
+    nama_barang: str
+    kategori: str | None = None
+    stok: int = Field(..., ge=0)
+    stok_minimal: int = Field(..., ge=0)
+    harga_beli: float = Field(..., ge=0)
+    harga_jual: float = Field(..., ge=0)
+    nilai_stok: float = Field(..., ge=0)
+    jumlah_terjual: int = Field(..., ge=0)
+    omzet: float = Field(..., ge=0)
+    last_sold_date: str | None = None
+    hari_sejak_terjual: int | None = None
+    kontribusi_persen: float = Field(..., ge=0)
+
+
+class PersediaanInput(BaseModel):
+    total_produk: int = Field(..., ge=0)
+    total_stok: int = Field(..., ge=0)
+    nilai_persediaan: float = Field(..., ge=0)
+    produk_habis: List[PersediaanDetail] = Field(default_factory=list)
+    produk_hampir_habis: List[PersediaanDetail] = Field(default_factory=list)
+    fast_moving: List[PersediaanDetail] = Field(default_factory=list)
+    slow_moving: List[PersediaanDetail] = Field(default_factory=list)
+    semua_produk: List[PersediaanDetail] = Field(default_factory=list)
+
+
+class PersediaanRequest(BaseModel):
+    persediaan: PersediaanInput
+
+
+class PersediaanResponse(BaseModel):
+    status: str
+    score: int = Field(..., ge=0, le=100)
+    insight: List[str]
+    warning: List[str]
+    rekomendasi: List[str]
+    narasi: str
+

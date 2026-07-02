@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from clients.ai_client import AIClient, build_ai_client
 from config import get_settings
-from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse, ProdukRequest, ProdukResponse
+from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse, ProdukRequest, ProdukResponse, PersediaanRequest, PersediaanResponse
 from utils.prompt_renderer import PromptRenderer
 import logging
 import re
@@ -19,10 +19,14 @@ class BusinessIntelligenceService:
         self.ringkasan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "ringkasan.md")
         self.cashflow_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "cashflow.md")
         self.produk_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "produk.md")
+        self.persediaan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "persediaan.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
-        raw_response = await self.ai_client.generate(prompt)
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_ringkasan_response(payload)
 
         try:
             return self._parse_ringkasan_response(raw_response)
@@ -31,7 +35,10 @@ class BusinessIntelligenceService:
                 "data": json.dumps(payload.model_dump()),
                 "retry": True,
             })
-            retry_response = await self.ai_client.generate(fallback_prompt)
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_ringkasan_response(payload)
             try:
                 return self._parse_ringkasan_response(retry_response)
             except ValueError:
@@ -65,7 +72,10 @@ class BusinessIntelligenceService:
     async def analyze_cashflow(self, payload: CashflowRequest) -> CashflowResponse:
         """Analyze cashflow health and provide insights"""
         prompt = self.cashflow_renderer.render({"data": json.dumps(payload.model_dump())})
-        raw_response = await self.ai_client.generate(prompt)
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_cashflow_response(payload)
 
         try:
             return self._parse_cashflow_response(raw_response)
@@ -74,7 +84,10 @@ class BusinessIntelligenceService:
                 "data": json.dumps(payload.model_dump()),
                 "retry": True,
             })
-            retry_response = await self.ai_client.generate(fallback_prompt)
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_cashflow_response(payload)
             try:
                 return self._parse_cashflow_response(retry_response)
             except ValueError:
@@ -82,17 +95,43 @@ class BusinessIntelligenceService:
 
     async def analyze_produk(self, payload: ProdukRequest) -> ProdukResponse:
         prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump())})
-        raw_response = await self.ai_client.generate(prompt)
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_produk_response(payload)
 
         try:
             return self._parse_produk_response(raw_response)
         except ValueError:
             fallback_prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump()), "retry": True})
-            retry_response = await self.ai_client.generate(fallback_prompt)
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_produk_response(payload)
             try:
                 return self._parse_produk_response(retry_response)
             except ValueError:
                 return self._build_fallback_produk_response(payload)
+
+    async def analyze_persediaan(self, payload: PersediaanRequest) -> PersediaanResponse:
+        prompt = self.persediaan_renderer.render({"data": json.dumps(payload.model_dump())})
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_persediaan_response(payload)
+
+        try:
+            return self._parse_persediaan_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.persediaan_renderer.render({"data": json.dumps(payload.model_dump()), "retry": True})
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_persediaan_response(payload)
+            try:
+                return self._parse_persediaan_response(retry_response)
+            except ValueError:
+                return self._build_fallback_persediaan_response(payload)
 
     def _build_fallback_produk_response(self, payload: ProdukRequest) -> ProdukResponse:
         produk = payload.produk
@@ -122,6 +161,34 @@ class BusinessIntelligenceService:
             narasi="Analisis produk fallback: data ringkasan tersedia tetapi AI tidak merespon dengan benar."
         )
 
+    def _build_fallback_persediaan_response(self, payload: PersediaanRequest) -> PersediaanResponse:
+        persediaan = payload.persediaan
+        total_stok = int(persediaan.total_stok or 0)
+        nilai_persediaan = float(persediaan.nilai_persediaan or 0)
+        produk_habis = len(persediaan.produk_habis or [])
+        produk_hampir_habis = len(persediaan.produk_hampir_habis or [])
+
+        status = "sehat" if produk_habis == 0 and produk_hampir_habis <= 2 else "waspada"
+        score = 80 if status == "sehat" else 60
+
+        insight = [
+            f"Total stok tercatat sebesar {total_stok} unit.",
+            f"Nilai persediaan mencapai {nilai_persediaan:,.0f}.",
+            f"Produk habis: {produk_habis}; produk hampir habis: {produk_hampir_habis}.",
+        ]
+
+        return PersediaanResponse(
+            status=status,
+            score=score,
+            insight=insight,
+            warning=["Perlu pantau stok yang sudah habis atau mendekati batas minimum."] if produk_habis or produk_hampir_habis else [],
+            rekomendasi=[
+                "Prioritaskan restock untuk produk yang sudah habis atau hampir habis.",
+                "Pantau kategori fast moving agar stok tidak cepat habis.",
+            ],
+            narasi="Analisis persediaan menggunakan data stok dan penjualan dasar karena layanan AI sedang tidak tersedia atau memberikan respons yang tidak valid."
+        )
+
     def _parse_produk_response(self, raw_response: str) -> ProdukResponse:
         try:
             parsed = json.loads(raw_response)
@@ -137,6 +204,22 @@ class BusinessIntelligenceService:
                 raise ValueError("Produk AI response did not contain a JSON object.") from exc
 
         return ProdukResponse.model_validate(parsed)
+
+    def _parse_persediaan_response(self, raw_response: str) -> PersediaanResponse:
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Persediaan AI response did not contain a JSON object.") from exc
+
+        return PersediaanResponse.model_validate(parsed)
 
     def _build_fallback_cashflow_response(self, payload: CashflowRequest) -> CashflowResponse:
         """Build fallback response when AI analysis fails"""

@@ -30,7 +30,7 @@ async function biFetch(
   const payload = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message = payload?.message || payload?.error || 'Gagal mengambil data ringkasan.';
+    const message = (payload as { message?: string; error?: string } | null)?.message || (payload as { message?: string; error?: string } | null)?.error || 'Gagal mengambil data ringkasan.';
     throw new Error(message);
   }
 
@@ -69,15 +69,18 @@ export const generateAiRingkasan = async (payload: {
   const responsePayload = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail = responsePayload?.detail;
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
     const detailMessage = Array.isArray(detail)
-      ? detail.map((item: any) => item?.msg || JSON.stringify(item)).join(' | ')
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
       : typeof detail === 'string'
       ? detail
       : undefined;
     const message =
-      responsePayload?.message ||
-      responsePayload?.error ||
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
       detailMessage ||
       'Gagal menghasilkan ringkasan AI.';
     throw new Error(message);
@@ -102,7 +105,15 @@ export const getProduk = (start?: string, end?: string) => {
   });
 };
 
-export const generateAiProduk = async (payload: { produk: any }) => {
+export const getPersediaan = (start?: string, end?: string) => {
+  const fallback = defaultMonthRange();
+  return biFetch('/persediaan', {
+    start: start ?? fallback.start,
+    end: end ?? fallback.end,
+  });
+};
+
+export const generateAiProduk = async (payload: { produk: Record<string, unknown> }) => {
   const res = await fetch(`${AI_BASE}/produk`, {
     method: 'POST',
     headers: {
@@ -116,17 +127,54 @@ export const generateAiProduk = async (payload: { produk: any }) => {
   const responsePayload = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail = responsePayload?.detail;
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
     const detailMessage = Array.isArray(detail)
-      ? detail.map((item: any) => item?.msg || JSON.stringify(item)).join(' | ')
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
       : typeof detail === 'string'
       ? detail
       : undefined;
     const message =
-      responsePayload?.message ||
-      responsePayload?.error ||
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
       detailMessage ||
       'Gagal menghasilkan analisis produk.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};
+
+export const generateAiPersediaan = async (payload: { persediaan: Record<string, unknown> }) => {
+  const res = await fetch(`${AI_BASE}/persediaan`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
+      detailMessage ||
+      'Gagal menghasilkan analisis persediaan.';
     throw new Error(message);
   }
 
@@ -156,15 +204,18 @@ export const generateAiCashflow = async (payload: {
   const responsePayload = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail = responsePayload?.detail;
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
     const detailMessage = Array.isArray(detail)
-      ? detail.map((item: any) => item?.msg || JSON.stringify(item)).join(' | ')
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
       : typeof detail === 'string'
       ? detail
       : undefined;
     const message =
-      responsePayload?.message ||
-      responsePayload?.error ||
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
       detailMessage ||
       'Gagal menghasilkan analisis cashflow.';
     throw new Error(message);

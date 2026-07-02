@@ -4,7 +4,7 @@ import json
 
 from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse
 from services.bi_service import BusinessIntelligenceService
-from models.bi_models import ProdukRequest, ProdukResponse
+from models.bi_models import ProdukRequest, ProdukResponse, PersediaanRequest, PersediaanResponse
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -69,4 +69,26 @@ async def analyze_produk(request: Request):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - defensive handling
         logger.error(f"Unexpected error in analyze_produk: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.post("/persediaan", response_model=PersediaanResponse)
+async def analyze_persediaan(request: Request):
+    try:
+        body = await request.json()
+        logger.debug(f"Raw persediaan body keys: {list(body.keys()) if isinstance(body, dict) else 'not a dict'}")
+        payload = PersediaanRequest(**body)
+        return await service.analyze_persediaan(payload)
+    except ValidationError as e:
+        logger.error(f"Persediaan validation error: {e.error_count()} errors")
+        for error in e.errors():
+            loc_path = " → ".join(str(x) for x in error["loc"])
+            logger.error(f"  - {loc_path}: {error['msg']} (type: {error.get('type', 'unknown')})")
+        raise HTTPException(status_code=422, detail=[{
+            "loc": error["loc"],
+            "msg": error["msg"],
+            "type": error.get("type", "unknown")
+        } for error in e.errors()]) from e
+    except Exception as exc:
+        logger.error(f"Unexpected error in analyze_persediaan: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error") from exc
