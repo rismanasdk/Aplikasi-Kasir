@@ -35,4 +35,4 @@ IMPORTANT: Return ONLY the JSON object above. Do NOT wrap the JSON in markdown o
 - If the response would be truncated, continue until the JSON object is complete and the final characters are a closing `}`.
 
 Data:
-{data_json}
+{data}

@@ -3,15 +3,18 @@ import { Skeleton } from './components/SharedComponents';
 
 // Lazy load semua panel agar tidak load sekaligus
 const RingkasanBisnis = lazy(() => import('./components/RingkasanBisnis'));
+const CashflowAnalysis = lazy(() => import('./components/CashflowAnalysis'));
 
 const TABS = [
   { id: 'ringkasan', label: 'Ringkasan Bisnis' },
+  { id: 'cashflow', label: 'Cash Flow' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
 
 const PanelMap: Record<TabId, React.LazyExoticComponent<React.ComponentType>> = {
   ringkasan: RingkasanBisnis,
+  cashflow: CashflowAnalysis,
 };
 
 const BIDashboard: React.FC = () => {

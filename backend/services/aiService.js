@@ -1,7 +1,7 @@
 export const AI_SERVICE_URL = (process.env.AI_SERVICE_URL || "http://localhost:8000").replace(/\/+$|\s+$/g, "");
 export const AI_SERVICE_TIMEOUT_MS = (() => {
-  const configured = Number.parseInt(process.env.AI_SERVICE_TIMEOUT_MS || "15000", 10);
-  return Number.isFinite(configured) && configured > 0 ? configured : 15000;
+  const configured = Number.parseInt(process.env.AI_SERVICE_TIMEOUT_MS || "90000", 10);
+  return Number.isFinite(configured) && configured > 0 ? configured : 90000;
 })();
 
 export const buildAiUrl = (path = "", queryParams = {}) => {
