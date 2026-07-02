@@ -85,3 +85,51 @@ export const generateAiRingkasan = async (payload: {
 
   return responsePayload;
 };
+
+export const getCashflow = (start?: string, end?: string) => {
+  const fallback = defaultMonthRange();
+  return biFetch('/cashflow', {
+    startDate: start ?? fallback.start,
+    endDate: end ?? fallback.end,
+  });
+};
+
+export const generateAiCashflow = async (payload: {
+  cashflow: {
+    kas: number;
+    total_modal: number;
+    sisa_modal: number;
+    kas_masuk: number;
+    kas_keluar: number;
+    arus_kas_bersih: number;
+  };
+}) => {
+  const res = await fetch(`${AI_BASE}/cashflow`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = responsePayload?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: any) => item?.msg || JSON.stringify(item)).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      responsePayload?.message ||
+      responsePayload?.error ||
+      detailMessage ||
+      'Gagal menghasilkan analisis cashflow.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};

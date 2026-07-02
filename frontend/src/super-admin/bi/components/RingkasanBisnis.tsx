@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { generateAiRingkasan, getRingkasan } from '../biApi';
-import { BISection, StatCard, NarasiBox, Skeleton, EmptyState } from './SharedComponents';
+import { StatCard, NarasiBox, Skeleton, EmptyState } from './SharedComponents';
 import { rp } from './biUiHelpers';
 import { currentMonthValue, monthToRange } from '../utils/dateUtils';
 
@@ -51,16 +51,6 @@ function RefreshIcon({ className }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
 
 function LightbulbIcon({ className }: { className?: string }) {
   return (
@@ -184,17 +174,17 @@ export default function RingkasanBisnis() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-yellow-400 p-6 shadow-xl">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         <div className="relative z-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <ChartIcon className="h-6 w-6 text-blue-400" />
+                <ChartIcon className="h-6 w-6 text-black-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Ringkasan Bisnis</h2>
-                <p className="mt-0.5 text-sm text-slate-400">
+                <h2 className="text-xl font-bold text-black">Ringkasan Bisnis</h2>
+                <p className="mt-0.5 text-sm text-black">
                   {formatMonthDisplay(selectedMonth)}
                 </p>
               </div>
@@ -204,13 +194,12 @@ export default function RingkasanBisnis() {
                 type="button"
                 onClick={() => void handleGenerateAiSummary()}
                 disabled={aiLoading || !data?.ringkasan}
-                className="group inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-sm font-medium text-violet-300 backdrop-blur-sm transition-all hover:border-violet-500/50 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="group inline-flex items-center gap-2 rounded-xl border border-blue-500 bg-blue-500 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <SparklesIcon className={`h-4 w-4 ${aiLoading ? 'animate-pulse' : 'group-hover:rotate-12 transition-transform'}`} />
                 <span>{aiLoading ? 'Menganalisis...' : 'Analisis AI'}</span>
               </button>
               <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 <input
                   type="month"
                   value={selectedMonth}
