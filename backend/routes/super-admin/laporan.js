@@ -15,6 +15,8 @@ import {
     getCashflowSummary,
     getCashBalance
 } from "../../controllers/super-admin/cashflowController.js";
+import { getProdukSummary } from "../../controllers/super-admin/produkController.js";
+import { getPersediaanSummary } from "../../controllers/super-admin/persediaanController.js";
 
 const router = express.Router();
 
@@ -31,8 +33,8 @@ router.get("/neraca", getNeraca);
 // Cashflow analytics
 router.get("/cashflow/balance", getCashBalance);
 router.get("/cashflow", getCashflowSummary);
-import { getProdukSummary } from "../../controllers/super-admin/produkController.js";
 router.get("/produk", getProdukSummary);
+router.get("/persediaan", getPersediaanSummary);
 router.get("/:id", getLaporanById);
 
 export default router;
