@@ -145,3 +145,49 @@ async def test_persediaan_falls_back_when_ai_client_errors():
     assert isinstance(result.narasi, str)
     assert "data stok" in result.narasi.lower()
     assert "layanan ai" in result.narasi.lower()
+
+
+@pytest.mark.asyncio
+async def test_executive_falls_back_when_ai_client_errors():
+    class FailingAIClient:
+        async def generate(self, prompt: str) -> str:
+            raise RuntimeError("quota exceeded")
+
+    service = BusinessIntelligenceService(ai_client=FailingAIClient())
+    payload = {
+        "ringkasan": {
+            "total_pendapatan": 1000000,
+            "total_hpp": 400000,
+            "total_laba_bersih": 300000,
+            "target": 1200000,
+        },
+        "cashflow": {
+            "kas": 50000,
+            "kas_masuk": 200000,
+            "kas_keluar": 180000,
+            "arus_kas_bersih": 20000,
+        },
+        "keuangan": {
+            "pendapatan": 1000000,
+            "hpp": 400000,
+            "pengeluaran_operasional": 300000,
+            "margin_bersih": 30,
+        },
+        "anomaly": {
+            "anomaly": {"status": "Normal", "severity": "Normal"}
+        }
+    }
+
+    # Use the Pydantic model to validate
+    from models.bi_models import ExecutiveRequest
+
+    exec_req = ExecutiveRequest(**payload)
+
+    result = await service.analyze_executive(exec_req)
+
+    assert result.status
+    assert isinstance(result.prioritas, list)
+    assert isinstance(result.peluang, list)
+    assert isinstance(result.risiko, list)
+    assert isinstance(result.aksi_minggu_ini, list)
+    assert isinstance(result.narasi, str)

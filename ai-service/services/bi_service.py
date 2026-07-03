@@ -21,6 +21,8 @@ from models.bi_models import (
     ForecastResponse,
     AnomalyRequest,
     AnomalyResponse,
+    ExecutiveRequest,
+    ExecutiveResponse,
 )
 from utils.prompt_renderer import PromptRenderer
 import logging
@@ -38,6 +40,7 @@ class BusinessIntelligenceService:
         self.keuangan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "keuangan.md")
         self.forecast_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "forecast.md")
         self.anomaly_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "anomaly.md")
+        self.executive_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "executive.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -178,6 +181,29 @@ class BusinessIntelligenceService:
                 retry_response = await self.ai_client.generate(fallback_prompt)
             except Exception:
                 return self._build_fallback_anomaly_response(payload)
+
+    async def analyze_executive(self, payload: 'ExecutiveRequest') -> 'ExecutiveResponse':
+        # Build aggregated data for executive prompt
+        data = self._build_executive_metrics(payload)
+        prompt = self.executive_renderer.render({"data": data})
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_executive_response(payload)
+
+        try:
+            return self._parse_executive_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.executive_renderer.render({"data": data, "retry": True})
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_executive_response(payload)
+            try:
+                return self._parse_executive_response(retry_response)
+            except ValueError:
+                return self._build_fallback_executive_response(payload)
+
             try:
                 return self._parse_anomaly_response(retry_response)
             except ValueError:
@@ -533,6 +559,209 @@ class BusinessIntelligenceService:
                 "top_anomaly": top_anomaly,
             }
         }
+
+    def _map_status_to_score(self, status: str | None) -> int:
+        if not status:
+            return 60
+        s = str(status).lower()
+        if any(k in s for k in ("sangat", "sehat", "optimis")):
+            return 100
+        if "baik" in s:
+            return 80
+        if any(k in s for k in ("cukup", "stabil", "normal")):
+            return 60
+        if any(k in s for k in ("perlu", "waspada", "peringatan", "perlu dipantau")):
+            return 40
+        if "kritis" in s:
+            return 20
+        return 60
+
+    def _build_executive_metrics(self, payload: 'ExecutiveRequest') -> dict[str, object]:
+        # Accept payload as Pydantic model; use model_dump() to get raw dict
+        try:
+            raw = payload.model_dump()
+        except Exception:
+            raw = payload if isinstance(payload, dict) else {}
+
+        domains = [
+            ("ringkasan", 20),
+            ("cashflow", 15),
+            ("produk", 10),
+            ("persediaan", 10),
+            ("keuangan", 20),
+            ("forecast", 15),
+            ("anomaly", 10),
+        ]
+
+        scores = {}
+        total_weight = 0
+        for name, weight in domains:
+            value = raw.get(name) if isinstance(raw, dict) else None
+            domain_score = None
+            if isinstance(value, dict):
+                # prefer explicit numeric score
+                if "score" in value and isinstance(value.get("score"), (int, float)):
+                    domain_score = int(max(0, min(100, int(value.get("score")))))
+                elif "status" in value:
+                    domain_score = self._map_status_to_score(value.get("status"))
+            if domain_score is None:
+                # fallback: treat missing domain as None (skip weight)
+                domain_score = None
+
+            scores[name] = {"score": domain_score, "weight": weight, "raw": value}
+            if domain_score is not None:
+                total_weight += weight
+
+        # compute weighted aggregate (normalize by available weights)
+        aggregate = 0.0
+        if total_weight > 0:
+            for name, info in scores.items():
+                if info["score"] is not None:
+                    aggregate += (info["score"] * (info["weight"] / total_weight))
+        else:
+            aggregate = 60.0
+
+        business_health_score = round(float(aggregate))
+
+        # derive business health label
+        if business_health_score >= 90:
+            business_health = "Sangat Baik"
+        elif business_health_score >= 75:
+            business_health = "Baik"
+        elif business_health_score >= 60:
+            business_health = "Cukup"
+        elif business_health_score >= 40:
+            business_health = "Perlu Perhatian"
+        else:
+            business_health = "Kritis"
+
+        return {
+            "executive": {
+                "business_health_score": business_health_score,
+                "business_health": business_health,
+                "domain_scores": scores,
+            },
+            **raw,
+        }
+
+    def _build_fallback_executive_response(self, payload: 'ExecutiveRequest') -> 'ExecutiveResponse':
+        metrics = self._build_executive_metrics(payload).get("executive", {})
+        score = metrics.get("business_health_score", 60)
+        health = metrics.get("business_health", "Cukup")
+
+        # Build simple lists for priorities, opportunities, and risks based on available raw domains
+        raw = payload.model_dump() if hasattr(payload, "model_dump") else (payload if isinstance(payload, dict) else {})
+        prioritas = []
+        peluang = []
+        risiko = []
+        # priority checks
+        anomaly = raw.get("anomaly") or {}
+        if isinstance(anomaly, dict):
+            sev = anomaly.get("anomaly", {}) if anomaly.get("anomaly") else anomaly
+            severity = None
+            if isinstance(sev, dict):
+                severity = sev.get("severity") or sev.get("status")
+            if severity and ("tinggi" in str(severity).lower() or "anomali" in str(severity).lower()):
+                prioritas.append("Anomali signifikan terdeteksi pada metrik keuangan atau produk")
+
+        # keuangan
+        keu = raw.get("keuangan") or {}
+        if isinstance(keu, dict):
+            lb = keu.get("laba_bersih") or keu.get("laba_kotor")
+            if lb is not None and isinstance(lb, (int, float)) and lb < 0:
+                prioritas.append("Laba negatif: periksa margin dan biaya operasional")
+            margin = keu.get("margin_bersih") or keu.get("margin")
+            if margin is not None and isinstance(margin, (int, float)) and margin < 0:
+                prioritas.append("Margin negatif: evaluasi harga dan HPP")
+
+        # cashflow
+        cf = raw.get("cashflow") or {}
+        if isinstance(cf, dict):
+            arus = cf.get("arus_kas_bersih") or cf.get("kas_masuk") and (cf.get("kas_masuk") - cf.get("kas_keluar"))
+            if arus is not None and isinstance(arus, (int, float)) and arus < 0:
+                prioritas.append("Arus kas negatif: segera atasi defisit kas")
+
+        # persediaan
+        per = raw.get("persediaan") or {}
+        if isinstance(per, dict):
+            habis = per.get("produk_habis") or []
+            hampir = per.get("produk_hampir_habis") or []
+            if (isinstance(habis, list) and len(habis) > 0) or (isinstance(hampir, list) and len(hampir) > 0):
+                prioritas.append("Stok kritis: beberapa produk habis atau hampir habis")
+
+        # forecast
+        fo = raw.get("forecast") or {}
+        if isinstance(fo, dict):
+            conf = fo.get("confidence")
+            trend = fo.get("trend") or ""
+            if conf is not None and isinstance(conf, (int, float)) and conf < 0.5:
+                prioritas.append("Forecast memiliki tingkat kepercayaan rendah")
+            if isinstance(trend, str) and trend.lower() == "turun":
+                risiko.append("Forecast menurun: waspadai potensi penurunan penjualan")
+
+        # peluang
+        if isinstance(fo, dict) and fo.get("trend") == "Naik":
+            peluang.append("Forecast naik: peluang peningkatan penjualan")
+        if isinstance(cf, dict) and (cf.get("arus_kas_bersih") is not None and cf.get("arus_kas_bersih") > 0):
+            peluang.append("Arus kas positif: peluang ekspansi atau investasi operasional kecil")
+        if isinstance(keu, dict) and (keu.get("margin_bersih") is not None and keu.get("margin_bersih") > 0):
+            peluang.append("Margin positif: fokus pada produk berkontribusi tinggi untuk meningkatkan profit")
+
+        # risks: basic checks
+        if isinstance(keu, dict) and (keu.get("pendapatan") is not None and keu.get("pendapatan") < (keu.get("target_omzet") or 0)):
+            risiko.append("Pendapatan di bawah target")
+        if isinstance(cf, dict) and (cf.get("kas") is not None and cf.get("kas") <= 0):
+            risiko.append("Saldo kas rendah atau nol")
+
+        # dedupe and limit to 5
+        def take_unique(items):
+            out = []
+            for it in items:
+                if it not in out:
+                    out.append(it)
+                if len(out) >= 5:
+                    break
+            return out
+
+        prioritas = take_unique(prioritas)
+        peluang = take_unique(peluang)
+        risiko = take_unique(risiko)
+
+        highlights = []
+        if peluang:
+            highlights.append(f"Peluang utama: {peluang[0]}")
+        if prioritas:
+            highlights.append(f"Prioritas utama: {prioritas[0]}")
+        if risiko:
+            highlights.append(f"Risiko utama: {risiko[0]}")
+
+        executive_summary = f"Skor kesehatan bisnis: {score} ({health})."
+
+        return ExecutiveResponse(
+            status=health,
+            executive_summary=executive_summary,
+            prioritas=prioritas,
+            peluang=peluang,
+            risiko=risiko,
+            aksi_minggu_ini=["Tinjau prioritas pertama dan ambil tindakan cepat."],
+            narasi="Ringkasan eksekutif fallback: AI tidak tersedia sehingga hasil agregasi dasar disajikan."
+        )
+
+    def _parse_executive_response(self, raw_response: str) -> 'ExecutiveResponse':
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Executive AI response did not contain a JSON object.") from exc
+
+        return ExecutiveResponse.model_validate(parsed)
 
     def _build_fallback_anomaly_response(self, payload: AnomalyRequest) -> AnomalyResponse:
         metrics = self._build_anomaly_metrics(payload).get("anomaly", {})
