@@ -5,6 +5,7 @@ Loads saved models and makes predictions on new data.
 """
 
 import os
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any
 import numpy as np
@@ -161,6 +162,83 @@ class ModelPredictor:
             and self.scaler is not None
             and self.feature_names is not None
         )
+
+    def predict_future(
+        self,
+        days: int,
+        start_date: Optional[date] = None,
+    ) -> tuple[np.ndarray, Optional[float], pd.DataFrame]:
+        """
+        Generate future feature rows and predict using the loaded model.
+
+        Args:
+            days: Number of future days to predict
+            start_date: Date to start prediction from (defaults to today)
+
+        Returns:
+            Tuple of (predictions, confidence, prediction_dataframe)
+        """
+        if days <= 0:
+            raise ValueError("days harus lebih besar dari 0")
+
+        if self.feature_names is None:
+            raise ValueError("Feature names tidak tersedia. Pastikan model disimpan dengan benar.")
+
+        start_date = start_date or datetime.now(timezone.utc).date()
+        feature_rows = []
+
+        for day_offset in range(1, days + 1):
+            current_date = start_date + timedelta(days=day_offset)
+            feature_row = {}
+
+            for feature in self.feature_names:
+                if feature == "day_of_week":
+                    feature_row[feature] = current_date.weekday()
+                elif feature == "day":
+                    feature_row[feature] = current_date.day
+                elif feature == "month":
+                    feature_row[feature] = current_date.month
+                elif feature == "year":
+                    feature_row[feature] = current_date.year
+                elif feature == "week_of_year":
+                    feature_row[feature] = current_date.isocalendar().week
+                elif feature == "is_weekend":
+                    feature_row[feature] = int(current_date.weekday() >= 5)
+                elif feature == "quarter":
+                    feature_row[feature] = (current_date.month - 1) // 3 + 1
+                else:
+                    feature_row[feature] = 0.0
+
+            feature_rows.append(feature_row)
+
+        prediction_df = pd.DataFrame(feature_rows)
+        predictions = self.predict_sales(prediction_df, feature_columns=self.feature_names)
+        confidence = self._estimate_confidence(prediction_df)
+        return predictions, confidence, prediction_df
+
+    def _estimate_confidence(self, df: pd.DataFrame) -> Optional[float]:
+        """Estimate prediction confidence for ensemble models."""
+        if self.model is None:
+            return None
+
+        if not hasattr(self.model, "estimators_"):
+            return None
+
+        X = df[self.feature_names].values
+        if self.scaler is not None:
+            X = self.scaler.transform(X)
+
+        estimators = getattr(self.model, "estimators_")
+        try:
+            all_preds = np.vstack([
+                estimator.predict(X).reshape(1, -1)
+                for estimator in estimators
+            ])
+        except Exception:
+            return None
+
+        stddev = float(np.std(all_preds, axis=0).mean())
+        return float(round(100.0 / (1.0 + stddev), 2))
 
 
 def predict_sales(
