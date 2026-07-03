@@ -121,6 +121,14 @@ export const getKeuangan = (start?: string, end?: string) => {
   });
 };
 
+export const getForecast = (start?: string, end?: string) => {
+  const fallback = defaultMonthRange();
+  return biFetch('/forecast', {
+    start: start ?? fallback.start,
+    end: end ?? fallback.end,
+  });
+};
+
 export const generateAiProduk = async (payload: { produk: Record<string, unknown> }) => {
   const res = await fetch(`${AI_BASE}/produk`, {
     method: 'POST',
@@ -267,6 +275,43 @@ export const generateAiKeuangan = async (payload: {
       (responsePayload as { message?: string; error?: string } | null)?.error ||
       detailMessage ||
       'Gagal menghasilkan analisis keuangan.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};
+
+export const generateAiForecast = async (payload: {
+  histori: Array<{ tanggal: string; total_penjualan: number }>;
+  produk: Array<{ nama: string; total_qty_terjual: number; stok_sekarang?: number }>;
+}) => {
+  const res = await fetch(`${AI_BASE}/forecast`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
+      detailMessage ||
+      'Gagal menghasilkan analisis forecast.';
     throw new Error(message);
   }
 

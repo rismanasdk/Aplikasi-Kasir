@@ -1,7 +1,7 @@
 import pytest
 
 from services.bi_service import BusinessIntelligenceService
-from models.bi_models import KeuanganRequest, RingkasanRequest, PersediaanRequest
+from models.bi_models import ForecastRequest, KeuanganRequest, RingkasanRequest, PersediaanRequest
 
 
 class FakeAIClient:
@@ -56,6 +56,35 @@ async def test_keuangan_falls_back_when_ai_client_errors():
     assert isinstance(result.rekomendasi, list)
     assert isinstance(result.narasi, str)
     assert "keuangan" in result.narasi.lower()
+
+
+@pytest.mark.asyncio
+async def test_forecast_falls_back_when_ai_client_errors():
+    class FailingAIClient:
+        async def generate(self, prompt: str) -> str:
+            raise RuntimeError("quota exceeded")
+
+    service = BusinessIntelligenceService(ai_client=FailingAIClient())
+    payload = ForecastRequest(histori=[
+        {"tanggal": "2026-06-20", "total_penjualan": 500000},
+        {"tanggal": "2026-06-21", "total_penjualan": 530000},
+        {"tanggal": "2026-06-22", "total_penjualan": 520000},
+        {"tanggal": "2026-06-23", "total_penjualan": 540000},
+        {"tanggal": "2026-06-24", "total_penjualan": 550000},
+        {"tanggal": "2026-06-25", "total_penjualan": 560000},
+        {"tanggal": "2026-06-26", "total_penjualan": 570000},
+    ], produk=[
+        {"nama": "Produk A", "total_qty_terjual": 120, "stok_sekarang": 30},
+        {"nama": "Produk B", "total_qty_terjual": 60, "stok_sekarang": 20},
+    ])
+
+    result = await service.analyze_forecast(payload)
+
+    assert result.status
+    assert isinstance(result.insight, list)
+    assert isinstance(result.rekomendasi, list)
+    assert isinstance(result.narasi, str)
+    assert "forecast" in result.narasi.lower()
 
 
 @pytest.mark.asyncio
