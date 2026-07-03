@@ -4,6 +4,7 @@ Model trainer for Sales Forecasting.
 Trains and saves machine learning models using sklearn.
 """
 
+import json
 import os
 import time
 import pandas as pd
@@ -13,6 +14,7 @@ from typing import Dict, Tuple, Any, Optional
 from datetime import datetime
 
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 import joblib
 
@@ -26,6 +28,11 @@ class ModelTrainer:
     MODEL_DIR = Path(__file__).parent.parent / "trained_models"
     MODEL_FILENAME = "forecast_sales.joblib"
     SCALER_FILENAME = "forecast_scaler.joblib"
+    SUPPORTED_MODELS = {
+        "LinearRegression": LinearRegression,
+        "RandomForestRegressor": RandomForestRegressor,
+        "GradientBoostingRegressor": GradientBoostingRegressor,
+    }
     
     def __init__(self):
         """Initialize trainer."""
@@ -39,16 +46,18 @@ class ModelTrainer:
         df: pd.DataFrame,
         date_column: str = "tanggal",
         sales_column: str = "total_penjualan",
-        numeric_columns: Optional[list] = None
+        numeric_columns: Optional[list] = None,
+        model_type: str = "LinearRegression"
     ) -> Dict[str, Any]:
         """
-        Train sales forecasting model using Linear Regression.
+        Train sales forecasting model using a supported regression model.
         
         Args:
             df: Raw transaction data
             date_column: Name of date column
             sales_column: Name of sales column
             numeric_columns: Numeric columns for preprocessing
+            model_type: One of LinearRegression, RandomForestRegressor, GradientBoostingRegressor
             
         Returns:
             Dictionary with training information
@@ -103,7 +112,13 @@ class ModelTrainer:
         X_test_scaled = self.scaler.transform(X_test)
         
         # Train model
-        self.model = LinearRegression()
+        if model_type not in self.SUPPORTED_MODELS:
+            raise ValueError(
+                f"Model type '{model_type}' tidak didukung. Gunakan salah satu {list(self.SUPPORTED_MODELS)}"
+            )
+
+        model_cls = self.SUPPORTED_MODELS[model_type]
+        self.model = model_cls()
         self.model.fit(X_train_scaled, y_train)
         
         self.feature_names = feature_names
@@ -113,7 +128,7 @@ class ModelTrainer:
         # Prepare result
         result = {
             "status": "success",
-            "model_type": "LinearRegression",
+            "model_type": model_type,
             "training_rows": len(train_df),
             "testing_rows": len(test_df),
             "total_rows": len(df_processed),
@@ -129,13 +144,19 @@ class ModelTrainer:
         
         return result
     
-    def save_model(self, filename: Optional[str] = None, directory: Optional[str] = None) -> str:
+    def save_model(
+        self,
+        filename: Optional[str] = None,
+        directory: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Save trained model and scaler to joblib files.
         
         Args:
             filename: Model filename (default: forecast_sales.joblib)
             directory: Directory to save (default: trained_models/)
+            metadata: Optional metadata dictionary to save alongside model
             
         Returns:
             Path to saved model
@@ -169,6 +190,32 @@ class ModelTrainer:
         feature_names_filename = filename.replace('.joblib', '_features.joblib')
         feature_names_path = os.path.join(directory, feature_names_filename)
         joblib.dump(self.feature_names, feature_names_path)
+
+        # Build metadata from training log and overrides
+        model_name = self.training_log.get('model_type', 'unknown')
+        metadata_payload = {
+            "model_name": model_name,
+            "saved_filename": filename,
+            "saved_at": datetime.now().isoformat(),
+            "training_rows": self.training_log.get('training_rows'),
+            "testing_rows": self.training_log.get('testing_rows'),
+            "total_rows": self.training_log.get('total_rows'),
+            "num_features": self.training_log.get('num_features'),
+            "features_used": self.training_log.get('features_used'),
+            "sales_column": self.training_log.get('sales_column'),
+            "date_column": self.training_log.get('date_column'),
+            "mae": self.training_log.get('mae'),
+            "rmse": self.training_log.get('rmse'),
+            "r2_score": self.training_log.get('r2_score'),
+            "mape": self.training_log.get('mape'),
+        }
+        if metadata:
+            metadata_payload.update(metadata)
+
+        metadata_filename = filename.replace('.joblib', '_metadata.json')
+        metadata_path = os.path.join(directory, metadata_filename)
+        with open(metadata_path, 'w', encoding='utf-8') as metadata_file:
+            json.dump(metadata_payload, metadata_file, indent=2, ensure_ascii=False)
         
         return model_path
     

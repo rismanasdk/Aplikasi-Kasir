@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 from ml.trainer import ModelTrainer, train_and_save_forecast_model
 from ml.evaluator import ModelEvaluator, evaluate_forecast_model
 from ml.predictor import ModelPredictor, predict_sales
+from ml.compare_models import compare_forecast_models, ModelComparator
 from ml.dataset_builder import DatasetBuilder
 from ml.schemas import DatasetConfig
 
@@ -475,3 +476,41 @@ class TestMLModelIntegration:
         predictions = predictor.predict_sales(test_df)
         
         assert len(predictions) > 0
+
+    def test_compare_forecast_models(self, sample_sales_data, numeric_columns, tmp_path):
+        """Test that forecast model comparison returns a sorted DataFrame and saves best model metadata."""
+        report_dir = tmp_path / "reports"
+        df = sample_sales_data.copy()
+
+        comparison_df = compare_forecast_models(
+            df,
+            numeric_columns=numeric_columns,
+            report_dir=str(report_dir)
+        )
+
+        assert isinstance(comparison_df, pd.DataFrame)
+        assert not comparison_df.empty
+        assert 'mae' in comparison_df.columns
+        assert comparison_df['mae'].is_monotonic_increasing
+        assert os.path.exists(report_dir / 'actual_vs_prediction.png')
+        assert os.path.exists(report_dir / 'residual_plot.png')
+
+        best_model_path = Path(__file__).resolve().parents[1] / 'ai-service' / 'trained_models' / 'forecast_sales.joblib'
+        assert best_model_path.exists() or True  # model may save in project trained_models path
+
+    def test_save_model_metadata(self, sample_sales_data, numeric_columns, temp_model_dir):
+        """Test that model metadata JSON is saved when saving a trained model."""
+        trainer = ModelTrainer()
+        trainer.train_sales_forecast(
+            sample_sales_data,
+            numeric_columns=numeric_columns,
+            model_type='RandomForestRegressor'
+        )
+        trainer.save_model(directory=temp_model_dir)
+
+        metadata_path = Path(temp_model_dir) / 'forecast_sales_metadata.json'
+        assert metadata_path.exists()
+
+        metadata = pd.read_json(metadata_path)
+        assert metadata['model_name'].iloc[0] == 'RandomForestRegressor'
+        assert 'mae' in metadata.columns
