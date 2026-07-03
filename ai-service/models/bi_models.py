@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -163,6 +163,27 @@ class AnomalyResponse(BaseModel):
     status: str
     insight: List[str]
     rekomendasi: List[str]
+    narasi: str
+
+
+class ExecutiveRequest(BaseModel):
+    # Accept domain results as arbitrary objects (dicts) to allow flexibility
+    ringkasan: Dict[str, Any] | None = None
+    cashflow: Dict[str, Any] | None = None
+    produk: Dict[str, Any] | None = None
+    persediaan: Dict[str, Any] | None = None
+    keuangan: Dict[str, Any] | None = None
+    forecast: Dict[str, Any] | None = None
+    anomaly: Dict[str, Any] | None = None
+
+
+class ExecutiveResponse(BaseModel):
+    status: str
+    executive_summary: str
+    prioritas: List[str]
+    peluang: List[str]
+    risiko: List[str]
+    aksi_minggu_ini: List[str]
     narasi: str
 
 

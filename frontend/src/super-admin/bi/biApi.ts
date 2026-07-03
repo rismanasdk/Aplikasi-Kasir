@@ -89,6 +89,48 @@ export const generateAiRingkasan = async (payload: {
   return responsePayload;
 };
 
+export const generateAiExecutive = async (payload: {
+  ringkasan?: Record<string, unknown>;
+  cashflow?: Record<string, unknown>;
+  produk?: Record<string, unknown>;
+  persediaan?: Record<string, unknown>;
+  keuangan?: Record<string, unknown>;
+  forecast?: Record<string, unknown>;
+  anomaly?: Record<string, unknown>;
+}) => {
+  const res = await fetch(`${AI_BASE}/executive`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
+      detailMessage ||
+      'Gagal menghasilkan Executive Dashboard.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};
+
 export const getCashflow = (start?: string, end?: string) => {
   const fallback = defaultMonthRange();
   return biFetch('/cashflow', {
