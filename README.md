@@ -27,16 +27,16 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Block IP address otomatis ketika terkena trap routes
 - Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
 - Smart Notifikasi pada role super-admin yang meliputi Uang Kas, Liabilitas, Stok Barang/Produk
-- Business Intelligence dengan mengimplementasikan model AI `Gemini, GPT` kedalam analis data 
+- Business Intelligence dengan mengimplementasikan model AI `Gemini, GPT` kedalam analis data
 
 ## Fitur Per Area
 
-### Super Admin 
+### Super Admin
 
 - Kelola Modal Utama
 - Kelola tambah modal, prive, saldo kas, riwayat kas, aset tetap, bahan baku modal, dan biaya operasional modal
 - Kelola Laporan Penjualan, ringkasan laba, detail laba, rekap metode pembayaran, dan neraca
-- Mengatur pengaturan aplikasi 
+- Mengatur pengaturan aplikasi
 - Mengatur Biaya Layanan
 - Menambah atau menghapus user
 - Kelola master biaya operasional dan pengeluaran biaya
@@ -76,7 +76,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 
 - Memantau Log Server
 - Melakukan Block IP Address
-- Memantau kesehatan server 
+- Memantau kesehatan server
 - Melihat suspicious activities, statistik IP, detail blocked IP, dan real-time alerts
 
 ### Users
@@ -86,7 +86,6 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Lihat katalog produk
 - Checkout dan bayar secara online
 - Cek status transaksi publik dan riwayat pesanan pribadi
-
 
 ## Algoritma Dan Logika Bisnis
 
@@ -148,6 +147,36 @@ Aplikasi-Kasir/
 - Integrasi pihak ketiga: `Midtrans`, `Cloudinary`, `Firebase Admin`, `Google OAuth`
 - Export laporan: `jsPDF`, `jspdf-autotable`, `xlsx`
 
+## Business Intelligence (AI Service)
+
+- Repositori ini mencakup layanan AI ringan (`ai-service/`) yang menyediakan analisis Intelijen Bisnis (BI) menggunakan penyedia AI yang telah dikonfigurasi (Gemini / OpenAI). Layanan ini mengagregasi output domain (ringkasan, arus kas, produk, persediaan, keuangan, perkiraan, anomali) dan mengekspos endpoint yang mengembalikan JSON terstruktur.
+- Baru: `POST /api/v1/bi/executive` — Mengagregasi hasil domain BI dan mengembalikan analisis tingkat eksekutif (`ExecutiveResponse`) dengan field: `status`, `executive_summary`, `prioritas`, `peluang`, `risiko`, `aksi_minggu_ini`, dan `narasi`.
+
+- Endpoint BI lainnya (pola yang sama): `/api/v1/bi/ringkasan`, `/api/v1/bi/cashflow`, `/api/v1/bi/produk`, `/api/v1/bi/persediaan`, `/api/v1/bi/keuangan`, `/api/v1/bi/forecast`, `/api/v1/bi/anomaly`.
+
+- Template prompt: lihat `ai-service/prompts/bi/*.md` (menggunakan `PromptRenderer` untuk menyuntikkan JSON yang telah diagregasi).
+- Skema Pydantic untuk permintaan/respons: `ai-service/models/bi_models.py`.
+
+- Perilaku fallback: ketika klien AI gagal atau mengembalikan non-JSON, layanan akan membangun respons fallback deterministik untuk memastikan API selalu mengembalikan skema yang diharapkan.
+
+- Integrasi frontend: pembungkus frontend `generateAiExecutive` berada di `frontend/src/super-admin/bi/biApi.ts` dan tab/komponen `Executive Dashboard` (`frontend/src/super-admin/bi/components/ExecutiveDashboard.tsx`) ditambahkan ke dasbor BI (`BIDashboard.tsx`).
+
+Cara menjalankan pengujian layanan AI
+
+```bash
+cd ai-service
+python -m venv .venv 
+source venv/bin/activate
+pip install -r requirements.txt
+pytest -q
+```
+
+Catatan
+
+- Jauhkan kredensial penyedia AI dari kontrol versi. Konfigurasikan melalui variabel lingkungan yang digunakan oleh `ai-service/config.py`.
+
+- Prompt sengaja dibuat ketat (hanya JSON) dan layanan ini menyertakan logika pemulihan untuk memperbaiki respons yang terpotong atau terblokir.
+
 ## Cara Menjalankan
 
 ### 1. Backend
@@ -202,7 +231,7 @@ GOOGLE_CLIENT_SECRET=
 FRONTEND_URL=http://localhost:5173
 CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
 ENABLE_DEBUG_TOKEN_LOGGER=false
-BACKEND_URL=https://xxx.ngrok-free.app 
+BACKEND_URL=https://xxx.ngrok-free.app
 MODE=ON/OFF # Pilih satu
 RATE_LIMIT_WINDOW_MS=900000 # Lama Waktu dalam (ms)
 RATE_LIMIT_MAX=600 # Max request dalam waktu RATE_LIMIT_WINDOW_MS
@@ -381,4 +410,3 @@ Catatan kondisi keamanan saat ini:
 ## License
 
 Lihat [LICENSE](LICENCE) untuk detail lebih lanjut tentang license.
-
