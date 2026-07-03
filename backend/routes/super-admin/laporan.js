@@ -9,7 +9,8 @@ import {
     getLaporanById,
     getDetailLaba,
     getRekapMetodePembayaranRealtime,
-    getNeraca
+    getNeraca,
+    getKeuanganSummary
 } from "../../controllers/super-admin/laporancontroller.js";
 import {
     getCashflowSummary,
@@ -33,6 +34,7 @@ router.get("/neraca", getNeraca);
 // Cashflow analytics
 router.get("/cashflow/balance", getCashBalance);
 router.get("/cashflow", getCashflowSummary);
+router.get("/keuangan", getKeuanganSummary);
 router.get("/produk", getProdukSummary);
 router.get("/persediaan", getPersediaanSummary);
 router.get("/:id", getLaporanById);
