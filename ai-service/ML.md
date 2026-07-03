@@ -1,292 +1,452 @@
-# Machine Learning Data Processing Pipeline
+# ML Module Documentation
 
 ## Overview
 
-The ML module provides a complete data preprocessing and feature engineering pipeline for building ML-ready datasets. It's integrated into the existing AI Service and focuses exclusively on data preparation without requiring any external model training frameworks yet.
+The `ml/` module provides a complete machine learning pipeline including data processing, feature engineering, model training, evaluation, and predictions. It's designed to be modular, well-tested, and production-ready.
 
 ## Architecture
 
 ```
 ai-service/
 ├── ml/
-│   ├── __init__.py
-│   ├── preprocessing.py        # Data cleaning & validation
-│   ├── feature_engineering.py  # Automatic feature creation
-│   ├── dataset_builder.py      # Orchestrates data pipeline
-│   ├── schemas.py              # Pydantic data models
-│   └── utils.py                # Utility functions
+│   ├── __init__.py                 # Module exports
+│   ├── schemas.py                  # Pydantic models
+│   ├── utils.py                    # Utility functions
+│   ├── preprocessing.py            # Data cleaning
+│   ├── feature_engineering.py      # Feature creation
+│   ├── dataset_builder.py          # Pipeline orchestration
+│   ├── trainer.py                  # Model training
+│   ├── evaluator.py                # Evaluation metrics
+│   └── predictor.py                # Model inference
+├── trained_models/                 # Saved models (.joblib)
 └── tests/
-    └── test_ml_pipeline.py     # Comprehensive test suite
+    ├── test_ml_pipeline.py         # Data pipeline tests (20)
+    └── test_ml_models.py           # Model tests (22)
 ```
 
-## Modules
+## Module Descriptions
 
-### 1. `schemas.py` — Data Models
+### 1. schemas.py
 
-Defines Pydantic models for configuration and results:
+Pydantic models for type-safe configuration and validation.
 
-- **`PreprocessingConfig`**: Configuration for preprocessing operations
-  - `remove_duplicates`: Remove duplicate rows
-  - `handle_missing_values`: Fill missing values
-  - `convert_dates`: Convert date columns to datetime
-  - `sort_by_date`: Sort data by date column
-  - `remove_negative`: Remove rows with invalid negative values
-  - `date_column`: Name of date column (default: "tanggal")
-  - `numeric_columns`: List of numeric columns
+**Key Classes:**
 
-- **`DatasetConfig`**: Configuration for dataset building
-  - `task`: ML task type (forecast, profit_prediction, cashflow_prediction, restock_prediction)
-  - `target_column`: Target variable name
-  - `train_test_split`: Train/test split ratio (default: 0.8)
-  - `lookback_window`: Lookback window for time series features (default: 7)
-  - `fillna_method`: Missing value fill method (forward, backward, mean)
+- `PreprocessingConfig`: Preprocessing operation flags
+- `DatasetConfig`: Dataset building configuration
+- `PreprocessingResult`: Preprocessing output statistics
+- `FeatureEngineeringResult`: Feature engineering statistics
+- `DatasetBuildResult`: Final dataset information
 
-- **`PreprocessingResult`**, **`FeatureEngineeringResult`**, **`DatasetBuildResult`**: Result models
+### 2. utils.py
 
-### 2. `utils.py` — Utility Functions
+Utility functions for data validation and manipulation.
 
-Provides core data manipulation and validation functions:
+**Key Functions:**
 
-**Validation Functions:**
-
-- `validate_dataframe()`: Check dataframe structure
+- `validate_dataframe()`: Validate DataFrame structure
 - `validate_date_column()`: Validate date column
-- `validate_numeric_columns()`: Validate numeric columns
-
-**Data Manipulation:**
-
 - `remove_duplicates()`: Remove duplicate rows
-- `convert_to_numeric()`: Convert columns to numeric
-- `convert_to_datetime()`: Convert date columns
-- `remove_negative_values()`: Remove rows with negative values
+- `convert_to_numeric()`: Type conversion
+- `convert_to_datetime()`: Date conversion
+- `remove_negative_values()`: Remove invalid rows
 - `sort_by_date()`: Sort by date
-- `fill_missing_values()`: Fill missing values
-- `get_date_range()`: Get min/max dates
-- `count_missing_values()`: Count missing values per column
+- `fill_missing_values()`: Handle missing values
+- `get_date_range()`: Get date range
+- `count_missing_values()`: Count nulls
 
-### 3. `preprocessing.py` — Data Cleaning
+**Exception:** `DataValidationError`
 
-The `Preprocessor` class handles data cleaning:
+### 3. preprocessing.py
+
+Data cleaning and transformation.
 
 ```python
 from ml.preprocessing import Preprocessor
 from ml.schemas import PreprocessingConfig
 
-config = PreprocessingConfig()
-preprocessor = Preprocessor(config)
-
-df_clean, result = preprocessor.preprocess(
-    df,
-    numeric_columns=['pendapatan', 'hpp', 'laba_bersih']
+config = PreprocessingConfig(
+    remove_duplicates=True,
+    date_column="tanggal",
+    numeric_columns=["total_penjualan", "qty"]
 )
+
+preprocessor = Preprocessor(config)
+cleaned_df, result = preprocessor.preprocess(df, numeric_columns)
 ```
 
-**Operations:**
+**Operations:** Remove duplicates → Convert dates → Convert numeric → Remove negatives → Handle missing → Sort by date
 
-- Remove duplicates
-- Convert dates to datetime
-- Convert columns to numeric
-- Remove negative values
-- Handle missing values
-- Sort by date
+### 4. feature_engineering.py
 
-### 4. `feature_engineering.py` — Automatic Features
-
-The `FeatureEngineer` class creates time-based and rolling features:
+Automatic time series feature creation.
 
 ```python
 from ml.feature_engineering import FeatureEngineer
 
-engineer = FeatureEngineer(date_column='tanggal')
-df_featured, result = engineer.engineer_features(
-    df_clean,
-    target_column='total_penjualan',
+engineer = FeatureEngineer(date_column="tanggal")
+featured_df, result = engineer.engineer_features(
+    df,
+    target_column="total_penjualan",
     include_temporal=True,
     include_rolling=True
 )
 ```
 
-**Temporal Features:**
+**Features:**
 
-- `day_of_week`: Day of week (0-6)
-- `day`: Day of month (1-31)
-- `month`: Month (1-12)
-- `year`: Year
-- `week_of_year`: Week number (1-52)
-- `is_weekend`: Weekend indicator (0/1)
-- `quarter`: Quarter (1-4)
+- **Temporal** (7): day_of_week, day, month, year, week_of_year, is_weekend, quarter
+- **Rolling** (4): rolling_7_sales, rolling_30_sales, moving_average_7, moving_average_30
+- **Lag** (1): days_since_last_sale
 
-**Rolling Features:**
+### 5. dataset_builder.py
 
-- `days_since_last_sale`: Days since last event
-- `rolling_7_sales`: Sum of last 7 days
-- `rolling_30_sales`: Sum of last 30 days
-- `moving_average_7`: 7-day moving average
-- `moving_average_30`: 30-day moving average
-
-### 5. `dataset_builder.py` — ML Dataset Orchestration
-
-The `DatasetBuilder` class orchestrates the entire pipeline and supports multiple ML tasks:
-
-```python
-from ml.dataset_builder import DatasetBuilder
-
-# Method 1: Using builder directly
-config = DatasetConfig(
-    task='forecast',
-    target_column='total_penjualan'
-)
-builder = DatasetBuilder(config)
-df_dataset, result = builder.build(df)
-train_df, test_df = builder.get_train_test_split()
-
-# Method 2: Using convenience static methods
-df, result = DatasetBuilder.build_forecast_dataset(df)
-df, result = DatasetBuilder.build_profit_dataset(df)
-df, result = DatasetBuilder.build_cashflow_dataset(df)
-df, result = DatasetBuilder.build_restock_dataset(df)
-```
-
-**Supported Tasks:**
-
-- **forecast**: Sales forecasting
-- **profit_prediction**: Profit prediction
-- **cashflow_prediction**: Cashflow prediction
-- **restock_prediction**: Inventory/restock prediction
-
-## Usage Examples
-
-### Example 1: Build Forecast Dataset
-
-```python
-import pandas as pd
-from ml.dataset_builder import DatasetBuilder
-
-# Load transaction data
-df = pd.read_csv('transactions.csv')
-
-# Build dataset for sales forecasting
-dataset, result = DatasetBuilder.build_forecast_dataset(
-    df,
-    date_column='tanggal',
-    sales_column='total_penjualan'
-)
-
-print(f"Dataset built: {result.total_rows} rows, {result.feature_count} features")
-
-# Get train/test split
-train_df, test_df = builder.get_train_test_split()
-```
-
-### Example 2: Custom Dataset Configuration
+End-to-end pipeline orchestration.
 
 ```python
 from ml.dataset_builder import DatasetBuilder
 from ml.schemas import DatasetConfig
 
 config = DatasetConfig(
-    task='profit_prediction',
-    date_column='tanggal',
-    target_column='laba_bersih',
-    train_test_split=0.75,
-    lookback_window=14,
-    fillna_method='mean'
+    task="forecast",
+    date_column="tanggal",
+    target_column="total_penjualan",
+    train_test_split=0.8
 )
 
 builder = DatasetBuilder(config)
-df_dataset, result = builder.build(
-    df,
-    numeric_columns=['pendapatan', 'hpp', 'pengeluaran', 'laba_bersih']
-)
-
-info = builder.get_dataset_info()
-print(info)
+df_processed, result = builder.build(df, numeric_columns)
+train_df, test_df = builder.get_train_test_split()
 ```
 
-### Example 3: Manual Pipeline
+**Supported Tasks:**
+
+- `forecast`: Sales forecasting
+- `profit_prediction`: Profit prediction
+- `cashflow_prediction`: Cashflow prediction
+- `restock_prediction`: Inventory prediction
+
+### 6. trainer.py
+
+Model training with Linear Regression.
 
 ```python
-from ml.preprocessing import Preprocessor
-from ml.feature_engineering import FeatureEngineer
-from ml.schemas import PreprocessingConfig
+from ml.trainer import ModelTrainer
 
-# Step 1: Preprocess
-config = PreprocessingConfig()
-preprocessor = Preprocessor(config)
-df_clean, preprocess_result = preprocessor.preprocess(
+trainer = ModelTrainer()
+
+# Train model
+training_info = trainer.train_sales_forecast(
     df,
-    numeric_columns=['total_penjualan', 'hpp']
+    date_column="tanggal",
+    sales_column="total_penjualan",
+    numeric_columns=["qty", "biaya"]
 )
 
-# Step 2: Engineer features
-engineer = FeatureEngineer('tanggal')
-df_featured, feature_result = engineer.engineer_features(
-    df_clean,
-    target_column='total_penjualan'
+# Save model
+model_path = trainer.save_model(directory="trained_models/")
+```
+
+**Returns:** training_rows, testing_rows, features_used, training_time_seconds, timestamp
+
+**Saves:**
+
+- `forecast_sales.joblib`: Trained model
+- `forecast_sales_scaler.joblib`: StandardScaler
+- `forecast_sales_features.joblib`: Feature names
+
+### 7. evaluator.py
+
+Model evaluation metrics (MAE, RMSE, R²).
+
+```python
+from ml.evaluator import ModelEvaluator
+
+evaluator = ModelEvaluator()
+
+metrics = evaluator.evaluate_forecast_model(
+    model=trainer.model,
+    X_test=X_test,
+    y_test=y_test,
+    scaler=trainer.scaler,
+    feature_names=trainer.feature_names
 )
 
-print(f"Features created: {feature_result.feature_names}")
+evaluator.print_metrics()
+```
+
+**Returns:** MAE, RMSE, R² Score, MAPE, predictions min/max/mean, feature coefficients
+
+### 8. predictor.py
+
+Model inference and predictions.
+
+```python
+from ml.predictor import ModelPredictor
+
+# Load model
+predictor = ModelPredictor(model_filename="forecast_sales.joblib")
+
+# Make predictions
+predictions = predictor.predict_sales(test_df)
+
+# Or get DataFrame with predictions
+result_df = predictor.predict_with_dataframe(test_df)
+
+# Check model status
+if predictor.is_ready():
+    print("Model loaded and ready")
+```
+
+**Error Handling:**
+
+- `FileNotFoundError`: Model file not found
+- `ValueError`: Empty data, missing features
+
+## Usage Examples
+
+### Example 1: Complete Training Pipeline
+
+```python
+import pandas as pd
+from ml.trainer import ModelTrainer
+from ml.evaluator import ModelEvaluator
+from ml.predictor import ModelPredictor
+from ml.dataset_builder import DatasetBuilder
+from ml.schemas import DatasetConfig
+
+# Load data
+df = pd.read_csv("sales_data.csv")
+
+# Step 1: Train model
+trainer = ModelTrainer()
+training_info = trainer.train_sales_forecast(
+    df,
+    numeric_columns=["qty", "biaya"]
+)
+print(f"✓ Training: {training_info['training_rows']} rows in {training_info['training_time_seconds']}s")
+
+# Step 2: Save model
+model_path = trainer.save_model()
+print(f"✓ Model saved: {model_path}")
+
+# Step 3: Evaluate on test set
+config = DatasetConfig(
+    task="forecast",
+    date_column="tanggal",
+    target_column="total_penjualan"
+)
+builder = DatasetBuilder(config)
+df_processed, _ = builder.build(df, numeric_columns=["qty", "biaya"])
+train_df, test_df = builder.get_train_test_split()
+
+evaluator = ModelEvaluator()
+X_test = test_df[
+    [col for col in test_df.columns
+     if col != "total_penjualan"
+     and not pd.api.types.is_datetime64_any_dtype(test_df[col])]
+].values
+y_test = test_df["total_penjualan"].values
+
+metrics = evaluator.evaluate_forecast_model(
+    trainer.model,
+    X_test,
+    y_test,
+    scaler=trainer.scaler
+)
+print(f"✓ Metrics - MAE: {metrics['mae']}, RMSE: {metrics['rmse']}, R²: {metrics['r2_score']}")
+
+# Step 4: Load and predict
+predictor = ModelPredictor()
+predictions = predictor.predict_sales(test_df)
+print(f"✓ Predictions: {predictions[:5]}")
+```
+
+### Example 2: Load Existing Model and Predict
+
+```python
+from ml.predictor import ModelPredictor
+from ml.dataset_builder import DatasetBuilder
+from ml.schemas import DatasetConfig
+
+# Load model
+predictor = ModelPredictor("forecast_sales.joblib")
+assert predictor.is_ready(), "Model failed to load"
+
+# Prepare new data
+new_data = pd.read_csv("new_sales.csv")
+config = DatasetConfig(
+    task="forecast",
+    date_column="tanggal",
+    target_column="total_penjualan"
+)
+builder = DatasetBuilder(config)
+new_featured, _ = builder.build(new_data, numeric_columns=["qty", "biaya"])
+
+# Make predictions
+predictions = predictor.predict_with_dataframe(new_featured)
+print(predictions[['tanggal', 'predicted_sales']])
+```
+
+### Example 3: Convenience Functions
+
+```python
+from ml.trainer import train_and_save_forecast_model
+from ml.evaluator import evaluate_forecast_model
+
+# Train and save in one call
+training_info, model_path = train_and_save_forecast_model(
+    df,
+    save=True,
+    numeric_columns=["qty", "biaya"]
+)
+
+# Evaluate with convenience function
+metrics = evaluate_forecast_model(
+    model,
+    X_test,
+    y_test,
+    scaler=scaler
+)
 ```
 
 ## Error Handling
 
-The module provides clear error messages via `DataValidationError`:
-
 ```python
 from ml.utils import DataValidationError
 
+# Handling validation errors
 try:
-    dataset, result = builder.build(df, strict_validation=True)
-except DataValidationError as e:
-    print(f"Validation error: {e}")
+    trainer.train_sales_forecast(None)
+except ValueError as e:
+    print(f"Error: {e}")  # "Dataset kosong atau tidak valid"
+
+# Handling model errors
+try:
+    predictor = ModelPredictor("missing.joblib")
+except FileNotFoundError as e:
+    print(f"Error: {e}")  # Model file not found
+
+# Handling feature mismatch
+try:
+    predictions = predictor.predict_sales(df_with_wrong_features)
+except ValueError as e:
+    print(f"Error: {e}")  # "Feature tidak ditemukan"
 ```
 
-**Common Errors:**
+## Testing
 
-- Dataset kosong atau tidak valid
-- Kolom wajib tidak ada
-- Tanggal tidak valid di kolom
-- Kolom tidak dapat dikonversi ke numerik
-
-## Running Tests
+Run all tests:
 
 ```bash
-cd ai-service
+cd ai-service/
 
-# Run only ML pipeline tests
-pytest tests/test_ml_pipeline.py -v
+# Run ML model tests (trainer, evaluator, predictor)
+python -m pytest tests/test_ml_models.py -v
+
+# Run ML pipeline tests (preprocessing, feature engineering, dataset building)
+python -m pytest tests/test_ml_pipeline.py -v
 
 # Run all tests
-pytest -q
+python -m pytest -v
 
 # Run with coverage
-pytest tests/test_ml_pipeline.py --cov=ml
+python -m pytest --cov=ml -v
 ```
 
 **Test Coverage:**
 
-- 20 tests across 4 test classes
-- Preprocessing validation and operations
-- Feature engineering (temporal & rolling)
-- Dataset building for all tasks
-- End-to-end pipeline integration
+- `test_ml_models.py`: 22 tests
+  - ModelTrainer: 8 tests
+  - ModelEvaluator: 6 tests
+  - ModelPredictor: 6 tests
+  - Integration: 2 tests
+- `test_ml_pipeline.py`: 20 tests
+  - Preprocessing: 9 tests
+  - Feature Engineering: 3 tests
+  - Dataset Builder: 5 tests
+  - Integration: 2 tests
+- `test_bi_service.py`: 5 tests
+- **Total: 47 tests, all passing**
 
-## Future Enhancements
+## Architecture Diagram
 
-This module provides the foundation for:
+```
+Raw Data
+   ↓
+[DatasetBuilder.build()]
+   ├─→ [Preprocessor]
+   │      ├─→ Remove duplicates
+   │      ├─→ Convert dates
+   │      ├─→ Convert numeric
+   │      ├─→ Remove negatives
+   │      ├─→ Fill missing values
+   │      └─→ Sort by date
+   │
+   └─→ [FeatureEngineer]
+          ├─→ Temporal features (7)
+          ├─→ Rolling features (4)
+          └─→ Lag features (1)
+             ↓
+      Processed Dataset
+           ↓
+      ├─→ [ModelTrainer]
+      │      ├─→ Split 80/20
+      │      ├─→ Scale features
+      │      ├─→ Train LinearRegression
+      │      └─→ Save .joblib files
+      │           ├─→ Model
+      │           ├─→ Scaler
+      │           └─→ Feature names
+      │
+      └─→ [ModelEvaluator]
+             ├─→ Make predictions
+             └─→ Compute metrics
+                  ├─→ MAE
+                  ├─→ RMSE
+                  ├─→ R² Score
+                  ├─→ MAPE
+                  └─→ Coefficients
+                     ↓
+      [ModelPredictor]
+             ├─→ Load model
+             ├─→ Load scaler
+             ├─→ Load feature names
+             └─→ Make predictions
+```
 
-- Model training (Scikit-Learn)
-- Time series forecasting (AutoARIMA, Prophet)
-- Deep learning (TensorFlow/PyTorch)
-- Advanced feature selection
-- Cross-validation and hyperparameter tuning
+## Design Patterns
 
-Currently, the focus is purely on data preparation, keeping the module lightweight and reusable for any downstream ML framework.
+1. **Pipeline Pattern**: Sequential data transformation
+2. **Builder Pattern**: Complex object construction
+3. **Factory Pattern**: Static dataset builders
+4. **Strategy Pattern**: Multiple feature engineering strategies
+5. **Template Method**: Base preprocessing/feature operations
+
+## Dependencies
+
+- `scikit-learn>=1.5.2`: ML models and metrics
+- `joblib>=1.4.2`: Model serialization
+- `pandas>=1.5.0`: Data manipulation
+- `numpy>=1.26.4`: Numerical operations
 
 ## Notes
 
-- No external ML libraries required (only Pandas & Numpy)
-- All features are deterministic and reproducible
-- Missing values handled gracefully with configurable strategies
-- Date-based sorting ensures time series integrity
-- Train/test split respects temporal order (no shuffling)
+- **Linear Regression**: Simple baseline model (easily replaceable with XGBoost, RF, etc.)
+- **Feature Scaling**: StandardScaler applied to all features
+- **Temporal Integrity**: Train/test split respects temporal order (no shuffling)
+- **Model Persistence**: Models saved as joblib files (portable, binary)
+- **Error Messages**: All errors in Bahasa Indonesia for local use
+
+## Future Enhancements
+
+1. Advanced models (XGBoost, Random Forest, LSTM)
+2. Hyperparameter tuning (Grid Search, Bayesian Optimization)
+3. Cross-validation (K-Fold, Time Series CV)
+4. Model versioning and registry
+5. Model explainability (SHAP, feature importance)
+6. Automated feature selection
+7. Ensemble methods
+8. Real-time predictions
+9. Model monitoring and drift detection
+10. API integration with FastAPI
