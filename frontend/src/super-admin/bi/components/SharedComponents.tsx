@@ -18,12 +18,14 @@ export const BISection: React.FC<{ title: string; children: React.ReactNode; cla
   </div>
 );
 
-export const StatCard: React.FC<{ label: string; value: string; sub?: string; trend?: number; color?: string }> = ({
+export const StatCard: React.FC<{ label: string; value: string; sub?: string; trend?: number; color?: string; icon?: string; className?: string }> = ({
   label,
   value,
   sub,
   trend,
   color = 'blue',
+  icon,
+  className = '',
 }) => {
   const colorMap: Record<string, string> = {
     title: 'from-gray-200 to-gray-300',
@@ -36,9 +38,12 @@ export const StatCard: React.FC<{ label: string; value: string; sub?: string; tr
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow ${className}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-500">{label}</span>
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-lg leading-none">{icon}</span>}
+          <span className="text-sm text-gray-500">{label}</span>
+        </div>
         {trend !== undefined && <TrendBadge value={trend} />}
       </div>
       <div className="text-2xl font-bold text-gray-800">{value}</div>

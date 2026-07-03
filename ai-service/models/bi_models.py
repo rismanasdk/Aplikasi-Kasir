@@ -135,6 +135,37 @@ class ForecastHistoryItem(BaseModel):
     total_penjualan: float = Field(..., ge=0)
 
 
+class AnomalyPeriod(BaseModel):
+    pendapatan: float = Field(..., ge=0)
+    hpp: float = Field(..., ge=0)
+    pengeluaran: float = Field(..., ge=0)
+    laba_bersih: float = Field(...)
+    margin: float = Field(...)
+    produk_terjual: float = Field(default=0, ge=0)
+    persediaan: float = Field(default=0, ge=0)
+    forecast: float | None = Field(default=None, ge=0)
+    realisasi: float | None = Field(default=None, ge=0)
+
+
+class AnomalyProductItem(BaseModel):
+    nama: str
+    current_qty: float = Field(..., ge=0)
+    previous_qty: float = Field(..., ge=0)
+
+
+class AnomalyRequest(BaseModel):
+    current: AnomalyPeriod
+    previous: AnomalyPeriod
+    produk: list[AnomalyProductItem] = Field(default_factory=list)
+
+
+class AnomalyResponse(BaseModel):
+    status: str
+    insight: List[str]
+    rekomendasi: List[str]
+    narasi: str
+
+
 class ForecastRequest(BaseModel):
     histori: list[ForecastHistoryItem]
     produk: list[ForecastProductDetail] = Field(default_factory=list)

@@ -12,6 +12,7 @@ const TABS = [
   { id: 'produk', label: 'Produk' },
   { id: 'persediaan', label: 'Persediaan' },
   { id: 'forecast', label: 'Forecast' },
+  { id: 'anomaly', label: 'Anomaly Detection' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -23,6 +24,7 @@ const PanelMap: Record<TabId, React.LazyExoticComponent<React.ComponentType>> = 
   produk: lazy(() => import('./components/ProdukAnalysis')),
   persediaan: lazy(() => import('./components/PersediaanAnalysis')),
   forecast: lazy(() => import('./components/ForecastAnalysis')),
+  anomaly: lazy(() => import('./components/AnomalyDetection')),
 };
 
 const BIDashboard: React.FC = () => {

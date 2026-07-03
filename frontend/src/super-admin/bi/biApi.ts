@@ -281,6 +281,64 @@ export const generateAiKeuangan = async (payload: {
   return responsePayload;
 };
 
+export const generateAiAnomaly = async (payload: {
+  current: {
+    pendapatan: number;
+    hpp: number;
+    pengeluaran: number;
+    laba_bersih: number;
+    margin: number;
+    produk_terjual: number;
+    persediaan: number;
+    forecast?: number;
+    realisasi?: number;
+  };
+  previous: {
+    pendapatan: number;
+    hpp: number;
+    pengeluaran: number;
+    laba_bersih: number;
+    margin: number;
+    produk_terjual: number;
+    persediaan: number;
+    forecast?: number;
+    realisasi?: number;
+  };
+  produk: Array<{ nama: string; current_qty: number; previous_qty: number }>;
+}) => {
+  const res = await fetch(`${AI_BASE}/anomaly`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responsePayload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = (responsePayload as { detail?: unknown } | null)?.detail;
+    const detailMessage = Array.isArray(detail)
+      ? detail.map((item: unknown) => {
+          const msg = typeof item === 'object' && item !== null && 'msg' in item ? (item as { msg?: string }).msg : undefined;
+          return msg || JSON.stringify(item);
+        }).join(' | ')
+      : typeof detail === 'string'
+      ? detail
+      : undefined;
+    const message =
+      (responsePayload as { message?: string; error?: string } | null)?.message ||
+      (responsePayload as { message?: string; error?: string } | null)?.error ||
+      detailMessage ||
+      'Gagal menghasilkan analisis anomaly.';
+    throw new Error(message);
+  }
+
+  return responsePayload;
+};
+
 export const generateAiForecast = async (payload: {
   histori: Array<{ tanggal: string; total_penjualan: number }>;
   produk: Array<{ nama: string; total_qty_terjual: number; stok_sekarang?: number }>;
