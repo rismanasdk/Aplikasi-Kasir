@@ -26,6 +26,7 @@ export const StatCard: React.FC<{ label: string; value: string; sub?: string; tr
   color = 'blue',
 }) => {
   const colorMap: Record<string, string> = {
+    title: 'from-gray-200 to-gray-300',
     blue: 'from-blue-500 to-blue-600',
     green: 'from-emerald-500 to-emerald-600',
     red: 'from-red-500 to-red-600',

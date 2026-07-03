@@ -124,6 +124,29 @@ class KeuanganRequest(BaseModel):
     keuangan: KeuanganInput
 
 
+class ForecastProductDetail(BaseModel):
+    nama: str
+    total_qty_terjual: float = Field(..., ge=0)
+    stok_sekarang: float | None = Field(default=None, ge=0)
+
+
+class ForecastHistoryItem(BaseModel):
+    tanggal: str
+    total_penjualan: float = Field(..., ge=0)
+
+
+class ForecastRequest(BaseModel):
+    histori: list[ForecastHistoryItem]
+    produk: list[ForecastProductDetail] = Field(default_factory=list)
+
+
+class ForecastResponse(BaseModel):
+    status: str
+    insight: List[str]
+    rekomendasi: List[str]
+    narasi: str
+
+
 class PersediaanResponse(BaseModel):
     status: str
     score: int = Field(..., ge=0, le=100)

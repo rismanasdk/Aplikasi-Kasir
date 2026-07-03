@@ -17,6 +17,8 @@ from models.bi_models import (
     PersediaanResponse,
     KeuanganRequest,
     KeuanganResponse,
+    ForecastRequest,
+    ForecastResponse,
 )
 from utils.prompt_renderer import PromptRenderer
 import logging
@@ -32,6 +34,7 @@ class BusinessIntelligenceService:
         self.produk_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "produk.md")
         self.persediaan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "persediaan.md")
         self.keuangan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "keuangan.md")
+        self.forecast_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "forecast.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -107,7 +110,7 @@ class BusinessIntelligenceService:
 
     async def analyze_keuangan(self, payload: KeuanganRequest) -> KeuanganResponse:
         data = self._build_keuangan_metrics(payload)
-        prompt = self.keuangan_renderer.render({"data": json.dumps(data)})
+        prompt = self.keuangan_renderer.render({"data": data})
         try:
             raw_response = await self.ai_client.generate(prompt)
         except Exception:
@@ -117,7 +120,7 @@ class BusinessIntelligenceService:
             return self._parse_keuangan_response(raw_response)
         except ValueError:
             fallback_prompt = self.keuangan_renderer.render({
-                "data": json.dumps(data),
+                "data": data,
                 "retry": True,
             })
             try:
@@ -128,6 +131,30 @@ class BusinessIntelligenceService:
                 return self._parse_keuangan_response(retry_response)
             except ValueError:
                 return self._build_fallback_keuangan_response(payload)
+
+    async def analyze_forecast(self, payload: ForecastRequest) -> ForecastResponse:
+        data = self._build_forecast_metrics(payload)
+        prompt = self.forecast_renderer.render({"data": data})
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_forecast_response(payload)
+
+        try:
+            return self._parse_forecast_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.forecast_renderer.render({
+                "data": data,
+                "retry": True,
+            })
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_forecast_response(payload)
+            try:
+                return self._parse_forecast_response(retry_response)
+            except ValueError:
+                return self._build_fallback_forecast_response(payload)
 
     async def analyze_produk(self, payload: ProdukRequest) -> ProdukResponse:
         prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -260,6 +287,77 @@ class BusinessIntelligenceService:
             }
         }
 
+    def _build_forecast_metrics(self, payload: ForecastRequest) -> dict[str, object]:
+        histori = payload.histori or []
+        products = payload.produk or []
+
+        total_penjualan = sum(float(item.total_penjualan or 0) for item in histori)
+        jumlah_hari = len({item.tanggal for item in histori if item.tanggal})
+        average_daily_sales = total_penjualan / jumlah_hari if jumlah_hari else 0
+
+        sorted_histori = sorted(histori, key=lambda item: item.tanggal)
+        recent_sales = [float(item.total_penjualan or 0) for item in sorted_histori[-7:]]
+        moving_average_7 = sum(recent_sales) / len(recent_sales) if recent_sales else 0
+        forecast_next_day = moving_average_7
+        forecast_next_week = forecast_next_day * 7
+        forecast_next_month = forecast_next_day * 30
+
+        prev_histori = sorted_histori[-14:-7]
+        prev_average = sum(float(item.total_penjualan or 0) for item in prev_histori) / len(prev_histori) if prev_histori else 0
+        trend_percentage = 0.0
+        if prev_average:
+            trend_percentage = ((moving_average_7 - prev_average) / prev_average) * 100
+
+        if not histori:
+            trend = "Tidak Ada Data"
+            trend_percentage = 0.0
+        elif trend_percentage > 5:
+            trend = "Naik"
+        elif trend_percentage < -5:
+            trend = "Turun"
+        else:
+            trend = "Stabil"
+
+        forecast_products = []
+        for product in products:
+            total_qty_terjual = float(product.total_qty_terjual or 0)
+            average_daily_qty = total_qty_terjual / jumlah_hari if jumlah_hari else 0
+            forecast_qty_30_days = average_daily_qty * 30
+            stok_sekarang = float(product.stok_sekarang) if product.stok_sekarang is not None else None
+            days_until_stockout = None
+            if stok_sekarang is not None and average_daily_qty > 0:
+                days_until_stockout = stok_sekarang / average_daily_qty
+
+            forecast_products.append({
+                "nama": product.nama,
+                "forecast_qty": round(forecast_qty_30_days, 0),
+                "days_until_stockout": None if days_until_stockout is None else round(days_until_stockout, 0),
+            })
+
+        daily_values = [float(item.total_penjualan or 0) for item in histori]
+        confidence = 0.0
+        if len(daily_values) >= 2:
+            mean = sum(daily_values) / len(daily_values)
+            variance = sum((value - mean) ** 2 for value in daily_values) / len(daily_values)
+            stddev = variance ** 0.5
+            confidence = 1 - (stddev / mean) if mean else 0
+            confidence = max(0.0, min(1.0, confidence))
+
+        return {
+            "forecast": {
+                "total_penjualan": round(total_penjualan, 0),
+                "jumlah_hari": jumlah_hari,
+                "average_daily_sales": round(average_daily_sales, 0),
+                "forecast_next_day": round(forecast_next_day, 0),
+                "forecast_next_week": round(forecast_next_week, 0),
+                "forecast_next_month": round(forecast_next_month, 0),
+                "trend": trend,
+                "trend_percentage": round(trend_percentage, 1),
+                "confidence": round(confidence, 2),
+                "products": forecast_products,
+            }
+        }
+
     def _build_fallback_keuangan_response(self, payload: KeuanganRequest) -> KeuanganResponse:
         keuangan = payload.keuangan
         pendapatan = float(keuangan.pendapatan or 0)
@@ -284,6 +382,39 @@ class BusinessIntelligenceService:
             insight=insight,
             rekomendasi=rekomendasi,
             narasi="Analisis keuangan fallback: AI tidak tersedia atau menghasilkan respons yang tidak valid, sehingga data numerik dasar perlu ditindaklanjuti secara manual."
+        )
+
+    def _build_fallback_forecast_response(self, payload: ForecastRequest) -> ForecastResponse:
+        data = self._build_forecast_metrics(payload)
+        forecast_object = data.get("forecast", {})
+        forecast = dict(forecast_object) if isinstance(forecast_object, dict) else {}
+
+        status = "Stabil"
+        if forecast.get("trend") == "Naik":
+            status = "Optimis"
+        elif forecast.get("trend") == "Turun":
+            status = "Waspada"
+
+        insight = [
+            f"Rata-rata penjualan harian: {forecast.get('average_daily_sales', 0):,.0f}.",
+            f"Forecast besok: {forecast.get('forecast_next_day', 0):,.0f}.",
+            f"Trend saat ini: {forecast.get('trend', 'Tidak Ada Data')} ({forecast.get('trend_percentage', 0):+.1f}%).",
+        ]
+        products = forecast.get("products") or []
+        if products:
+            insight.append(f"Ada {len(products)} produk dengan prediksi kebutuhan stok 30 hari.")
+
+        rekomendasi = [
+            "Pantau penjualan harian dan sesuaikan stok untuk produk dengan forecast tinggi.",
+            "Siapkan stok tambahan jika trend penjualan menunjukkan kenaikan.",
+            "Periksa stok yang hampir habis untuk menghindari kekosongan produk." ,
+        ]
+
+        return ForecastResponse(
+            status=status,
+            insight=insight,
+            rekomendasi=rekomendasi,
+            narasi="Forecast fallback: AI tidak tersedia atau tidak merespon dengan benar. Gunakan angka prediksi dasar sebagai panduan sementara.",
         )
 
     def _parse_produk_response(self, raw_response: str) -> ProdukResponse:
@@ -333,6 +464,22 @@ class BusinessIntelligenceService:
                 raise ValueError("Keuangan AI response did not contain a JSON object.") from exc
 
         return KeuanganResponse.model_validate(parsed)
+
+    def _parse_forecast_response(self, raw_response: str) -> ForecastResponse:
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Forecast AI response did not contain a JSON object.") from exc
+
+        return ForecastResponse.model_validate(parsed)
 
     def _build_fallback_cashflow_response(self, payload: CashflowRequest) -> CashflowResponse:
         """Build fallback response when AI analysis fails"""
