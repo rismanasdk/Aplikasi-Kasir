@@ -19,6 +19,8 @@ from models.bi_models import (
     KeuanganResponse,
     ForecastRequest,
     ForecastResponse,
+    AnomalyRequest,
+    AnomalyResponse,
 )
 from utils.prompt_renderer import PromptRenderer
 import logging
@@ -35,6 +37,7 @@ class BusinessIntelligenceService:
         self.persediaan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "persediaan.md")
         self.keuangan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "keuangan.md")
         self.forecast_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "forecast.md")
+        self.anomaly_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "anomaly.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -155,6 +158,30 @@ class BusinessIntelligenceService:
                 return self._parse_forecast_response(retry_response)
             except ValueError:
                 return self._build_fallback_forecast_response(payload)
+
+    async def analyze_anomaly(self, payload: AnomalyRequest) -> AnomalyResponse:
+        data = self._build_anomaly_metrics(payload)
+        prompt = self.anomaly_renderer.render({"data": data})
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_anomaly_response(payload)
+
+        try:
+            return self._parse_anomaly_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.anomaly_renderer.render({
+                "data": data,
+                "retry": True,
+            })
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_anomaly_response(payload)
+            try:
+                return self._parse_anomaly_response(retry_response)
+            except ValueError:
+                return self._build_fallback_anomaly_response(payload)
 
     async def analyze_produk(self, payload: ProdukRequest) -> ProdukResponse:
         prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -417,6 +444,123 @@ class BusinessIntelligenceService:
             narasi="Forecast fallback: AI tidak tersedia atau tidak merespon dengan benar. Gunakan angka prediksi dasar sebagai panduan sementara.",
         )
 
+    def _build_anomaly_metrics(self, payload: AnomalyRequest) -> dict[str, object]:
+        def safe_number(value: float | int | None) -> float:
+            try:
+                if value is None:
+                    return 0.0
+                return float(value)
+            except (TypeError, ValueError):
+                return 0.0
+
+        def percent_change(current: float, previous: float) -> float:
+            current_value = safe_number(current)
+            previous_value = safe_number(previous)
+            if previous_value == 0:
+                return 0.0
+            change = ((current_value - previous_value) / previous_value) * 100
+            if change != change or change == float('inf') or change == float('-inf'):
+                return 0.0
+            return round(change, 1)
+
+        current = payload.current
+        previous = payload.previous
+
+        revenue_change = percent_change(current.pendapatan, previous.pendapatan)
+        expense_change = percent_change(current.pengeluaran, previous.pengeluaran)
+        gross_profit_change = percent_change(current.pendapatan - current.hpp, previous.pendapatan - previous.hpp)
+        net_profit_change = percent_change(current.laba_bersih, previous.laba_bersih)
+        margin_change = percent_change(current.margin, previous.margin)
+        hpp_change = percent_change(current.hpp, previous.hpp)
+        inventory_change = percent_change(current.persediaan, previous.persediaan)
+
+        forecast_error = 0.0
+        if current.forecast is not None and current.realisasi is not None and current.forecast != 0:
+            forecast_error = round(((safe_number(current.realisasi) - safe_number(current.forecast)) / safe_number(current.forecast)) * 100, 1)
+            if forecast_error != forecast_error or forecast_error == float('inf') or forecast_error == float('-inf'):
+                forecast_error = 0.0
+
+        product_changes = []
+        for item in payload.produk or []:
+            change = percent_change(item.current_qty, item.previous_qty)
+            product_changes.append({
+                "kategori": item.nama,
+                "perubahan": change,
+            })
+
+        anomalies = [
+            {"kategori": "Pendapatan", "perubahan": revenue_change},
+            {"kategori": "Pengeluaran", "perubahan": expense_change},
+            {"kategori": "Laba Kotor", "perubahan": gross_profit_change},
+            {"kategori": "Laba Bersih", "perubahan": net_profit_change},
+            {"kategori": "Margin", "perubahan": margin_change},
+            {"kategori": "HPP", "perubahan": hpp_change},
+            {"kategori": "Forecast Error", "perubahan": forecast_error},
+            {"kategori": "Persediaan", "perubahan": inventory_change},
+        ]
+        anomalies.extend(product_changes)
+
+        sorted_anomalies = sorted(anomalies, key=lambda item: abs(item["perubahan"]), reverse=True)
+        top_anomaly = [item for item in sorted_anomalies if item.get("perubahan") is not None][:5]
+
+        max_change = max((abs(item["perubahan"]) for item in anomalies), default=0.0)
+        if max_change > 50:
+            severity = "Tinggi"
+        elif max_change >= 20:
+            severity = "Sedang"
+        else:
+            severity = "Normal"
+
+        if max_change > 50:
+            status = "Anomali Terdeteksi"
+        elif max_change >= 20:
+            status = "Perlu Dipantau"
+        else:
+            status = "Normal"
+
+        return {
+            "anomaly": {
+                "status": status,
+                "revenue_change": revenue_change,
+                "expense_change": expense_change,
+                "gross_profit_change": gross_profit_change,
+                "net_profit_change": net_profit_change,
+                "margin_change": margin_change,
+                "hpp_change": hpp_change,
+                "forecast_error": forecast_error,
+                "inventory_change": inventory_change,
+                "severity": severity,
+                "top_anomaly": top_anomaly,
+            }
+        }
+
+    def _build_fallback_anomaly_response(self, payload: AnomalyRequest) -> AnomalyResponse:
+        metrics = self._build_anomaly_metrics(payload).get("anomaly", {})
+        status = metrics.get("status", "Normal")
+        top_anomaly = metrics.get("top_anomaly", []) or []
+
+        insight = [
+            f"Perubahan pendapatan: {metrics.get('revenue_change', 0):+.1f}%.",
+            f"Perubahan pengeluaran: {metrics.get('expense_change', 0):+.1f}%.",
+            f"Perubahan margin: {metrics.get('margin_change', 0):+.1f}%.",
+        ]
+        if top_anomaly:
+            anomaly_names = ", ".join(str(item.get("kategori", "")) for item in top_anomaly[:3])
+            insight.append(f"Top anomali: {anomaly_names}.")
+
+        rekomendasi = [
+            "Periksa kategori dengan perubahan terbesar untuk menemukan penyebab anomali.",
+            "Bandingkan performa periode ini dengan periode sebelumnya pada metrik utama.",
+            "Tindaklanjuti produk atau persediaan yang menunjukkan deviasi signifikan.",
+        ]
+
+        return AnomalyResponse(
+            status=status,
+            insight=insight,
+            rekomendasi=rekomendasi,
+            narasi="Analisis anomaly fallback: AI tidak tersedia atau menghasilkan respons tidak valid, sehingga hasil perhitungan dasar digunakan sebagai panduan sementara."
+        )
+
     def _parse_produk_response(self, raw_response: str) -> ProdukResponse:
         try:
             parsed = json.loads(raw_response)
@@ -480,6 +624,22 @@ class BusinessIntelligenceService:
                 raise ValueError("Forecast AI response did not contain a JSON object.") from exc
 
         return ForecastResponse.model_validate(parsed)
+
+    def _parse_anomaly_response(self, raw_response: str) -> AnomalyResponse:
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Anomaly AI response did not contain a JSON object.") from exc
+
+        return AnomalyResponse.model_validate(parsed)
 
     def _build_fallback_cashflow_response(self, payload: CashflowRequest) -> CashflowResponse:
         """Build fallback response when AI analysis fails"""

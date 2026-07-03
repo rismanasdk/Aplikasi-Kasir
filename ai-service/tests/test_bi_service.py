@@ -1,7 +1,7 @@
 import pytest
 
 from services.bi_service import BusinessIntelligenceService
-from models.bi_models import ForecastRequest, KeuanganRequest, RingkasanRequest, PersediaanRequest
+from models.bi_models import AnomalyRequest, AnomalyPeriod, AnomalyProductItem, ForecastRequest, KeuanganRequest, RingkasanRequest, PersediaanRequest
 
 
 class FakeAIClient:
@@ -59,32 +59,48 @@ async def test_keuangan_falls_back_when_ai_client_errors():
 
 
 @pytest.mark.asyncio
-async def test_forecast_falls_back_when_ai_client_errors():
+async def test_anomaly_falls_back_when_ai_client_errors():
     class FailingAIClient:
         async def generate(self, prompt: str) -> str:
             raise RuntimeError("quota exceeded")
 
     service = BusinessIntelligenceService(ai_client=FailingAIClient())
-    payload = ForecastRequest(histori=[
-        {"tanggal": "2026-06-20", "total_penjualan": 500000},
-        {"tanggal": "2026-06-21", "total_penjualan": 530000},
-        {"tanggal": "2026-06-22", "total_penjualan": 520000},
-        {"tanggal": "2026-06-23", "total_penjualan": 540000},
-        {"tanggal": "2026-06-24", "total_penjualan": 550000},
-        {"tanggal": "2026-06-25", "total_penjualan": 560000},
-        {"tanggal": "2026-06-26", "total_penjualan": 570000},
-    ], produk=[
-        {"nama": "Produk A", "total_qty_terjual": 120, "stok_sekarang": 30},
-        {"nama": "Produk B", "total_qty_terjual": 60, "stok_sekarang": 20},
-    ])
+    payload = AnomalyRequest(
+        current=AnomalyPeriod(
+            pendapatan=12000000,
+            hpp=5000000,
+            pengeluaran=2500000,
+            laba_bersih=4500000,
+            margin=37.5,
+            produk_terjual=400,
+            persediaan=200,
+            forecast=13000000,
+            realisasi=12000000,
+        ),
+        previous=AnomalyPeriod(
+            pendapatan=10000000,
+            hpp=4500000,
+            pengeluaran=2000000,
+            laba_bersih=3500000,
+            margin=35.0,
+            produk_terjual=420,
+            persediaan=220,
+            forecast=11000000,
+            realisasi=10000000,
+        ),
+        produk=[
+            AnomalyProductItem(nama="Burger", current_qty=80, previous_qty=120),
+            AnomalyProductItem(nama="Nasi Goreng", current_qty=150, previous_qty=140),
+        ],
+    )
 
-    result = await service.analyze_forecast(payload)
+    result = await service.analyze_anomaly(payload)
 
     assert result.status
     assert isinstance(result.insight, list)
     assert isinstance(result.rekomendasi, list)
     assert isinstance(result.narasi, str)
-    assert "forecast" in result.narasi.lower()
+    assert result.status in {"Normal", "Perlu Dipantau", "Anomali Terdeteksi"}
 
 
 @pytest.mark.asyncio

@@ -15,6 +15,8 @@ from models.bi_models import (
     KeuanganResponse,
     ForecastRequest,
     ForecastResponse,
+    AnomalyRequest,
+    AnomalyResponse,
 )
 from services.bi_service import BusinessIntelligenceService
 from pydantic import ValidationError
@@ -58,6 +60,16 @@ async def analyze_keuangan(payload: KeuanganRequest) -> KeuanganResponse:
 async def analyze_forecast(payload: ForecastRequest) -> ForecastResponse:
     try:
         return await service.analyze_forecast(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive handling
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.post("/anomaly", response_model=AnomalyResponse)
+async def analyze_anomaly(payload: AnomalyRequest) -> AnomalyResponse:
+    try:
+        return await service.analyze_anomaly(payload)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - defensive handling
