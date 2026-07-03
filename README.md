@@ -87,32 +87,81 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Checkout dan bayar secara online
 - Cek status transaksi publik dan riwayat pesanan pribadi
 
-## Algoritma Dan Logika Bisnis
+## Algoritma dan Logika Bisnis
 
-Repo ini tidak memakai algoritma kompleks seperti machine learning, tetapi ada beberapa logika bisnis inti yang penting:
+Repo ini menggabungkan logika bisnis berbasis aturan (Rule-Based Business Intelligence) dengan fondasi Machine Learning menggunakan Python. Saat ini sistem telah memiliki pipeline Business Intelligence, AI Service, serta data processing untuk pengembangan model Machine Learning.
+
+Beberapa algoritma dan logika bisnis utama yang digunakan:
+
+### Business Logic
 
 - Perhitungan harga final barang:
   harga jual dihitung ulang dari kombinasi `global discount`, `tax`, dan `service charge`, lalu dibulatkan ke bilangan bulat.
+
 - Round-robin assignment kasir:
   jika transaksi dibuat tanpa `kasir_username`, backend memilih kasir aktif berikutnya secara bergiliran memakai counter di database.
+
 - Sinkronisasi stok atomik:
   saat transaksi dibuat, stok dikurangi melalui `Firebase RTDB transaction` agar bentrok update stok lebih aman ketika ada beberapa client aktif sekaligus.
-- Perhitungan HPP dan laba harian:
-  backend mengakumulasi HPP per item, pendapatan, laba kotor, total beban, dan laba bersih per tanggal.
+
+- Perhitungan HPP dan laba:
+  backend menghitung HPP, pendapatan, laba kotor, laba bersih, margin, ROI, dan Break Even Point (BEP).
+
 - Perhitungan neraca:
   backend menghitung aset dari kas, persediaan barang, persediaan bahan baku, dan aset tetap; liabilitas dari kewajiban aktif; ekuitas sebagai penyeimbang `aset - liabilitas`.
+
 - Pencatatan kewajiban:
-  kewajiban menyimpan `jumlah_awal`, `sisa_jumlah`, status pelunasan, jatuh tempo, riwayat pembayaran, dan bisa terhubung ke `BahanBaku` untuk skenario utang supplier.
+  kewajiban menyimpan `jumlah_awal`, `sisa_jumlah`, status pelunasan, jatuh tempo, riwayat pembayaran, dan dapat dikaitkan dengan `BahanBaku`.
+
 - Pembayaran kewajiban:
-  pembayaran liabilitas mengurangi `saldo_kas` di Modal Utama dan menambahkan riwayat pengeluaran kas.
-- Pengeluaran biaya:
-  pencatatan pengeluaran operasional mengurangi `saldo_kas`, masuk ke riwayat kas, dan ikut memengaruhi perhitungan laba bersih/HPP harian.
-- Modal dan aset tetap:
-  tambah modal menambah kas, prive mengurangi kas dan sisa modal, pembelian aset tetap mengurangi kas dan menambah daftar aset tetap.
+  pembayaran liabilitas mengurangi saldo kas dan mencatat histori pengeluaran.
+
+- Pengeluaran operasional:
+  setiap pengeluaran mengurangi saldo kas dan memengaruhi laba bersih.
+
+- Manajemen modal dan aset tetap:
+  penambahan modal, prive, dan pembelian aset tetap akan memperbarui kas serta nilai aset.
+
 - Validasi metode pembayaran:
-  metode dan channel pembayaran divalidasi terhadap data settings, sehingga hanya metode/channel aktif yang terdaftar yang bisa dipakai.
+  metode dan channel pembayaran divalidasi terhadap data settings sehingga hanya metode aktif yang dapat digunakan.
+
 - Mapping callback pembayaran:
-  notifikasi Midtrans dipetakan kembali ke metode seperti `Virtual Account`, `QRIS`, atau `E-Wallet` agar status transaksi konsisten di aplikasi.
+  notifikasi Midtrans dipetakan kembali ke metode pembayaran internal agar status transaksi tetap konsisten.
+
+### Business Intelligence (Rule-Based AI)
+
+AI Service melakukan analisis data menggunakan Python (Pandas & NumPy) sebelum menghasilkan insight melalui Gemini AI.
+
+Domain Business Intelligence yang tersedia:
+
+- Ringkasan Bisnis
+- Analisis Cash Flow
+- Analisis Produk
+- Analisis Persediaan
+- Analisis Keuangan
+- Forecast Bisnis
+- Anomaly Detection
+- Executive Dashboard
+
+Setiap domain menghitung metrik bisnis menggunakan Python terlebih dahulu, kemudian menghasilkan insight, rekomendasi, dan narasi otomatis melalui AI.
+
+### Machine Learning Pipeline
+
+Sebagai fondasi Machine Learning, sistem telah memiliki pipeline data processing yang reusable.
+
+Pipeline meliputi:
+
+- Data Cleaning
+- Missing Value Handling
+- Duplicate Removal
+- Feature Engineering
+- Rolling Statistics
+- Moving Average
+- Dataset Builder
+- Temporal Train/Test Split
+- Dataset Validation
+
+Pipeline ini dirancang agar dapat digunakan kembali oleh model Machine Learning seperti Sales Forecasting, Profit Prediction, Inventory Prediction, dan Recommendation System.
 
 ## Modul Backend Utama
 
@@ -165,7 +214,7 @@ Cara menjalankan pengujian layanan AI
 
 ```bash
 cd ai-service
-python -m venv .venv 
+python -m venv .venv
 source venv/bin/activate
 pip install -r requirements.txt
 pytest -q
@@ -176,6 +225,37 @@ Catatan
 - Jauhkan kredensial penyedia AI dari kontrol versi. Konfigurasikan melalui variabel lingkungan yang digunakan oleh `ai-service/config.py`.
 
 - Prompt sengaja dibuat ketat (hanya JSON) dan layanan ini menyertakan logika pemulihan untuk memperbaiki respons yang terpotong atau terblokir.
+
+## Machine Learning (Data Processing Pipeline)
+
+Sprint 1: Data Processing — Pondasi untuk semua modul ML di masa depan
+
+- Modul ML (`ai-service/ml/`) menyediakan pipeline preprocessing dan feature engineering untuk mempersiapkan data ML-ready.
+- Modul ini **tidak melakukan training model** atau memerlukan Scikit-Learn/TensorFlow. Fokus murni pada **data processing** yang reusable.
+- Arsitektur: terintegrasi dalam FastAPI AI Service yang sudah ada, tanpa membuat service baru.
+
+**Komponen Utama:**
+
+- **`preprocessing.py`**: Pembersihan data (hapus duplikat, handling missing values, konversi tipe data, sort by date, hapus nilai negatif)
+- **`feature_engineering.py`**: Pembuatan fitur otomatis (temporal: day_of_week, month, year, quarter, is_weekend; rolling: moving_average_7/30, rolling_sales_7/30, days_since_last_sale)
+- **`dataset_builder.py`**: Orkestrasi pipeline — mendukung Forecast Penjualan, Prediksi Laba, Prediksi Cashflow, Prediksi Restock
+- **`schemas.py`**: Pydantic models untuk konfigurasi dan hasil
+- **`utils.py`**: Utility functions untuk validasi dan manipulasi data
+
+**Validasi:**
+
+- Dataset kosong, kolom wajib hilang, tanggal tidak valid, duplicate index — semuanya menghasilkan exception yang jelas
+
+**Testing:**
+
+```bash
+cd ai-service
+pytest tests/test_ml_pipeline.py -v
+```
+
+20 unit tests mencakup preprocessing, feature engineering, dataset building, dan end-to-end integration.
+
+Dokumentasi lengkap: lihat `ai-service/ML.md`
 
 ## Cara Menjalankan
 
