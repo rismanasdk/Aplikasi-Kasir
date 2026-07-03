@@ -113,11 +113,29 @@ class PersediaanRequest(BaseModel):
     persediaan: PersediaanInput
 
 
+class KeuanganInput(BaseModel):
+    pendapatan: float = Field(..., ge=0)
+    hpp: float = Field(..., ge=0)
+    pengeluaran_operasional: float = Field(..., ge=0)
+    target_omzet: float = Field(default=0, ge=0)
+
+
+class KeuanganRequest(BaseModel):
+    keuangan: KeuanganInput
+
+
 class PersediaanResponse(BaseModel):
     status: str
     score: int = Field(..., ge=0, le=100)
     insight: List[str]
     warning: List[str]
+    rekomendasi: List[str]
+    narasi: str
+
+
+class KeuanganResponse(BaseModel):
+    status: str
+    insight: List[str]
     rekomendasi: List[str]
     narasi: str
 

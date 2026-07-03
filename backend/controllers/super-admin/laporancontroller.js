@@ -12,3 +12,5 @@ export {
   getRekapMetodePembayaranRealtime,
   getNeraca
 } from "../admin/laporancontroller.js";
+
+export { getKeuanganSummary } from "../admin/keuangancontroller.js";

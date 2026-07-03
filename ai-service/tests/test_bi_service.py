@@ -1,7 +1,7 @@
 import pytest
 
 from services.bi_service import BusinessIntelligenceService
-from models.bi_models import RingkasanRequest, PersediaanRequest
+from models.bi_models import KeuanganRequest, RingkasanRequest, PersediaanRequest
 
 
 class FakeAIClient:
@@ -33,6 +33,29 @@ async def test_fallback_when_ai_returns_non_json():
     assert isinstance(result.insight, list)
     assert isinstance(result.rekomendasi, list)
     assert isinstance(result.narasi, str)
+
+
+@pytest.mark.asyncio
+async def test_keuangan_falls_back_when_ai_client_errors():
+    class FailingAIClient:
+        async def generate(self, prompt: str) -> str:
+            raise RuntimeError("quota exceeded")
+
+    service = BusinessIntelligenceService(ai_client=FailingAIClient())
+    payload = KeuanganRequest(keuangan={
+        "pendapatan": 20000000,
+        "hpp": 12000000,
+        "pengeluaran_operasional": 3000000,
+        "target_omzet": 25000000,
+    })
+
+    result = await service.analyze_keuangan(payload)
+
+    assert result.status
+    assert isinstance(result.insight, list)
+    assert isinstance(result.rekomendasi, list)
+    assert isinstance(result.narasi, str)
+    assert "keuangan" in result.narasi.lower()
 
 
 @pytest.mark.asyncio

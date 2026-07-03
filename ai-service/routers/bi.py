@@ -2,9 +2,19 @@ from fastapi import APIRouter, HTTPException, Request
 import logging
 import json
 
-from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse
+from models.bi_models import (
+    RingkasanRequest,
+    RingkasanResponse,
+    CashflowRequest,
+    CashflowResponse,
+    ProdukRequest,
+    ProdukResponse,
+    PersediaanRequest,
+    PersediaanResponse,
+    KeuanganRequest,
+    KeuanganResponse,
+)
 from services.bi_service import BusinessIntelligenceService
-from models.bi_models import ProdukRequest, ProdukResponse, PersediaanRequest, PersediaanResponse
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -26,6 +36,16 @@ async def analyze_ringkasan(payload: RingkasanRequest) -> RingkasanResponse:
 async def analyze_cashflow(payload: CashflowRequest) -> CashflowResponse:
     try:
         return await service.analyze_cashflow(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive handling
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.post("/keuangan", response_model=KeuanganResponse)
+async def analyze_keuangan(payload: KeuanganRequest) -> KeuanganResponse:
+    try:
+        return await service.analyze_keuangan(payload)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - defensive handling

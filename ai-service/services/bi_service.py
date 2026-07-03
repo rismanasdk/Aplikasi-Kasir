@@ -6,7 +6,18 @@ from typing import Any, Dict
 
 from clients.ai_client import AIClient, build_ai_client
 from config import get_settings
-from models.bi_models import RingkasanRequest, RingkasanResponse, CashflowRequest, CashflowResponse, ProdukRequest, ProdukResponse, PersediaanRequest, PersediaanResponse
+from models.bi_models import (
+    RingkasanRequest,
+    RingkasanResponse,
+    CashflowRequest,
+    CashflowResponse,
+    ProdukRequest,
+    ProdukResponse,
+    PersediaanRequest,
+    PersediaanResponse,
+    KeuanganRequest,
+    KeuanganResponse,
+)
 from utils.prompt_renderer import PromptRenderer
 import logging
 import re
@@ -20,6 +31,7 @@ class BusinessIntelligenceService:
         self.cashflow_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "cashflow.md")
         self.produk_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "produk.md")
         self.persediaan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "persediaan.md")
+        self.keuangan_renderer = PromptRenderer(Path(__file__).resolve().parent.parent / "prompts" / "bi" / "keuangan.md")
 
     async def analyze_ringkasan(self, payload: RingkasanRequest) -> RingkasanResponse:
         prompt = self.ringkasan_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -92,6 +104,30 @@ class BusinessIntelligenceService:
                 return self._parse_cashflow_response(retry_response)
             except ValueError:
                 return self._build_fallback_cashflow_response(payload)
+
+    async def analyze_keuangan(self, payload: KeuanganRequest) -> KeuanganResponse:
+        data = self._build_keuangan_metrics(payload)
+        prompt = self.keuangan_renderer.render({"data": json.dumps(data)})
+        try:
+            raw_response = await self.ai_client.generate(prompt)
+        except Exception:
+            return self._build_fallback_keuangan_response(payload)
+
+        try:
+            return self._parse_keuangan_response(raw_response)
+        except ValueError:
+            fallback_prompt = self.keuangan_renderer.render({
+                "data": json.dumps(data),
+                "retry": True,
+            })
+            try:
+                retry_response = await self.ai_client.generate(fallback_prompt)
+            except Exception:
+                return self._build_fallback_keuangan_response(payload)
+            try:
+                return self._parse_keuangan_response(retry_response)
+            except ValueError:
+                return self._build_fallback_keuangan_response(payload)
 
     async def analyze_produk(self, payload: ProdukRequest) -> ProdukResponse:
         prompt = self.produk_renderer.render({"data": json.dumps(payload.model_dump())})
@@ -189,6 +225,67 @@ class BusinessIntelligenceService:
             narasi="Analisis persediaan menggunakan data stok dan penjualan dasar karena layanan AI sedang tidak tersedia atau memberikan respons yang tidak valid."
         )
 
+    def _build_keuangan_metrics(self, payload: KeuanganRequest) -> dict[str, object]:
+        keuangan = payload.keuangan
+        pendapatan = float(keuangan.pendapatan or 0)
+        hpp = float(keuangan.hpp or 0)
+        pengeluaran = float(keuangan.pengeluaran_operasional or 0)
+        target = float(keuangan.target_omzet or 0)
+
+        laba_kotor = pendapatan - hpp
+        laba_bersih = laba_kotor - pengeluaran
+
+        margin_kotor = round((laba_kotor / pendapatan) * 100) if pendapatan else 0
+        margin_bersih = round((laba_bersih / pendapatan) * 100) if pendapatan else 0
+        roi = round((laba_bersih / hpp) * 100) if hpp else 0
+        bep = None
+        if margin_kotor > 0:
+            bep = round(pengeluaran / (margin_kotor / 100)) if margin_kotor else None
+
+        persentase_target = round((pendapatan / target) * 100) if target else 0
+
+        return {
+            "keuangan": {
+                "pendapatan": round(pendapatan, 0),
+                "hpp": round(hpp, 0),
+                "laba_kotor": round(laba_kotor, 0),
+                "pengeluaran_operasional": round(pengeluaran, 0),
+                "laba_bersih": round(laba_bersih, 0),
+                "margin_kotor": margin_kotor,
+                "margin_bersih": margin_bersih,
+                "roi": roi,
+                "bep": bep,
+                "target_omzet": round(target, 0),
+                "persentase_target": persentase_target,
+            }
+        }
+
+    def _build_fallback_keuangan_response(self, payload: KeuanganRequest) -> KeuanganResponse:
+        keuangan = payload.keuangan
+        pendapatan = float(keuangan.pendapatan or 0)
+        hpp = float(keuangan.hpp or 0)
+        pengeluaran = float(keuangan.pengeluaran_operasional or 0)
+        laba_kotor = pendapatan - hpp
+        laba_bersih = laba_kotor - pengeluaran
+
+        status = "Sehat" if laba_bersih >= 0 and pengeluaran <= pendapatan * 0.7 else "Perlu Perhatian"
+        insight = [
+            f"Pendapatan tercatat sebesar {pendapatan:,.0f}.",
+            f"HPP tercatat sebesar {hpp:,.0f} dan pengeluaran operasional sebesar {pengeluaran:,.0f}.",
+            f"Laba bersih sementara adalah {laba_bersih:,.0f}.",
+        ]
+        rekomendasi = [
+            "Periksa struktur biaya operasional untuk menjaga margin tetap positif.",
+            "Pantau HPP dan harga jual agar margin kotor tidak tergerus.",
+            "Bandingkan pendapatan dengan target omzet untuk memastikan pencapaian bisnis.",
+        ]
+        return KeuanganResponse(
+            status=status,
+            insight=insight,
+            rekomendasi=rekomendasi,
+            narasi="Analisis keuangan fallback: AI tidak tersedia atau menghasilkan respons yang tidak valid, sehingga data numerik dasar perlu ditindaklanjuti secara manual."
+        )
+
     def _parse_produk_response(self, raw_response: str) -> ProdukResponse:
         try:
             parsed = json.loads(raw_response)
@@ -220,6 +317,22 @@ class BusinessIntelligenceService:
                 raise ValueError("Persediaan AI response did not contain a JSON object.") from exc
 
         return PersediaanResponse.model_validate(parsed)
+
+    def _parse_keuangan_response(self, raw_response: str) -> KeuanganResponse:
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raw_json = self._extract_json_candidate(raw_response)
+            if raw_json is not None:
+                try:
+                    parsed = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    cleaned = raw_json.replace("\n", " ").replace("\r", " ")
+                    parsed = json.loads(cleaned)
+            else:
+                raise ValueError("Keuangan AI response did not contain a JSON object.") from exc
+
+        return KeuanganResponse.model_validate(parsed)
 
     def _build_fallback_cashflow_response(self, payload: CashflowRequest) -> CashflowResponse:
         """Build fallback response when AI analysis fails"""
