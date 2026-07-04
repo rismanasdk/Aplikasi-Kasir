@@ -1,8 +1,8 @@
-# Kasir Plus
+# Aplikasi-Kasir (PUSAT)
 
 [![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)](LICENSE)
 
-Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, keamanan server, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, update real-time via `Socket.IO`, serta pondasi laporan keuangan seperti HPP/laba, modal, aset tetap, liabilitas, dan neraca.
+Aplikasi Kasir adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko/resto dengan frontend `React + TypeScript + Vite` dan backend `Express + MongoDB`. Repo ini sudah mencakup alur transaksi kasir, dashboard admin dan manajer, proses dapur/chef, keamanan server, dashboard publik untuk pelanggan, pembayaran online via `Midtrans`, upload gambar via `Cloudinary`, sinkronisasi stok via `Firebase RTDB`, update real-time via `Socket.IO`, serta pondasi laporan keuangan seperti HPP/laba, modal, aset tetap, liabilitas, dan neraca.
 
 ## Ringkasan Fitur
 
@@ -28,6 +28,7 @@ Kasir Plus adalah aplikasi Point of Sale (POS) full-stack untuk operasional toko
 - Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
 - Smart Notifikasi pada role super-admin yang meliputi Uang Kas, Liabilitas, Stok Barang/Produk
 - Business Intelligence dengan mengimplementasikan model AI `Gemini, GPT` kedalam analis data
+- Machine Learning pada model AI agar analisis data dapat lebih tajam dan lebih sempurna
 
 ## Fitur Per Area
 
