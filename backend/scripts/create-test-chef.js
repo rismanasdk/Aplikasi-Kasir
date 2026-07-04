@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User from "../models/user.js";
+import Role from "../models/role.js";
+import Branch from "../models/branch.js";
 import connectDB from "../database/db.js";
 
 const createTestChef = async () => {
@@ -15,6 +17,20 @@ const createTestChef = async () => {
       return;
     }
 
+    // Get chef role
+    const chefRole = await Role.findOne({ code: "chef" });
+    if (!chefRole) {
+      console.error("Chef role not found. Please seed RBAC foundation first.");
+      process.exit(1);
+    }
+
+    // Get default branch (Pusat)
+    const pusat = await Branch.findOne({ nama: "Pusat" });
+    if (!pusat) {
+      console.error("Pusat branch not found. Please seed RBAC foundation first.");
+      process.exit(1);
+    }
+
     // Create test chef
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash("12345678", salt);
@@ -24,7 +40,9 @@ const createTestChef = async () => {
       username: "testchef",
       password: hashedPassword,
       status: "aktif",
-      role: "chef",
+      role_id: chefRole._id,
+      branch_id: pusat._id,
+      role: "chef", // legacy field for compatibility
       profilePicture: "https://example.com/chef.jpg"
     });
 
@@ -32,6 +50,8 @@ const createTestChef = async () => {
     console.log("Test chef created successfully");
     console.log("Username: testchef");
     console.log("Password: 12345678");
+    console.log("Role: Chef");
+    console.log("Branch: Pusat");
 
     process.exit(0);
   } catch (error) {

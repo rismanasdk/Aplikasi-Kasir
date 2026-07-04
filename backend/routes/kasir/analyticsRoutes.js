@@ -1,6 +1,7 @@
 import express from "express";
 import verifyToken from "../../middleware/verifyToken.js";
-import authorize from "../../middleware/authorize.js";
+import { requirePermission } from "../../middleware/authorization.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 import {
   getDailyCashFlow,
   getCashFlowRange,
@@ -12,7 +13,7 @@ const router = express.Router();
 
 // All kasir routes require authentication and kasir role
 router.use(verifyToken);
-router.use(authorize(["kasir", "admin"]));
+router.use(requirePermission(PERMISSIONS.REPORT_VIEW));
 
 // Daily cash flow report
 router.get("/daily-cash-flow", getDailyCashFlow);

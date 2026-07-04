@@ -7,20 +7,21 @@ import {
   deleteBahanBaku,
   updateBahanBakuStatus,
 } from "../../controllers/admin/bahanbakumanager.js";
-import authorize from "../../middleware/authorize.js";
+import { requirePermission } from "../../middleware/authorization.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 import verifyToken from "../../middleware/verifyToken.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
-// All routes require authentication and admin role
+// All routes require authentication and stock access
 router.use(verifyToken);
-router.use(authorize(["admin"]));
+router.use(requirePermission(PERMISSIONS.STOCK_VIEW));
 
 router.get("/", getAllBahanBaku);
-router.post("/", upload.single("gambar"), createBahanBaku);
-router.put("/:id", upload.single("gambar"), updateBahanBaku);
-router.delete("/:id", deleteBahanBaku);
-router.put("/:id/status", updateBahanBakuStatus);
+router.post("/", requirePermission(PERMISSIONS.STOCK_ADJUST), upload.single("gambar"), createBahanBaku);
+router.put("/:id", requirePermission(PERMISSIONS.STOCK_ADJUST), upload.single("gambar"), updateBahanBaku);
+router.delete("/:id", requirePermission(PERMISSIONS.STOCK_ADJUST), deleteBahanBaku);
+router.put("/:id/status", requirePermission(PERMISSIONS.STOCK_ADJUST), updateBahanBakuStatus);
 
 export default router;  

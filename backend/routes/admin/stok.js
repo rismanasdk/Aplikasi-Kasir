@@ -10,19 +10,20 @@ import {
     publishBarang
 } from "../../controllers/admin/stokbarangcontroller.js";
 import { updateBarangStatus } from "../../controllers/databarangControllers.js";
-import authorize from "../../middleware/authorize.js";
+import { requirePermission } from "../../middleware/authorization.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 import verifyToken from "../../middleware/verifyToken.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" }); // temporary folder
 
 router.use(verifyToken);
-router.use(authorize(["admin"]));
+router.use(requirePermission(PERMISSIONS.STOCK_VIEW));
 
 router.get("/", getAllBarang);
-router.post("/", upload.single("gambar"), createBarang);
-router.put("/:id", upload.single("gambar"), updateBarang);
-router.delete("/:id", deleteBarang);
+router.post("/", requirePermission(PERMISSIONS.PRODUCT_CREATE), upload.single("gambar"), createBarang);
+router.put("/:id", requirePermission(PERMISSIONS.PRODUCT_UPDATE), upload.single("gambar"), updateBarang);
+router.delete("/:id", requirePermission(PERMISSIONS.PRODUCT_DELETE), deleteBarang);
 
 // Production routes
 router.post("/production", createProduction);

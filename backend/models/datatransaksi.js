@@ -1,6 +1,13 @@
 import { Schema, model } from "mongoose";
 
 const transaksiSchema = new Schema({
+  // 🔹 NEW: Branch reference (MANDATORY for multi-branch support)
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    required: true,
+  },
+
   order_id: {
     type: String,
     required: true,
@@ -64,6 +71,11 @@ const transaksiSchema = new Schema({
   }
 
 }, { timestamps: true });
+
+// 🔹 Create compound index for branch + date filtering
+transaksiSchema.index({ branch_id: 1, tanggal_transaksi: -1 });
+transaksiSchema.index({ branch_id: 1, status: 1 });
+transaksiSchema.index({ branch_id: 1, user_id: 1 });
 
 const Transaksi = model("Transaksi", transaksiSchema, "Data-Transaksi");
 export default Transaksi;

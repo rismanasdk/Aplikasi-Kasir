@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import BahanBaku from "../models/bahanbaku.js";
+import User from "../models/user.js";
+import Role from "../models/role.js";
+import Branch from "../models/branch.js";
 import connectDB from "../database/db.js";
 
 const createTestBahanBaku = async () => {
@@ -79,59 +82,37 @@ const createTestBahanBaku = async () => {
     const createdBahanBaku = await BahanBaku.insertMany(testBahanBaku);
     console.log("Created test bahan baku:", createdBahanBaku.length);
 
-    // Create test productions for chef
-    const Production = mongoose.model("Production", new mongoose.Schema({
-      bahan_baku_id: { type: mongoose.Schema.Types.ObjectId, ref: "BahanBaku" },
-      chef_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      jumlah_diproses: Number,
-      status: { type: String, enum: ["pending", "approved", "cancelled"], default: "pending" },
-      waktu_mulai: Date,
-      waktu_selesai: Date,
-      catatan: String
-    }));
+    // Get or create chef user
+    const chefRole = await Role.findOne({ code: "chef" });
+    const pusat = await Branch.findOne({ nama: "Pusat" });
 
-    // Get a chef user (assuming there's at least one chef)
-    const User = mongoose.model("User", new mongoose.Schema({
-      role: String
-    }));
+    if (!chefRole || !pusat) {
+      console.error("Chef role or Pusat branch not found. Please seed RBAC foundation first.");
+      process.exit(1);
+    }
 
-    const chef = await User.findOne({ role: "chef" });
+    let chef = await User.findOne({ username: "testchef" });
     if (!chef) {
       console.log("No chef user found, creating test chef");
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash("12345678", saltRounds);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash("12345678", salt);
 
-      const testChef = new User({
+      chef = new User({
         nama_lengkap: "Test Chef",
         username: "testchef",
         password: hashedPassword,
         status: "aktif",
-        role: "chef",
+        role_id: chefRole._id,
+        branch_id: pusat._id,
+        role: "chef", // legacy field
         profilePicture: "https://example.com/chef.jpg"
       });
 
-      await testChef.save();
+      await chef.save();
       console.log("Test chef created");
-      // Continue to create productions with the new chef
-      const chef = testChef;
     }
 
     console.log("Using chef:", chef.username);
-
-    // Clear existing test productions
-    await Production.deleteMany({ catatan: "Test production" });
-
-    // Create test productions
-    const testProductions = createdBahanBaku.map(bahan => ({
-      bahan_baku_id: bahan._id,
-      chef_id: chef._id,
-      jumlah_diproses: Math.floor(Math.random() * 10) + 1,
-      status: "pending",
-      catatan: "Test production"
-    }));
-
-    await Production.insertMany(testProductions);
-    console.log("Created test productions:", testProductions.length);
 
     console.log("Test data creation completed");
     process.exit(0);

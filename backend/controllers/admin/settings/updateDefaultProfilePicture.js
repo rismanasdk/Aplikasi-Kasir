@@ -1,11 +1,13 @@
 import Settings from "../../../models/settings.js";
 import cloudinary from "../../../config/cloudinary.js";
 import streamifier from "streamifier";
+import { PERMISSIONS } from "../../../../shared/permissionRegistry.js";
 
 
 export const updateDefaultProfilePicture = async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    if (!permissionCodes.includes(PERMISSIONS.USER_UPDATE)) {
       return res.status(403).json({ message: "Hanya admin yang bisa mengubah default profile picture" });
     }
 

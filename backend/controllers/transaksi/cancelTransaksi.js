@@ -3,12 +3,14 @@ import Transaksi from "../../models/datatransaksi.js";
 import Barang from "../../models/databarang.js"; 
 import db from "../../config/firebaseAdmin.js";
 import { io } from "../../server.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 
 
 export const cancelTransaksi = async (req, res) => {
   try {
     const { id } = req.params;
-    const normalizedRole = String(req.user?.role || "").toLowerCase();
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    const canCancelTransaction = permissionCodes.includes(PERMISSIONS.TRANSACTION_DELETE) || permissionCodes.includes(PERMISSIONS.TRANSACTION_UPDATE);
 
     const transaksi = await Transaksi.findById(id);
 
@@ -24,15 +26,13 @@ export const cancelTransaksi = async (req, res) => {
       return res.status(400).json({ message: "Stok sudah dikembalikan untuk transaksi ini!" });
     }
 
-    const isAdmin = normalizedRole === "admin";
-    const isKasirOwner =
-      normalizedRole === "kasir" &&
-      transaksi.kasir_id === (req.user.username || req.user.id);
-    const isUserOwner =
-      normalizedRole === "user" &&
+    // Authorization: allow if user has permission OR owns the transaction
+    const isAdmin = canCancelTransaction;
+    const isTransactionOwner =
+      transaksi.kasir_id === (req.user.username || req.user.id) ||
       String(transaksi.user_id) === String(req.user.id);
 
-    if (!isAdmin && !isKasirOwner && !isUserOwner) {
+    if (!isAdmin && !isTransactionOwner) {
       return res.status(403).json({ message: "Anda tidak diizinkan membatalkan transaksi ini" });
     }
 

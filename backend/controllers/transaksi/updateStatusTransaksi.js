@@ -1,15 +1,17 @@
 import Transaksi from "./../../models/datatransaksi.js";
 import { io } from "./../../server.js";
 import { processCompletedTransaction } from "./helpers/transactionLifecycleHelper.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 
 export const updateStatusTransaksi = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const normalizedRole = String(req.user?.role || "").toLowerCase();
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    const canUpdateAllTransactions = permissionCodes.includes(PERMISSIONS.TRANSACTION_UPDATE);
 
-    if (!["admin", "kasir"].includes(normalizedRole)) {
-      return res.status(403).json({ message: "Role Anda tidak diizinkan mengubah status transaksi" });
+    if (!canUpdateAllTransactions) {
+      return res.status(403).json({ message: "Anda tidak diizinkan mengubah status transaksi" });
     }
 
     const transaksi = await Transaksi.findById(id);
@@ -18,11 +20,13 @@ export const updateStatusTransaksi = async (req, res) => {
       return res.status(404).json({ message: "Transaksi tidak ditemukan!" });
     }
 
-    if (normalizedRole === "kasir") {
-      const kasirKey = req.user.username || req.user.id;
-      if (transaksi.kasir_id !== kasirKey) {
-        return res.status(403).json({ message: "Anda tidak bisa mengubah transaksi milik kasir lain" });
-      }
+    // Allow only if user has permission OR owns the transaction
+    const isOwner = 
+      transaksi.kasir_id === (req.user.username || req.user.id) ||
+      String(transaksi.user_id) === String(req.user.id);
+
+    if (!canUpdateAllTransactions && !isOwner) {
+      return res.status(403).json({ message: "Anda tidak diizinkan mengubah transaksi ini" });
     }
 
     transaksi.status = status;

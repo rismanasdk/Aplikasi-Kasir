@@ -10,15 +10,18 @@ import {
   reserveStockForItems,
   restoreStockForItems,
 } from "./helpers/transactionLifecycleHelper.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 
 export const createTransaksi = async (req, res) => {
   let createdTransaksi = null;
   let reservedItems = [];
 
   try {
-    const allowedRoles = ["admin", "kasir", "user"];
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Role Anda tidak diizinkan membuat transaksi" });
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    const canCreateTransaction = permissionCodes.includes(PERMISSIONS.TRANSACTION_CREATE);
+
+    if (!req.user || !canCreateTransaction) {
+      return res.status(403).json({ message: "Anda tidak diizinkan membuat transaksi" });
     }
 
     const { barang_dibeli, metode_pembayaran, total_harga } = req.body;
@@ -59,9 +62,6 @@ export const createTransaksi = async (req, res) => {
 
     // PINDAHKAN PENGECEKAN KASIR KE SINI (SEBELUM PENGURANGAN STOK)
     let kasirUsername = req.body.kasir_username || req.body.kasir_id;
-    if (req.user.role === "user") {
-      kasirUsername = null;
-    }
     if (!kasirUsername) {
       try {
         const kasirTerpilih = await pilihKasirRoundRobin();
@@ -73,9 +73,10 @@ export const createTransaksi = async (req, res) => {
         });
       }
     } else {
-      const kasirData = await User.findOne({ username: kasirUsername, role: "kasir" });
+      // Query kasir by username (not by role name)
+      const kasirData = await User.findOne({ username: kasirUsername });
       if (!kasirData) {
-        return res.status(400).json({ message: `Kasir '${kasirUsername}' tidak ditemukan atau bukan kasir.` });
+        return res.status(400).json({ message: `Kasir '${kasirUsername}' tidak ditemukan.` });
       }
     }
 

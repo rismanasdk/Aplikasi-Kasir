@@ -54,6 +54,8 @@ import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
 import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
+import { requirePermission } from "./middleware/authorization.js";
+import { PERMISSIONS } from "../shared/permissionRegistry.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import BlockedIP from "./models/blockedIP.js";
 import aiBiRoutes from "./routes/aiBiRoutes.js";
@@ -261,7 +263,7 @@ app.use("/api/bi", aiBiRoutes);
 // pelanggan, kasir
 app.use("/api/auth/google", googleAuthRoutes);
 app.use("/api/barang", barangRoutes);
-app.use("/api/transaksi", userAuth, transaksiRoutes);
+app.use("/api/transaksi", verifyToken, transaksiRoutes);
 app.use("/api/update-profile", updateProfile);
 app.use("/api/users/history", userAuth, usersRoutes);
 app.use("/api/cart", cartRoutes)
@@ -269,44 +271,44 @@ app.use("/api/kasir/analytics", kasirAnalyticsRoutes);
 app.use("/auth", authRoutes);
 
 // manager
-app.use("/api/manager/dashboard", verifyToken, authorize(["manajer", "manager", "admin"]), dashboardRoutes);
-app.use("/api/manager/riwayat", verifyToken, authorize(["manajer", "manager", "admin"]), riwayatRoutes);
-app.use("/api/manager/stok-barang", verifyToken, authorize(["manajer", "manager", "admin"]), stokBarang);
-app.use("/api/manager/laporan", verifyToken, authorize(["manajer", "manager", "admin"]), laporanManagerRoutes);
-app.use("/api/manager/biaya-operasional", verifyToken, authorize(["manajer", "manager", "admin"]), biayaoperasional);
-app.use("/api/manager/settings", verifyToken, authorize(["manajer", "manager", "admin"]), managerSettingsRoutes);
-app.use("/api/common", verifyToken, authorize(["super-admin", "admin", "manajer", "manager", "kasir", "chef", "user", "security"]), commonRoutes);
+app.use("/api/manager/dashboard", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), dashboardRoutes);
+app.use("/api/manager/riwayat", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), riwayatRoutes);
+app.use("/api/manager/stok-barang", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), stokBarang);
+app.use("/api/manager/laporan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), laporanManagerRoutes);
+app.use("/api/manager/biaya-operasional", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), biayaoperasional);
+app.use("/api/manager/settings", verifyToken, requirePermission(PERMISSIONS.BRANCH_UPDATE), managerSettingsRoutes);
+app.use("/api/common", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), commonRoutes);
 
 // admin
-app.use("/api/admin/dashboard", verifyToken, authorize(["admin"]), adminDashboardRoutes);
-app.use("/api/admin/status-pesanan", verifyToken, authorize(["admin"]), adminStatusPesanan);
-app.use("/api/admin/riwayat", verifyToken, authorize(["admin"]), adminRiwayat);
-app.use("/api/admin/stok-barang", adminStok);
-app.use("/api/admin/kategori", verifyToken, authorize(["admin", "super-admin"]), adminKategori)
-app.use("/api/admin/laporan", verifyToken, authorize(["admin", "manajer", "manager", "super-admin"]), adminLaporan);
-app.use("/api/admin/users", verifyToken, authorize(["super-admin"]), adminUsers);
-app.use("/api/admin/settings", verifyToken, authorize(["super-admin"]), adminSettingsRoutes);
-app.use("/api/admin/biaya-operasional", verifyToken, authorize(["admin"]), adminbiayaoperasional);
-app.use("/api/admin/biaya-layanan", verifyToken, authorize(["super-admin"]), adminbiayalayanan)
-app.use("/api/admin/modal-utama", verifyToken, authorize(["super-admin"]), adminmodalutama)
-app.use("/api/admin/hpp-total", verifyToken, authorize(["admin"]), adminhpptotal)
-app.use("/api/admin/bahan-baku", adminBahanBaku)
-app.use("/api/admin/data-satuan", verifyToken, authorize(["admin"]), adminDataSatuan)
-app.use("/api/admin/pengeluaran-biaya", verifyToken, authorize(["admin"]), adminPengeluaranBiaya);
-app.use("/api/admin/kewajiban", verifyToken, authorize(["admin"]), adminKewajiban);
+app.use("/api/admin/dashboard", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), adminDashboardRoutes);
+app.use("/api/admin/status-pesanan", verifyToken, requirePermission(PERMISSIONS.TRANSACTION_READ), adminStatusPesanan);
+app.use("/api/admin/riwayat", verifyToken, requirePermission(PERMISSIONS.TRANSACTION_READ), adminRiwayat);
+app.use("/api/admin/stok-barang", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), adminStok);
+app.use("/api/admin/kategori", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), adminKategori)
+app.use("/api/admin/laporan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminLaporan);
+app.use("/api/admin/users", verifyToken, requirePermission(PERMISSIONS.USER_VIEW), adminUsers);
+app.use("/api/admin/settings", verifyToken, requirePermission(PERMISSIONS.PERMISSION_MANAGE), adminSettingsRoutes);
+app.use("/api/admin/biaya-operasional", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminbiayaoperasional);
+app.use("/api/admin/biaya-layanan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminbiayalayanan)
+app.use("/api/admin/modal-utama", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminmodalutama)
+app.use("/api/admin/hpp-total", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminhpptotal)
+app.use("/api/admin/bahan-baku", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), adminBahanBaku)
+app.use("/api/admin/data-satuan", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), adminDataSatuan)
+app.use("/api/admin/pengeluaran-biaya", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminPengeluaranBiaya);
+app.use("/api/admin/kewajiban", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminKewajiban);
 
 // super-admin
-app.use("/api/super-admin/dashboard", verifyToken, authorize(["super-admin"]), superAdminDashboardRoutes);
-app.use("/api/super-admin/laporan", verifyToken, authorize(["super-admin"]), superAdminLaporanRoutes);
-app.use("/api/super-admin/settings", verifyToken, authorize(["super-admin"]), superAdminSettingsRoutes);
-app.use("/api/super-admin/users", verifyToken, authorize(["super-admin"]), superAdminUsersRoutes);
-app.use("/api/super-admin/biaya-layanan", verifyToken, authorize(["super-admin"]), superAdminBiayaLayananRoutes);
-app.use("/api/super-admin/modal-utama", verifyToken, authorize(["super-admin"]), superAdminModalUtamaRoutes);
-app.use("/api/super-admin/biaya-operasional", verifyToken, authorize(["super-admin"]), adminbiayaoperasional);
-app.use("/api/super-admin/pengeluaran-biaya", verifyToken, authorize(["super-admin"]), adminPengeluaranBiaya);
-app.use("/api/super-admin/kewajiban", verifyToken, authorize(["super-admin"]), superAdminKewajiban);
-app.use("/api/super-admin/stok-barang", verifyToken, authorize(["super-admin"]), superAdminProductsRoutes);
-app.use("/api/super-admin/kategori", verifyToken, authorize(["super-admin"]), superAdminKategoriRouter);
+app.use("/api/super-admin/dashboard", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), superAdminDashboardRoutes);
+app.use("/api/super-admin/laporan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), superAdminLaporanRoutes);
+app.use("/api/super-admin/settings", verifyToken, requirePermission(PERMISSIONS.PERMISSION_MANAGE), superAdminSettingsRoutes);
+app.use("/api/super-admin/users", verifyToken, requirePermission(PERMISSIONS.USER_VIEW), superAdminUsersRoutes);
+app.use("/api/super-admin/biaya-layanan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), superAdminBiayaLayananRoutes);
+app.use("/api/super-admin/modal-utama", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), superAdminModalUtamaRoutes);
+app.use("/api/super-admin/biaya-operasional", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminbiayaoperasional);
+app.use("/api/super-admin/pengeluaran-biaya", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), adminPengeluaranBiaya);
+app.use("/api/super-admin/kewajiban", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), superAdminKewajiban);
+app.use("/api/super-admin/stok-barang", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), superAdminProductsRoutes);
+app.use("/api/super-admin/kategori", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), superAdminKategoriRouter);
 
 // chef
 app.use("/api/chef", chefRoutes);
