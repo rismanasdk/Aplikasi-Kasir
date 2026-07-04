@@ -28,6 +28,11 @@ const bahanBakuSchema = new Schema(
       type: Number,
       // required: true,
       default: 0
+    },
+    branch_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      default: null,
     }
   },
   { timestamps: true }

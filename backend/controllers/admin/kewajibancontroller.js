@@ -1,6 +1,7 @@
 import Kewajiban from "../../models/kewajiban.js";
 import BahanBaku from "../../models/bahanbaku.js";
 import ModalUtama from "../../models/modalutama.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 const VALID_KATEGORI = new Set([
   "utang_supplier",
@@ -70,6 +71,7 @@ export const createKewajiban = async (req, res) => {
       }
     }
 
+    validateAndInjectBranch(req, true);
     const doc = new Kewajiban({
       kategori,
       nama: String(nama).trim(),
@@ -81,6 +83,7 @@ export const createKewajiban = async (req, res) => {
       sumber: sumber || (bahanBaku ? "pembelian_bahan_baku" : "manual"),
       bahan_baku_id: bahanBaku?._id || null,
       keterangan: keterangan ? String(keterangan).trim() : "",
+      branch_id: req.body.branch_id || req.user?.branch_id || null,
     });
 
     await doc.save();
@@ -104,7 +107,7 @@ export const listKewajiban = async (req, res) => {
     if (status) match.status = status;
     if (kategori) match.kategori = kategori;
 
-    const data = await Kewajiban.find(match)
+    const data = await Kewajiban.find({ ...match, ...buildBranchFilter(req.user) })
       .sort({ status: 1, jatuh_tempo: 1, tanggal: -1 })
       .populate("bahan_baku_id", "nama total_harga total_stok modal_per_porsi");
 
@@ -117,7 +120,7 @@ export const listKewajiban = async (req, res) => {
 
 export const getKewajibanById = async (req, res) => {
   try {
-    const doc = await Kewajiban.findById(req.params.id).populate(
+    const doc = await Kewajiban.findOne({ _id: req.params.id, ...buildBranchFilter(req.user) }).populate(
       "bahan_baku_id",
       "nama total_harga total_stok modal_per_porsi"
     );

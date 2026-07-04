@@ -1,10 +1,11 @@
 import Laporan from "../models/datalaporan.js";
 import Transaksi from "../models/datatransaksi.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.js";
 
 // Ambil semua Laporan
 export const getAllLaporan = async (req, res) => {
   try {
-    const laporan = await Laporan.find();
+    const laporan = await Laporan.find(buildBranchFilter(req.user));
     res.json(laporan);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -14,6 +15,11 @@ export const getAllLaporan = async (req, res) => {
 // Tambah Laporan
 export const createLaporan = async (req, res) => {
   try {
+    const validation = validateAndInjectBranch(req, true);
+    if (!validation.isValid) {
+      return res.status(403).json({ message: validation.error || "Branch tidak valid" });
+    }
+
     const laporan = new Laporan(req.body);
     await laporan.save();
     res.status(201).json({ message: "Laporan berhasil ditambahkan!", laporan });
@@ -25,7 +31,8 @@ export const createLaporan = async (req, res) => {
 // Update Laporan
 export const updateLaporan = async (req, res) => {
   try {
-    const laporan = await Laporan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const branchFilter = buildBranchFilter(req.user);
+    const laporan = await Laporan.findOneAndUpdate({ _id: req.params.id, ...branchFilter }, req.body, { new: true });
     if (!laporan) return res.status(404).json({ message: "Laporan tidak ditemukan" });
     res.json({ message: "Laporan berhasil diperbarui!", laporan });
   } catch (error) {
@@ -36,7 +43,8 @@ export const updateLaporan = async (req, res) => {
 // Hapus Laporan
 export const deleteLaporan = async (req, res) => {
   try {
-    const laporan = await Laporan.findByIdAndDelete(req.params.id);
+    const branchFilter = buildBranchFilter(req.user);
+    const laporan = await Laporan.findOneAndDelete({ _id: req.params.id, ...branchFilter });
     if (!laporan) return res.status(404).json({ message: "Laporan tidak ditemukan" });
     res.json({ message: "Laporan berhasil dihapus!" });
   } catch (error) {
@@ -54,6 +62,7 @@ export const updateLaporanDenganTransaksi = async (trx) => {
 
   // Cari laporan bulan transaksi ini (rentang)
   let laporan = await Laporan.findOne({
+    branch_id: trx.branch_id,
     "periode.start": { $lte: tanggal },
     "periode.end": { $gte: tanggal }
   });
@@ -61,6 +70,7 @@ export const updateLaporanDenganTransaksi = async (trx) => {
   // Kalau belum ada, bikin baru untuk bulan ini
   if (!laporan) {
     laporan = new Laporan({
+      branch_id: trx.branch_id,
       laporan_penjualan: { harian: [], mingguan: [], bulanan: [] },
       periode: { start: startOfMonth, end: endOfMonth },
       laba: { total_laba: 0, detail: [] },

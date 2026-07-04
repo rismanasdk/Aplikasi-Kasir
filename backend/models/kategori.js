@@ -13,6 +13,11 @@ const kategoriSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      default: null,
+    },
   },
   { timestamps: true }
 );

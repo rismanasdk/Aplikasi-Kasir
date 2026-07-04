@@ -1,6 +1,7 @@
 import Transaksi from "../../models/datatransaksi.js";
 import mongoose from "mongoose";
 import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getStatusTransaksi = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ export const getStatusTransaksi = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized, silakan login dulu" });
     }
 
-    let filter = { order_id };
+    let filter = { order_id, ...buildBranchFilter(req.user) };
     const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
     const canReadAllTransactions = permissionCodes.includes(PERMISSIONS.TRANSACTION_READ);
 

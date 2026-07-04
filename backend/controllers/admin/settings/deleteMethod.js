@@ -1,4 +1,5 @@
 import Settings from "../../../models/settings.js";
+import { buildBranchFilter } from "../../../utils/rbacHelper.js";
 
 export const deletePaymentMethod = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ export const deletePaymentMethod = async (req, res) => {
     }
 
     // Ambil data settings dari database
-    const settings = await Settings.findOne();
+    const settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       return res.status(404).json({ message: "Settings tidak ditemukan" });
     }

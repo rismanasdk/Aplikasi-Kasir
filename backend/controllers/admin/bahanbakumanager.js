@@ -1,11 +1,12 @@
 import BahanBaku from "../../models/bahanbaku.js";
 import Barang from "../../models/databarang.js";
 import Kewajiban from "../../models/kewajiban.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // Get all bahan baku
 export const getAllBahanBaku = async (req, res) => {
   try {
-    const bahanBaku = await BahanBaku.find().sort({ createdAt: -1 });
+    const bahanBaku = await BahanBaku.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
     res.json(bahanBaku);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -15,6 +16,7 @@ export const getAllBahanBaku = async (req, res) => {
 // Create bahan baku baru
 export const createBahanBaku = async (req, res) => {
   try {
+    validateAndInjectBranch(req, true);
     const {
       nama_produk,
       bahan,
@@ -45,7 +47,8 @@ export const createBahanBaku = async (req, res) => {
     // Buat dokumen baru, pre-save hook otomatis menghitung total_stok, total_harga, modal_per_porsi
     const bahanBaku = new BahanBaku({
       nama: nama_produk,
-      bahan
+      bahan,
+      branch_id: req.body.branch_id || req.user?.branch_id || null
     });
 
     await bahanBaku.save();
@@ -118,6 +121,7 @@ export const createBahanBaku = async (req, res) => {
         sumber: "pembelian_bahan_baku",
         bahan_baku_id: bahanBaku._id,
         keterangan: keterangan_kewajiban || `Pembelian bahan baku tempo untuk ${nama_produk}`,
+        branch_id: req.body.branch_id || req.user?.branch_id || null,
       });
     }
 
@@ -281,7 +285,7 @@ export const updateBahanBaku = async (req, res) => {
 export const deleteBahanBaku = async (req, res) => {
   try {
     const { id } = req.params;
-    const bahanBaku = await BahanBaku.findByIdAndDelete(id);
+    const bahanBaku = await BahanBaku.findOneAndDelete({ _id: id, ...buildBranchFilter(req.user) });
 
     if (!bahanBaku) {
       return res.status(404).json({ message: "Bahan baku tidak ditemukan" });

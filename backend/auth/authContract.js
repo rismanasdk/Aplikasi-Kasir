@@ -20,6 +20,7 @@ export const buildAuthMePayload = (user, role, branch) => {
     },
     role: {
       id: role?._id?.toString?.() || role?.id || null,
+      code: role?.code || null,
       name: role?.nama || null,
     },
     branch: {

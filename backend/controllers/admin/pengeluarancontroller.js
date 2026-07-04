@@ -3,6 +3,7 @@ import BiayaOperasional from "../../models/biayaoperasional.js";
 import ModalUtama from "../../models/modalutama.js";
 import HppHarian from "../../models/hpptotal.js";
 import { updateAllBarangHargaFinal } from "./biayaoperasionalcontroller.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // POST /api/admin/pengeluaran-biaya
 export const createPengeluaran = async (req, res) => {
@@ -14,7 +15,8 @@ export const createPengeluaran = async (req, res) => {
     if (!tanggal) return res.status(400).json({ message: "tanggal wajib diisi" });
 
     // verify kategori exists
-    const kategori = await BiayaOperasional.findById(kategoriId);
+    validateAndInjectBranch(req, true);
+    const kategori = await BiayaOperasional.findOne({ _id: kategoriId, ...buildBranchFilter(req.user) });
     if (!kategori) return res.status(404).json({ message: "Kategori tidak ditemukan" });
 
     // verify ModalUtama exists and saldo_kas cukup
@@ -25,6 +27,7 @@ export const createPengeluaran = async (req, res) => {
     }
 
     const doc = new PengeluaranBiaya({
+      branch_id: req.body.branch_id || req.user?.branch_id || null,
       kategoriId,
       jumlah: Number(jumlah),
       tanggal: new Date(tanggal),
@@ -46,7 +49,7 @@ export const createPengeluaran = async (req, res) => {
     // Update HppHarian.total_beban untuk tanggal pengeluaran (gunakan string YYYY-MM-DD)
     try {
       const tanggalStr = new Date(tanggal).toISOString().slice(0, 10);
-      let hppDoc = await HppHarian.findOne({ tanggal: tanggalStr });
+      let hppDoc = await HppHarian.findOne({ tanggal: tanggalStr, ...buildBranchFilter(req.user) });
       if (!hppDoc) {
         hppDoc = new HppHarian({
           tanggal: tanggalStr,
@@ -78,7 +81,7 @@ export const createPengeluaran = async (req, res) => {
 export const listPengeluaran = async (req, res) => {
   try {
     const { start, end } = req.query;
-    const match = {};
+    const match = buildBranchFilter(req.user);
     if (start || end) {
       match.tanggal = {};
       if (start) match.tanggal.$gte = new Date(start);
@@ -101,7 +104,7 @@ export const listPengeluaran = async (req, res) => {
 export const deletePengeluaran = async (req, res) => {
   try {
     const { id } = req.params;
-    const doc = await PengeluaranBiaya.findById(id);
+    const doc = await PengeluaranBiaya.findOne({ _id: id, ...buildBranchFilter(req.user) });
     if (!doc) return res.status(404).json({ message: "Pengeluaran tidak ditemukan" });
 
     const jumlah = Number(doc.jumlah || 0);
@@ -113,7 +116,7 @@ export const deletePengeluaran = async (req, res) => {
 
     // Kembalikan saldo kas pada ModalUtama
     try {
-      const modal = await ModalUtama.findOne();
+      const modal = await ModalUtama.findOne(buildBranchFilter(req.user));
       if (modal) {
         modal.saldo_kas = (modal.saldo_kas || 0) + jumlah;
         modal.riwayat.push({
@@ -131,7 +134,7 @@ export const deletePengeluaran = async (req, res) => {
     // Kurangi total_beban pada HppHarian untuk tanggal tersebut
     try {
       if (tanggalStr) {
-        const hppDoc = await HppHarian.findOne({ tanggal: tanggalStr });
+        const hppDoc = await HppHarian.findOne({ tanggal: tanggalStr, ...buildBranchFilter(req.user) });
         if (hppDoc) {
           hppDoc.total_beban = Math.max(0, (hppDoc.total_beban || 0) - jumlah);
           hppDoc.laba_bersih = (hppDoc.total_pendapatan || 0) - (hppDoc.total_hpp || 0) - (hppDoc.total_beban || 0);

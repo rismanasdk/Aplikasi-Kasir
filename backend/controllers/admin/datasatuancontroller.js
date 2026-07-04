@@ -1,11 +1,12 @@
 import DataSatuan from '../../models/datasatuan.js';
 import BahanBaku from '../../models/bahanbaku.js';
 import Barang from '../../models/databarang.js';
+import { buildBranchFilter, validateAndInjectBranch } from '../../utils/rbacHelper.js';
 
 // Get all Data Satuan
 export const getAllDataSatuan = async (req, res) => {
 	try {
-		const items = await DataSatuan.find().sort({ createdAt: -1 });
+		const items = await DataSatuan.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
 		return res.json(items);
 	} catch (err) {
 		console.error('getAllDataSatuan error:', err);
@@ -29,14 +30,15 @@ export const getDataSatuanById = async (req, res) => {
 // Create new
 export const createDataSatuan = async (req, res) => {
 	try {
+		validateAndInjectBranch(req, true);
 		const { nama, kode, tipe, deskripsi, isActive } = req.body;
 
-		const exists = await DataSatuan.findOne({ $or: [{ nama }, { kode }] });
+		const exists = await DataSatuan.findOne({ ...buildBranchFilter(req.user), $or: [{ nama }, { kode }] });
 		if (exists) {
 			return res.status(400).json({ message: 'Nama atau kode sudah ada' });
 		}
 
-		const newItem = new DataSatuan({ nama, kode, tipe, deskripsi: deskripsi || '', isActive: isActive ?? true });
+		const newItem = new DataSatuan({ nama, kode, tipe, deskripsi: deskripsi || '', isActive: isActive ?? true, branch_id: req.body.branch_id || req.user?.branch_id || null });
 		const saved = await newItem.save();
 		return res.status(201).json(saved);
 	} catch (err) {
@@ -56,11 +58,11 @@ export const updateDataSatuan = async (req, res) => {
 
 		// check uniqueness if changed
 		if (nama && nama !== item.nama) {
-			const exists = await DataSatuan.findOne({ nama });
+			const exists = await DataSatuan.findOne({ ...buildBranchFilter(req.user), nama });
 			if (exists) return res.status(400).json({ message: 'Nama sudah ada' });
 		}
 		if (kode && kode !== item.kode) {
-			const exists = await DataSatuan.findOne({ kode });
+			const exists = await DataSatuan.findOne({ ...buildBranchFilter(req.user), kode });
 			if (exists) return res.status(400).json({ message: 'Kode sudah ada' });
 		}
 

@@ -1,6 +1,7 @@
 import ServerLog from "../../models/serverLog.js";
 import BlockedIP from "../../models/blockedIP.js";
 import axios from "axios";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 // Get server logs with filters
 export const getServerLogs = async (req, res) => {
@@ -16,7 +17,7 @@ export const getServerLogs = async (req, res) => {
       sort = "-timestamp",
     } = req.query;
 
-    const filter = {};
+    const filter = { ...buildBranchFilter(req.user) };
 
     if (ip_address) {
       filter.ip_address = ip_address;
@@ -69,6 +70,7 @@ export const getSuspiciousActivities = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const suspiciousLogs = await ServerLog.find({
+      ...buildBranchFilter(req.user),
       $or: [
         { action_type: "UNAUTHORIZED" },
         { action_type: "FORBIDDEN" },
@@ -80,6 +82,7 @@ export const getSuspiciousActivities = async (req, res) => {
       .skip(skip);
 
     const total = await ServerLog.countDocuments({
+      ...buildBranchFilter(req.user),
       $or: [
         { action_type: "UNAUTHORIZED" },
         { action_type: "FORBIDDEN" },
@@ -110,6 +113,7 @@ export const getIPStatistics = async (req, res) => {
     const stats = await ServerLog.aggregate([
       {
         $match: {
+          ...buildBranchFilter(req.user),
           timestamp: { $gte: startDate },
         },
       },
@@ -146,7 +150,7 @@ export const getBlockedIPs = async (req, res) => {
     const { limit = 50, page = 1, status } = req.query;
     const skip = (page - 1) * limit;
 
-    const filter = {};
+    const filter = { ...buildBranchFilter(req.user) };
     if (status) {
       filter.status = status;
     }
@@ -193,7 +197,7 @@ export const blockIP = async (req, res) => {
       auto_unblock_at = new Date(Date.now() + duration_hours * 60 * 60 * 1000);
     }
 
-    const existingBlock = await BlockedIP.findOne({ ip_address });
+    const existingBlock = await BlockedIP.findOne({ ip_address, ...buildBranchFilter(req.user) });
 
     if (existingBlock) {
       if (existingBlock.status === "active") {
@@ -215,6 +219,7 @@ export const blockIP = async (req, res) => {
     const newBlockedIP = new BlockedIP({
       ip_address,
       reason: reason || "Suspicious activity",
+      branch_id: req.user?.branch_id || null,
       blocked_by: req.user.username,
       block_type: "manual",
       duration_hours: duration_hours || null,
@@ -238,7 +243,7 @@ export const unblockIP = async (req, res) => {
       return res.status(400).json({ message: "IP address is required" });
     }
 
-    const blockedIP = await BlockedIP.findOne({ ip_address });
+    const blockedIP = await BlockedIP.findOne({ ip_address, ...buildBranchFilter(req.user) });
 
     if (!blockedIP) {
       return res.status(404).json({ message: "IP address not found in blocked list" });
@@ -260,6 +265,7 @@ export const getRealTimeAlerts = async (req, res) => {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
     const alerts = await ServerLog.find({
+      ...buildBranchFilter(req.user),
       timestamp: { $gte: oneHourAgo },
       $or: [
         { status_code: 401 },
@@ -298,6 +304,7 @@ export const getSystemHealth = async (req, res) => {
     const healthStats = await ServerLog.aggregate([
       {
         $match: {
+          ...buildBranchFilter(req.user),
           timestamp: { $gte: oneHourAgo },
         },
       },
@@ -346,14 +353,14 @@ export const getBlockedIPDetail = async (req, res) => {
   try {
     const { ip_address } = req.params;
 
-    const blockedIP = await BlockedIP.findOne({ ip_address });
+    const blockedIP = await BlockedIP.findOne({ ip_address, ...buildBranchFilter(req.user) });
 
     if (!blockedIP) {
       return res.status(404).json({ message: "IP address not found in blocked list" });
     }
 
     // Get logs for this IP
-    const logs = await ServerLog.find({ ip_address })
+    const logs = await ServerLog.find({ ip_address, ...buildBranchFilter(req.user) })
       .sort("-timestamp")
       .limit(50);
 
@@ -381,7 +388,7 @@ export const updateBlockedIPReason = async (req, res) => {
       return res.status(400).json({ message: "Reason is required" });
     }
 
-    const blockedIP = await BlockedIP.findOne({ ip_address });
+    const blockedIP = await BlockedIP.findOne({ ip_address, ...buildBranchFilter(req.user) });
 
     if (!blockedIP) {
       return res.status(404).json({ message: "IP address not found in blocked list" });

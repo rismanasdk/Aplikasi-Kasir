@@ -13,6 +13,7 @@ const productionSchema = new Schema(
     waktu_selesai: { type: Date, default: null },
     chef_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     catatan: { type: String, default: "" },
+    branch_id: { type: Schema.Types.ObjectId, ref: "Branch", default: null },
   },
   { timestamps: true }
 );

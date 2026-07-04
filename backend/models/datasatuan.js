@@ -28,6 +28,11 @@ const dataSatuanSchema = new mongoose.Schema(
       type: Boolean,
       default: true, 
     },
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      default: null,
+    },
   },
   { timestamps: true }
 );

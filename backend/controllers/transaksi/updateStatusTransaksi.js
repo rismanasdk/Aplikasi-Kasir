@@ -2,6 +2,7 @@ import Transaksi from "./../../models/datatransaksi.js";
 import { io } from "./../../server.js";
 import { processCompletedTransaction } from "./helpers/transactionLifecycleHelper.js";
 import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const updateStatusTransaksi = async (req, res) => {
   try {
@@ -14,7 +15,8 @@ export const updateStatusTransaksi = async (req, res) => {
       return res.status(403).json({ message: "Anda tidak diizinkan mengubah status transaksi" });
     }
 
-    const transaksi = await Transaksi.findById(id);
+    const branchFilter = buildBranchFilter(req.user);
+    const transaksi = await Transaksi.findOne({ _id: id, ...branchFilter });
 
     if (!transaksi) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan!" });

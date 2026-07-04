@@ -8,6 +8,7 @@ import cloudinary from "../../config/cloudinary.js";
 import { kurangiModalUtama } from "./utils/updatemodalutama.js";
 import Production from "../../models/production.js";
 import Transaksi from "./../../models/datatransaksi.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // Fungsi helper untuk menghitung status berdasarkan stok
 const calculateStatus = (stok, stokMinimal) => {
@@ -133,7 +134,7 @@ const computeHargaJual = (hb, m) => {
 
 export const getAllBarang = async (req, res) => {
   try {
-    const barangList = await Barang.find().lean();
+    const barangList = await Barang.find(buildBranchFilter(req.user)).lean();
     
     // Ambil pengaturan lowStockAlert
     const settings = await Settings.findOne();
@@ -201,6 +202,11 @@ export const createBarang = async (req, res) => {
       ? parseFloat(margin)
       : 35; // Default 35% jika tidak ada margin
 
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
     // Parse bahan_baku (kalau dikirim dalam bentuk stringified JSON)
     let bahanParsed = [];
     try {
@@ -266,6 +272,7 @@ export const createBarang = async (req, res) => {
 
     // Simpan barang baru
     const barang = new Barang({
+      branch_id: req.user?.branch_id,
       kode_barang,
       nama_barang,
       kategori,

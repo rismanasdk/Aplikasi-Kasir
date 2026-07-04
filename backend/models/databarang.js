@@ -39,6 +39,7 @@ const barangSchema = new Schema(
     bestSeller: { type: Boolean, default: false },
     // Store previous kategori value when a product is promoted to Best Seller
     bestSellerPrevKategori: { type: String, default: "" },
+    branch_id: { type: Schema.Types.ObjectId, ref: "Branch", default: null },
   },
   { timestamps: true }
 );

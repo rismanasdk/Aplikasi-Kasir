@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; 
-import { AuthProvider } from "./auth/context/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import AuthOnlyRoute from "./auth/AuthOnlyRoute";
 import AuthGuard from "./auth/AuthGuard";
@@ -59,7 +58,6 @@ interface RouterProps {
 
 const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
   return (
-    <AuthProvider>
       <Router>
         <Routes>
           {/* Halaman default - bisa diakses tanpa login */}
@@ -182,7 +180,6 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </AuthProvider>
   );
 };
 

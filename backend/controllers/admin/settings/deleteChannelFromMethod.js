@@ -1,4 +1,5 @@
 import Settings from "../../../models/settings.js";
+import { buildBranchFilter } from "../../../utils/rbacHelper.js";
 
 export const deleteChannelFromMethod = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ export const deleteChannelFromMethod = async (req, res) => {
       });
     }
 
-    const settings = await Settings.findOne();
+    const settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       return res.status(404).json({ message: "Settings tidak ditemukan" });
     }

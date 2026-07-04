@@ -102,6 +102,12 @@ export const validateAndInjectBranch = (req, required = false) => {
   const hasGlobalAccess = permissionCodes.includes(PERMISSIONS.BRANCH_GLOBAL) || permissionCodes.includes(PERMISSIONS.BRANCH_SWITCH);
 
   if (hasGlobalAccess) {
+    if (req.body.branch_id && req.body.branch_id !== req.user.branch_id?.toString()) {
+      req.body.branch_id = req.user.branch_id || req.body.branch_id;
+    } else if (!req.body.branch_id && req.user.branch_id) {
+      req.body.branch_id = req.user.branch_id;
+    }
+
     return {
       isValid: true,
       branchId: req.body.branch_id || req.user.branch_id || null,

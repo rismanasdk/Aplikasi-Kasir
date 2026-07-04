@@ -5,16 +5,6 @@ import { useAuth } from '../../../auth/hooks/useAuth';
 import { FaCamera, FaSave, FaArrowLeft, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import SweetAlert from '../../../components/SweetAlert';
 
-interface User {
-  id?: string;
-  _id?: string;
-  nama_lengkap: string;
-  username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security' | 'super-admin';
-  status: string;
-  profilePicture?: string;
-}
-
 interface UpdateProfileData {
   nama_lengkap: string;
   username: string;
@@ -23,7 +13,7 @@ interface UpdateProfileData {
 }
 
 // Helper function untuk mendapatkan ID user
-function getUserId(user: User | null): string {
+function getUserId(user: { id?: string; _id?: string } | null): string {
   return user?._id || user?.id || '';
 }
 
@@ -86,15 +76,15 @@ export default function ProfilePage() {
           
           if (refreshedUser) {
             setForm({
-              nama_lengkap: refreshedUser.nama_lengkap || '',
-              username: refreshedUser.username || '',
+              nama_lengkap: refreshedUser.user?.nama_lengkap || '',
+              username: refreshedUser.user?.username || '',
               currentPassword: '',
               newPassword: '',
               confirmPassword: ''
             });
             
-            if (refreshedUser.profilePicture) {
-              setPreviewUrl(refreshedUser.profilePicture);
+            if (refreshedUser.user?.profilePicture) {
+              setPreviewUrl(refreshedUser.user.profilePicture);
             } else if (defaultProfilePicture) {
               setPreviewUrl(defaultProfilePicture);
             }

@@ -16,7 +16,8 @@
     total_pendapatan: Number,
     total_laba_kotor: Number,
     total_beban: { type: Number, default: 0},
-    laba_bersih: { type: Number, default: 0}
+    laba_bersih: { type: Number, default: 0},
+    branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null }
   }, { timestamps: true });
 
   export default mongoose.model("HppHarian", hppHarianSchema, "HppHarian");

@@ -11,6 +11,7 @@ import {
   restoreStockForItems,
 } from "./helpers/transactionLifecycleHelper.js";
 import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 export const createTransaksi = async (req, res) => {
   let createdTransaksi = null;
@@ -22,6 +23,11 @@ export const createTransaksi = async (req, res) => {
 
     if (!req.user || !canCreateTransaction) {
       return res.status(403).json({ message: "Anda tidak diizinkan membuat transaksi" });
+    }
+
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
     }
 
     const { barang_dibeli, metode_pembayaran, total_harga } = req.body;
@@ -118,6 +124,7 @@ export const createTransaksi = async (req, res) => {
 
     const transaksi = new Transaksi({
       ...req.body,
+      branch_id: req.user.branch_id,
       barang_dibeli: barangFinal,
       order_id: nomorTransaksi,
       nomor_transaksi: nomorTransaksi,

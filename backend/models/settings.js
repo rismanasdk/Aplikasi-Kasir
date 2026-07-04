@@ -42,7 +42,8 @@ const settingsSchema = new Schema({
   kasWarning: {type: Number, default: 50000},
   currency: { type: String, default: "IDR" },
   dateFormat: { type: String, default: "DD/MM/YYYY" },
-  language: { type: String, default: "id" }
+  language: { type: String, default: "id" },
+  branch_id: { type: Schema.Types.ObjectId, ref: "Branch", default: null }
 
 }, { timestamps: true });
 

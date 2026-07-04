@@ -1,5 +1,6 @@
 import Transaksi from "../../models/datatransaksi.js";
 import Barang from "../../models/databarang.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 // Ringkasan Dashboard Manager
 export const getDashboard = async (req, res) => {
@@ -12,7 +13,8 @@ export const getDashboard = async (req, res) => {
     // Ambil transaksi selesai pada bulan ini
     const transaksiSelesai = await Transaksi.find({
       status: "selesai",
-      tanggal_transaksi: { $gte: startOfMonth, $lte: endOfMonth }
+      tanggal_transaksi: { $gte: startOfMonth, $lte: endOfMonth },
+      ...buildBranchFilter(req.user)
     });
 
     // Ringkasan penjualan (jumlah transaksi selesai bulan ini)
@@ -58,7 +60,7 @@ export const getTopBarang = async (req, res) => {
     let transaksiSelesai;
 
     if (bulan === 'kumulatif') {
-      transaksiSelesai = await Transaksi.find({ status: "selesai" });
+      transaksiSelesai = await Transaksi.find({ status: "selesai", ...buildBranchFilter(req.user) });
     } else {
       // Default: bulan ini
       const now = new Date();
@@ -67,7 +69,8 @@ export const getTopBarang = async (req, res) => {
 
       transaksiSelesai = await Transaksi.find({
         status: "selesai",
-        tanggal_transaksi: { $gte: startOfMonth, $lte: endOfMonth }
+        tanggal_transaksi: { $gte: startOfMonth, $lte: endOfMonth },
+        ...buildBranchFilter(req.user)
       });
     }
 

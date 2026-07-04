@@ -1,5 +1,6 @@
 import Transaksi from "../../models/datatransaksi.js";
 import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const deleteTransaksiById = async (req, res) => {
   try {
@@ -10,7 +11,8 @@ export const deleteTransaksiById = async (req, res) => {
       return res.status(403).json({ message: "Anda tidak diizinkan menghapus transaksi" });
     }
 
-    const transaksi = await Transaksi.findById(req.params.id);
+    const branchFilter = buildBranchFilter(req.user);
+    const transaksi = await Transaksi.findOne({ _id: req.params.id, ...branchFilter });
     if (!transaksi) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan" });
     }

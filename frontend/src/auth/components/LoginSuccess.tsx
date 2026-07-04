@@ -1,17 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { clearStoredAuthSession, getStoredUser } from "../storage";
-
-interface User {
-  id?: string;
-  _id?: string;
-  nama_lengkap: string;
-  username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security';
-  status: string;
-  profilePicture?: string;
-}
+import { clearStoredAuthSession } from "../storage";
 
 export default function LoginSuccess() {
   const navigate = useNavigate();
@@ -41,28 +31,23 @@ export default function LoginSuccess() {
         // Bersihkan token dari URL
         window.history.replaceState({}, document.title, "/login-success");
 
-        // Simpan token dan set auth state
-        await auth.handleGoogleToken(token);
-
-        // Ambil user yang sudah disimpan
-        const savedUser = getStoredUser<User>();
-
-        if (!savedUser) {
-          console.error("No user saved after handleGoogleToken");
+        const authSession = await auth.handleGoogleToken(token);
+        if (!authSession) {
+          console.error("No auth session after handleGoogleToken");
           navigate("/login");
           return;
         }
 
-        // Redirect berdasarkan role
-        if (savedUser.role === 'admin') {
+        const roleCode = authSession.role?.code || authSession.user?.role;
+        if (roleCode === 'admin') {
           navigate('/admin/dashboard');
-        } else if (savedUser.role === 'manajer') {
+        } else if (roleCode === 'manajer') {
           navigate('/meneger/dashboard');
-        } else if (savedUser.role === 'chef') {
+        } else if (roleCode === 'chef') {
           navigate('/chef/bahan-baku');
-        } else if (savedUser.role === 'kasir') {
+        } else if (roleCode === 'kasir') {
           navigate('/kasir/dashboard');
-        } else if (savedUser.role === 'security') {
+        } else if (roleCode === 'security') {
           navigate('/security/dashboard');
         } else {
           navigate('/');

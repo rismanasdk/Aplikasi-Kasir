@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AppRouter from "./router";
 import type { Barang } from "./admin/stok-barang";
 import { initializeSocket } from './utils/socket';
 import { API_URL } from "./config/api";
+import { getStoredToken, getStoredAuth } from "./auth/storage";
+import { useAuth } from './auth/hooks/useAuth';
+
+const API_KEY = import.meta.env.VITE_API_KEY;
+
 // Inisialisasi socket ketika aplikasi dimulai
 initializeSocket();
 
@@ -25,11 +30,51 @@ const STOK_BARANG_URL = `${API_URL}/api/barang`;
 
 function App() {
   const [dataBarang, setDataBarang] = useState<Barang[]>([]);
+  const auth = useAuth();
+  const lastFetchRoleRef = useRef<string | null>(null);
+  const fetchErroredRef = useRef<boolean>(false);
 
   const fetchBarang = async () => {
     try {
-      const res = await fetch(STOK_BARANG_URL);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const token = getStoredToken();
+      const storedAuth = getStoredAuth<{ role?: { code?: string }; user?: { role?: string } }>();
+      const roleCode = (
+        auth?.role?.code ||
+        auth?.user?.role ||
+        storedAuth?.role?.code ||
+        storedAuth?.user?.role ||
+        ''
+      )?.toLowerCase();
+
+      const allowedRoles = ['admin', 'super-admin', 'super_admin', 'manajer', 'manager', 'kasir', 'chef'];
+
+      // Avoid re-fetching repeatedly for the same role if it previously errored
+      if (fetchErroredRef.current && lastFetchRoleRef.current === roleCode) {
+        return;
+      }
+
+      if (!token || !roleCode || !allowedRoles.includes(roleCode)) {
+        // Clear data if not allowed or not authenticated
+        setDataBarang([]);
+        return;
+      }
+
+      console.debug('App.fetchBarang:', { tokenExists: !!token, roleCode, authReady: auth?.isLoading === false });
+
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+      };
+
+      const res = await fetch(STOK_BARANG_URL, { headers });
+      if (!res.ok) {
+        if (res.status === 403) {
+          // mark that this role cannot access barang to avoid repeated retries
+          fetchErroredRef.current = true;
+          lastFetchRoleRef.current = roleCode;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const data: BarangAPI[] = await res.json();
 
       const mapped: Barang[] = data.map((item) => ({
@@ -48,6 +93,9 @@ function App() {
         statusBarang: item.status || "pending"
       }));
 
+      // success
+      fetchErroredRef.current = false;
+      lastFetchRoleRef.current = roleCode;
       setDataBarang(mapped);
     } catch (error) {
       console.error("Gagal mengambil data barang:", error);
@@ -55,8 +103,20 @@ function App() {
   };
 
   useEffect(() => {
-    fetchBarang();
-  }, []);
+    let mounted = true;
+
+    const run = async () => {
+      if (auth.isLoading) return; // wait until auth finished bootstrapping
+      if (!mounted) return;
+      await fetchBarang();
+    };
+
+    run();
+
+    return () => {
+      mounted = false;
+    };
+  }, [auth.isLoading, auth.isAuthenticated]);
 
   return (
     <div>

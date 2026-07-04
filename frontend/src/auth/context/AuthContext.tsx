@@ -1,44 +1,66 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/api';
-import { clearStoredAuthSession, getStoredToken, getStoredUser, setStoredAuthSession } from '../storage';
+import { clearStoredAuthSession, getStoredAuth, getStoredToken, getStoredUser, setStoredAuthSession, setStoredToken } from '../storage';
 const ApiKey = import.meta.env.VITE_API_KEY;
 
 
-interface User {
+interface UserProfile {
   id?: string;
   _id?: string;
   nama_lengkap: string;
   username?: string;
-  role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security' | 'super-admin';
+  email?: string;
   status: string;
+  role?: string;
   profilePicture?: string;
+}
+
+interface RolePayload {
+  id: string | null;
+  code?: string | null;
+  name: string | null;
+}
+
+interface BranchPayload {
+  id: string | null;
+  name: string | null;
+}
+
+interface AuthSession {
+  user: UserProfile;
+  role: RolePayload;
+  branch: BranchPayload;
+  permissions: string[];
 }
 
 interface LoginResponse {
   message: string;
   token: string;
-  user: User;
 }
 
 interface RegisterResponse {
   message: string;
-  user: User;
+  user: UserProfile;
 }
 
 interface LogoutResponse {
   message: string;
 }
 
-type MeResponse = { user: User } | User;
+type MeResponse = AuthSession;
 
 interface AuthContextType {
-  user: User | null;
+  auth: AuthSession | null;
+  user: UserProfile | null;
+  role: RolePayload | null;
+  branch: BranchPayload | null;
+  permissions: string[];
   isLoading: boolean;
   defaultProfilePicture: string;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security' ) => Promise<{ success: boolean; message?: string }>;
+  register: (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security') => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateProfilePicture: (profilePicture: File) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (profileData: {
@@ -48,10 +70,10 @@ interface AuthContextType {
     newPassword?: string;
   }) => Promise<{ success: boolean; message?: string }>;
   getDefaultProfilePicture: () => Promise<{ success: boolean; defaultProfilePicture?: string; message?: string }>;
-  refreshUser: () => Promise<User | null>;
-  setUser: (user: User | null) => void;
+  refreshUser: () => Promise<AuthSession | null>;
+  setAuth: (auth: AuthSession | null) => void;
   setIsAuthenticated: (status: boolean) => void;
-  handleGoogleToken: (token: string) => Promise<void>;
+  handleGoogleToken: (token: string) => Promise<AuthSession | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,24 +96,57 @@ interface ErrorResponse {
   message?: string;
 }
 
-function getUserId(user: User): string {
-  return user._id || user.id || '';
+function getUserId(user: UserProfile | null | undefined): string {
+  return user?._id || user?.id || '';
 }
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [auth, setAuth] = useState<AuthSession | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [role, setRole] = useState<RolePayload | null>(null);
+  const [branch, setBranch] = useState<BranchPayload | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [defaultProfilePicture, setDefaultProfilePicture] = useState<string>('');
   const hasBootstrappedMe = useRef(false);
 
+  const setAuthSession = useCallback((authSession: AuthSession | null, token?: string) => {
+    if (!authSession) {
+      clearStoredAuthSession();
+      setAuth(null);
+      setUser(null);
+      setRole(null);
+      setBranch(null);
+      setPermissions([]);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    const authToken = token || getStoredToken();
+    if (authToken) {
+      setStoredAuthSession(authToken, authSession);
+    }
+
+    setAuth(authSession);
+    setUser(authSession.user);
+    setRole(authSession.role);
+    setBranch(authSession.branch);
+    setPermissions(authSession.permissions || []);
+    setIsAuthenticated(true);
+  }, []);
+
   useEffect(() => {
     const checkAuth = () => {
-      const storedUser = getStoredUser<User>();
+      const storedAuth = getStoredAuth<AuthSession>();
       const token = getStoredToken();
       
-      if (storedUser && token) {
-        setUser(storedUser);
+      if (storedAuth && token) {
+        setAuth(storedAuth);
+        setUser(storedAuth.user);
+        setRole(storedAuth.role);
+        setBranch(storedAuth.branch);
+        setPermissions(storedAuth.permissions || []);
         setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
@@ -105,8 +160,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchDefaultProfilePicture = useCallback(async (): Promise<{ success: boolean; defaultProfilePicture?: string; message?: string }> => {
     try {
       const token = getStoredToken();
-      const currentUser = getStoredUser<User>() || ({} as User);
-      const canReadCommonSettings = currentUser?.role === "admin";
+      const storedAuth = getStoredAuth<AuthSession>();
+      const currentRole = role?.code || auth?.role?.code || storedAuth?.role?.code || auth?.user?.role;
+      const canReadCommonSettings = currentRole === "admin" || currentRole === "super-admin";
 
       if (!token || !canReadCommonSettings) {
         return { success: false, message: "Default profile picture hanya untuk admin" };
@@ -136,42 +192,79 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const fallback = getMessageFromUnknown(error);
       return { success: false, message: fallback ?? 'Terjadi kesalahan saat mendapatkan default profile picture' };
     }
-  }, []);
+  }, [auth, role]);
+
+  const fetchCurrentUser = useCallback(async (): Promise<AuthSession | null> => {
+    try {
+      const token = getStoredToken();
+      if (!token) {
+        return null;
+      }
+
+      const { data } = await axios.get<MeResponse>(
+        `${API_BASE_URL}/auth/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-api-key': API_KEY
+          }
+        }
+      );
+
+      const authSession = data;
+      setAuthSession(authSession, token);
+
+      if (authSession.role?.code === 'admin') {
+        fetchDefaultProfilePicture();
+      }
+
+      return authSession;
+    } catch (error) {
+      console.error('Fetch current user failed:', error);
+      setAuthSession(null);
+      return null;
+    }
+  }, [fetchDefaultProfilePicture, setAuthSession]);
 
   const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    const { data } = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, {
-      username,
-      password
-    }, {
-      headers: {
-        'x-api-key': API_KEY  // Tambahkan header ini
+    try {
+      const { data } = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, {
+        username,
+        password
+      }, {
+        headers: {
+          'x-api-key': API_KEY
+        }
+      });
+
+      setStoredToken(data.token);
+      const meAuth = await fetchCurrentUser();
+      if (!meAuth) {
+        setAuthSession(null);
+        return { success: false, message: 'Gagal memuat data pengguna setelah login' };
       }
-    });
 
-    setStoredAuthSession(data.token, data.user);
-    setUser(data.user);
-    setIsAuthenticated(true);
-    if (data.user.role === 'admin') {
-      fetchDefaultProfilePicture();
+      if (meAuth.role?.code === 'admin') {
+        fetchDefaultProfilePicture();
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Login gagal:', error);
+
+      if (isAxiosError(error)) {
+        const errorMessage = (error.response?.data as ErrorResponse)?.message ?? error.message;
+        return { success: false, message: errorMessage || 'Terjadi kesalahan saat login' };
+      }
+
+      const fallback = getMessageFromUnknown(error);
+      return { success: false, message: fallback ?? 'Terjadi kesalahan saat login' };
+    } finally {
+      setIsLoading(false);
     }
-    return { success: true };
-  } catch (error) {
-    console.error('Login gagal:', error);
-
-    if (isAxiosError(error)) {
-      const errorMessage = (error.response?.data as ErrorResponse)?.message ?? error.message;
-      return { success: false, message: errorMessage || 'Terjadi kesalahan saat login' };
-    }
-
-    const fallback = getMessageFromUnknown(error);
-    return { success: false, message: fallback ?? 'Terjadi kesalahan saat login' };
-  } finally {
-    setIsLoading(false);
-  }
-}, [fetchDefaultProfilePicture]);
+  }, [fetchCurrentUser, fetchDefaultProfilePicture, setAuthSession]);
 
   const register = useCallback(async (nama_lengkap: string, username: string, password: string, role: 'admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security'): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
@@ -206,9 +299,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = useCallback(async (): Promise<void> => {
     const token = getStoredToken();
-    setUser(null);
-    setIsAuthenticated(false);
-    clearStoredAuthSession();
+    setAuthSession(null);
 
     try {
       if (token) {
@@ -231,7 +322,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Logout error:', getMessageFromUnknown(error) ?? error);
       }
     }
-  }, []);
+  }, [setAuthSession]);
 
   const updateProfilePicture = useCallback(async (profilePicture: File): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
@@ -243,7 +334,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, message: 'Anda belum login' };
       }
 
-      const currentUser = getStoredUser<User>() || ({} as User);
+      const currentUser = auth?.user || user || getStoredUser<UserProfile>() || ({} as UserProfile);
       const userId = getUserId(currentUser);
 
       if (!userId) {
@@ -255,7 +346,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const url = `${API_BASE_URL}/api/update-profile/user/${userId}/profile-picture`;
 
-      const { data } = await axios.put<{ message: string; user: User }>(
+      const { data } = await axios.put<{ message: string; user: UserProfile }>(
         url,
         formData,
         {
@@ -267,8 +358,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
 
       if (data.user) {
-        setUser(data.user);
-        setStoredAuthSession(token, data.user);
+        const updatedSession: AuthSession = auth
+          ? { ...auth, user: data.user }
+          : {
+              user: data.user,
+              role: role ?? { id: null, code: null, name: null },
+              branch: branch ?? { id: null, name: null },
+              permissions,
+            };
+        setAuthSession(updatedSession, token);
       }
 
       return { success: true, message: data.message };
@@ -286,7 +384,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [auth, user, role, branch, permissions, setAuthSession]);
 
   const updateProfile = useCallback(async (profileData: {
     nama_lengkap: string;
@@ -303,7 +401,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, message: 'Anda belum login' };
       }
 
-      const currentUser = getStoredUser<User>() || ({} as User);
+      const currentUser = auth?.user || user || getStoredUser<UserProfile>() || ({} as UserProfile);
       const userId = getUserId(currentUser);
 
       if (!userId) {
@@ -312,7 +410,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const url = `${API_BASE_URL}/api/update-profile/user/${userId}`;
 
-      const { data } = await axios.put<{ message: string; user: User }>(
+      const { data } = await axios.put<{ message: string; user: UserProfile }>(
         url,
         profileData,
         {
@@ -324,8 +422,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
 
       if (data.user) {
-        setUser(data.user);
-        setStoredAuthSession(token, data.user);
+        const updatedSession: AuthSession = auth
+          ? { ...auth, user: data.user }
+          : {
+              user: data.user,
+              role: role ?? { id: null, code: null, name: null },
+              branch: branch ?? { id: null, name: null },
+              permissions,
+            };
+        setAuthSession(updatedSession, token);
       }
 
       return { success: true, message: data.message };
@@ -343,87 +448,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [auth, user, role, branch, permissions, setAuthSession]);
 
-  const fetchCurrentUser = useCallback(async (): Promise<User | null> => {
+  const handleGoogleToken = useCallback(async (token: string): Promise<AuthSession | null> => {
     try {
-      const token = getStoredToken();
-      
-      if (!token) {
-        return null;
+      setIsLoading(true);
+      setStoredToken(token);
+      const authSession = await fetchCurrentUser();
+      if (!authSession) {
+        throw new Error('Gagal memuat data pengguna setelah login Google');
       }
-
-      const { data } = await axios.get<MeResponse>(
-        `${API_BASE_URL}/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-api-key': API_KEY
-          }
-        }
-      );
-
-      const meUser = "user" in data ? data.user : data;
-      if (meUser) {
-        setUser(meUser);
-        setStoredAuthSession(token, meUser);
-         if (meUser.role === 'admin') {
-             fetchDefaultProfilePicture();
-        }
-        return meUser;
-      }
-      
-      return null;
+      return authSession;
     } catch (error) {
-      console.error('Fetch current user failed:', error);
-      clearStoredAuthSession();
-      setUser(null);
-      setIsAuthenticated(false);
-      return null;
+      console.error('Error handling Google token:', error);
+      setAuthSession(null);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-
-const handleGoogleToken = useCallback(async (token: string): Promise<void> => {
-  try {
-    setIsLoading(true);
-
-    // Decode JWT payload
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64).split('').map(c =>
-        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      ).join('')
-    );
-
-    const payload = JSON.parse(jsonPayload);
-
-    // Mapping payload JWT → struktur User yang benar
-    const userInfo: User = {
-      id: payload.id,
-      _id: payload.id,
-      nama_lengkap: payload.nama_lengkap,
-      username: payload.username,
-      role: payload.role,
-      status: payload.status ?? 'aktif',
-      profilePicture: payload.profilePicture,
-    };
-
-    setStoredAuthSession(token, userInfo); // simpan token + user
-    setUser(userInfo);
-    setIsAuthenticated(true);
-
-    console.log('Google login successful, user:', userInfo);
-  } catch (error) {
-    console.error('Error handling Google token:', error);
-    clearStoredAuthSession();
-    setUser(null);
-    setIsAuthenticated(false);
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-  }, []);
+  }, [fetchCurrentUser, setAuthSession]);
 
   useEffect(() => {
     if (hasBootstrappedMe.current) return;
@@ -436,7 +479,11 @@ const handleGoogleToken = useCallback(async (token: string): Promise<void> => {
   }, [fetchCurrentUser]);
 
   const value = useMemo(() => ({ 
+    auth,
     user, 
+    role,
+    branch,
+    permissions,
     isLoading, 
     defaultProfilePicture,
     isAuthenticated,
@@ -447,10 +494,10 @@ const handleGoogleToken = useCallback(async (token: string): Promise<void> => {
     updateProfile,
     getDefaultProfilePicture: fetchDefaultProfilePicture,
     refreshUser: fetchCurrentUser,
-    setUser,
+    setAuth: setAuthSession,
     setIsAuthenticated,
     handleGoogleToken
-  }), [user, isLoading, isAuthenticated, defaultProfilePicture, login, register, logout, updateProfilePicture, updateProfile, fetchDefaultProfilePicture, fetchCurrentUser, handleGoogleToken]);
+  }), [auth, user, role, branch, permissions, isLoading, isAuthenticated, defaultProfilePicture, login, register, logout, updateProfilePicture, updateProfile, fetchDefaultProfilePicture, fetchCurrentUser, setAuthSession, handleGoogleToken]);
 
   return (
     <AuthContext.Provider value={value}>

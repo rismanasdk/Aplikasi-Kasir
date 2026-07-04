@@ -1,4 +1,5 @@
 import Settings from "../../../models/settings.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
 
 export const addPaymentMethod = async (req, res) => {
   try {
@@ -8,10 +9,12 @@ export const addPaymentMethod = async (req, res) => {
       return res.status(400).json({ message: "Nama method wajib diisi" });
     }
 
-    let settings = await Settings.findOne();
+    validateAndInjectBranch(req, true);
+    let settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       settings = await Settings.create({
         payment_methods: [{ method, channels: channels || [] }],
+        branch_id: req.body.branch_id || req.user?.branch_id || null,
       });
     } else {
       // cek kalau sudah ada method dengan nama sama
