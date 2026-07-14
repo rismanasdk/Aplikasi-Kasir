@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import PublicHome from '../pages/PublicHome';
@@ -8,41 +8,33 @@ interface DashboardRedirectProps {
   dataBarang: Barang[];
 }
 
+const resolveDashboardPath = (roleCode?: string | null): string | null => {
+  const normalized = (roleCode || '').toLowerCase();
+  if (normalized === 'admin') return '/admin/dashboard';
+  if (normalized === 'super-admin' || normalized === 'super_admin') return '/super-admin/dashboard';
+  if (normalized === 'manajer' || normalized === 'manager') return '/meneger/dashboard';
+  if (normalized === 'kasir') return '/kasir/dashboard';
+  if (normalized === 'chef') return '/chef/bahan-baku';
+  if (normalized === 'security') return '/security/dashboard';
+  return null;
+};
+
 const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => {
   const auth = useAuth();
   const navigate = useNavigate();
+  const lastRedirectTarget = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!auth.isLoading) {
-      if (auth.user) {
-        switch (auth.user.role) {
-          case 'admin':
-            navigate('/admin/dashboard');
-            break;
-          case 'super-admin':
-            navigate('/super-admin/dashboard');
-            break;
-          case 'manajer':
-            navigate('/meneger/dashboard');
-            break;
-          case 'kasir':
-            navigate('/kasir/dashboard');
-            break;
-          case 'chef':
-            navigate('/chef/bahan-baku');
-            break;
-          case 'security':
-            navigate('/security/dashboard');
-            break;
-          case 'user':
-            break;
-          default:
-            navigate('/login');
-        }
+    if (!auth.isLoading && auth.user) {
+      const roleCode = (auth.role?.code || auth.user?.role || '').toLowerCase();
+      const target = resolveDashboardPath(roleCode);
+
+      if (target && window.location.pathname !== target && lastRedirectTarget.current !== target) {
+        lastRedirectTarget.current = target;
+        navigate(target, { replace: true });
       }
     }
-  }, [auth.user, auth.isLoading, navigate]);
-
+  }, [auth.user, auth.isLoading, auth.role?.code, auth.user?.role, navigate]);
   if (auth.isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -51,7 +43,8 @@ const DashboardRedirect: React.FC<DashboardRedirectProps> = ({ dataBarang }) => 
     );
   }
 
-  if (!auth.user || auth.user.role === 'user') {
+  const currentRole = auth.role?.code || auth.user?.role;
+  if (!auth.user || currentRole === 'user' || !resolveDashboardPath(currentRole)) {
     return <PublicHome dataBarang={dataBarang} />;
   }
 

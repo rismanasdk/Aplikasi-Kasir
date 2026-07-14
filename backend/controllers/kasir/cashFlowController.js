@@ -1,4 +1,5 @@
 import Transaksi from "../../models/datatransaksi.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 // Get daily cash flow report
 export const getDailyCashFlow = async (req, res) => {
@@ -12,6 +13,7 @@ export const getDailyCashFlow = async (req, res) => {
 
     // Get all transactions for the day
     const transactions = await Transaksi.find({
+      ...buildBranchFilter(req.user),
       tanggal_transaksi: {
         $gte: startOfDay,
         $lt: endOfDay
@@ -157,6 +159,7 @@ export const getCashFlowRange = async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     const transactions = await Transaksi.find({
+      ...buildBranchFilter(req.user),
       tanggal_transaksi: {
         $gte: start,
         $lte: end

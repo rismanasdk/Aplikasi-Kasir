@@ -4,14 +4,18 @@ import db from "../config/firebaseAdmin.js";
 import { io } from "../server.js";
 import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.js";
 
 // Ambil semua barang, menggabungkan stok dari Firebase RTDB jika tersedia
 export const getAllBarang = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, includePending } = req.query;
     let query = {};
-    
-    // Jika ada filter status, tambahkan ke query
+
+    const shouldIncludePending = includePending === "true" || includePending === "1";
+
+    // Default: hanya tampilkan barang yang sudah dipublish untuk endpoint publik/dashboard user.
+    // Jika ada request eksplisit untuk includePending, izinkan semua status.
     if (status) {
       query = {
         $or: [
@@ -19,9 +23,16 @@ export const getAllBarang = async (req, res) => {
           { status },
         ],
       };
+    } else if (!shouldIncludePending) {
+      query = {
+        $or: [
+          { status_publish: "publish" },
+          { status: "publish" },
+        ],
+      };
     }
 
-    const barang = await Barang.find(query).lean();
+    const barang = await Barang.find({ ...buildBranchFilter(req.user), ...query }).lean();
 
     // get all RTDB barang once
     let stokMap = {};
@@ -42,18 +53,22 @@ export const getAllBarang = async (req, res) => {
       const stokFromRTDB = stokMap[id];
       const stok = (typeof stokFromRTDB === 'number') ? stokFromRTDB : item.stok;
 
-      let status = "aman";
-      if (stok === 0) status = "habis";
-      else if (stok <= (item.stok_minimal || 5)) status = "hampir habis";
+      // Calculate stock status
+      let statusStok = "aman";
+      if (stok === 0) statusStok = "habis";
+      else if (stok <= (item.stok_minimal || 5)) statusStok = "hampir habis";
+      
+      // Get publish status from database
       const statusPublish = item.status_publish || item.status || "pending";
 
       return {
         ...item,
         stok,
         hargaFinal: Math.round(item.hargaFinal),
-        status,
+        // Return publish status as status field for consistency with admin API
+        status: statusPublish,
         status_publish: statusPublish,
-        status_stok: item.status_stok || status
+        status_stok: item.status_stok || statusStok
       };
     });
 
@@ -92,6 +107,11 @@ export const createBarang = async (req, res) => {
     // Handle gambar upload
     if (req.file) {
       bodyData.gambar_url = `/uploads/${req.file.filename}`;
+    }
+
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
     }
 
     const barang = new Barang(bodyData);
@@ -149,7 +169,12 @@ export const updateBarang = async (req, res) => {
       updateData.gambar_url = result.secure_url;
     }
 
-    const barang = await Barang.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    const barang = await Barang.findOneAndUpdate({ _id: req.params.id, ...buildBranchFilter(req.user) }, updateData, { new: true });
     if (!barang) return res.status(404).json({ message: "Barang tidak ditemukan" });
 
     if (db) {
@@ -175,7 +200,7 @@ export const updateBarang = async (req, res) => {
 // Hapus barang: hapus dari MongoDB dan RTDB
 export const deleteBarang = async (req, res) => {
   try {
-    const barang = await Barang.findByIdAndDelete(req.params.id);
+    const barang = await Barang.findOneAndDelete({ _id: req.params.id, ...buildBranchFilter(req.user) });
     if (!barang) return res.status(404).json({ message: "Barang tidak ditemukan" });
 
     if (db) {
@@ -245,9 +270,13 @@ export const updateBarangStatus = async (req, res) => {
       return res.status(400).json({ message: "Status tidak valid. Gunakan 'pending' atau 'publish'" });
     }
 
+    // Update both status dan status_publish untuk memastikan konsistensi
     const barang = await Barang.findByIdAndUpdate(
       id, 
-      { status }, 
+      { 
+        status, 
+        status_publish: status 
+      }, 
       { new: true }
     );
 

@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import App from "./App";
+import { AuthProvider } from "./auth/context/AuthContext";
 import { API_URL } from "./config/api";
-import { getStoredToken, getStoredUser } from "./auth/storage";
+import { getStoredToken, getStoredAuth } from "./auth/storage";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Root: React.FC = () => {
@@ -24,14 +25,20 @@ const Root: React.FC = () => {
           document.title = fallbackTitle;
           return;
         }
-        const role = getStoredUser<{ role?: string }>()?.role;
-        const isSuperAdmin = role === "super-admin";
-        const isManager = role === "manajer" || role === "manager";
+        const storedAuth = getStoredAuth<{ role?: { code?: string }; user?: { role?: string } }>();
+        const roleCode = storedAuth?.role?.code || storedAuth?.user?.role;
+        const normalizedRole = roleCode?.toLowerCase();
+        const isSuperAdmin = normalizedRole === "super-admin" || normalizedRole === "super_admin";
+        const isManager = normalizedRole === "manajer" || normalizedRole === "manager" || normalizedRole === "meneger";
+
+        if (!isSuperAdmin && !isManager) {
+          document.title = fallbackTitle;
+          return;
+        }
+
         const settingsPath = isSuperAdmin
           ? "/api/super-admin/settings"
-          : isManager
-            ? "/api/manager/settings"
-            : "/api/common/settings";
+          : "/api/manager/settings";
 
         const res = await fetch(`${API_URL}${settingsPath}`, {
           headers: {
@@ -63,7 +70,11 @@ const Root: React.FC = () => {
     };
   }, []);
 
-  return <App />;
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
 };
 
 export default Root;

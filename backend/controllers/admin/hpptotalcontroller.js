@@ -4,6 +4,7 @@ import Transaksi from "../../models/datatransaksi.js";
 import BiayaLayanan from "../../models/biayalayanan.js";
 import BiayaOperasional from "../../models/biayaoperasional.js";
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // =======================================================
 // OTOMATIS UPDATE HPP HARIAN SAAT ADA TRANSAKSI
@@ -16,12 +17,13 @@ export const getHppHarian = async (req, res) => {
 
     // --- KASUS 1: Ambil data untuk tanggal spesifik ---
     if (tanggal) {
-      hppData = await HppHarian.findOne({ tanggal });
+      hppData = await HppHarian.findOne({ tanggal, ...buildBranchFilter(req.user) });
     } 
     
     // --- KASUS 2: Ambil data untuk rentang tanggal ---
     else if (startDate && endDate) {
       hppData = await HppHarian.find({
+        ...buildBranchFilter(req.user),
         tanggal: {
           $gte: startDate,
           $lte: endDate,
@@ -31,7 +33,7 @@ export const getHppHarian = async (req, res) => {
     
     // --- KASUS 3: Ambil SEMUA DATA jika tidak ada query sama sekali ---
     else if (!tanggal && !startDate && !endDate) {
-      hppData = await HppHarian.find().sort({ tanggal: -1 });
+      hppData = await HppHarian.find(buildBranchFilter(req.user)).sort({ tanggal: -1 });
     }
 
     res.json({
@@ -52,7 +54,7 @@ export const getHppSummary = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const filter = {};
+    const filter = { ...buildBranchFilter(req.user) };
     if (startDate && endDate) {
       filter.tanggal = { $gte: startDate, $lte: endDate };
     }
@@ -74,7 +76,7 @@ export const getHppSummary = async (req, res) => {
     }
 
     // Ambil biaya
-    const biayaLayanan = await BiayaLayanan.findOne();
+    const biayaLayanan = await BiayaLayanan.findOne(buildBranchFilter(req.user));
     const persenLayanan = biayaLayanan?.persen || 0;
 
     // Hitung pengeluaran operasional per-hari pada rentang yang diminta
@@ -211,7 +213,7 @@ export const resetMonthlyBeban = async (req, res) => {
     }
 
     const regex = new RegExp(`^${month}`);
-    const docs = await HppHarian.find({ tanggal: { $regex: regex } });
+    const docs = await HppHarian.find({ ...buildBranchFilter(req.user), tanggal: { $regex: regex } });
 
     if (!docs || !docs.length) {
       return res.json({ success: true, updated: 0, message: "No HppHarian documents found for this month" });
@@ -242,7 +244,7 @@ export const upsertHppForSale = async (nama_produk, jumlah_terjual) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
 
-    const modalUtama = await ModalUtama.findOne();
+    const modalUtama = await ModalUtama.findOne(buildBranchFilter(req.user));
     if (!modalUtama) {
       throw new Error("Data modal utama tidak ditemukan");
     }
@@ -265,11 +267,12 @@ export const upsertHppForSale = async (nama_produk, jumlah_terjual) => {
     const laba_kotor = pendapatan - hpp_total;
 
     // Ambil dokumen harian
-    let hppHarian = await HppHarian.findOne({ tanggal: today });
+    let hppHarian = await HppHarian.findOne({ tanggal: today, ...buildBranchFilter(req.user) });
 
     if (!hppHarian) {
       hppHarian = new HppHarian({
         tanggal: today,
+        branch_id: req.user?.branch_id || null,
         produk: [],
         total_hpp: 0,
         total_pendapatan: 0,

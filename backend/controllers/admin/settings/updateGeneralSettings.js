@@ -3,13 +3,19 @@ import Barang from "../../../models/databarang.js";
 import { io } from "../../../server.js";
 import Transaksi from "../../../models/datatransaksi.js";
 import { refreshBiRingkasanByPeriod } from "../laporancontroller.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
 
 export const updateGeneralSettings = async (req, res) => {
   try {
     const { lowStockAlert, currency, dateFormat, language, kasWarning, targetOmzetBulanan } = req.body;
     console.log('>>> Menerima permintaan updateGeneralSettings dengan data:', req.body);
 
-    let settings = await Settings.findOne();
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    let settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       console.log('>>> Membuat pengaturan baru');
       settings = await Settings.create({
@@ -18,7 +24,8 @@ export const updateGeneralSettings = async (req, res) => {
         dateFormat,
         language,
         kasWarning,
-        targetOmzetBulanan
+        targetOmzetBulanan,
+        branch_id: req.user.branch_id
       });
     } else {
       console.log('>>> Memperbarui pengaturan yang ada');
@@ -47,7 +54,7 @@ export const updateGeneralSettings = async (req, res) => {
         console.log(`>>> Memperbarui stok_minimal untuk semua barang menjadi: ${lowStockAlert}`);
         
         const result = await Barang.updateMany(
-          {}, 
+          buildBranchFilter(req.user), 
           { $set: { stok_minimal: lowStockAlert } } 
         );
         
@@ -102,7 +109,8 @@ export const getRekomendasiTargetOmzet = async (req, res) => {
       {
         $match: {
           status: 'selesai',
-          tanggal_transaksi: { $gte: start90, $lte: now }
+          tanggal_transaksi: { $gte: start90, $lte: now },
+          ...buildBranchFilter(req.user)
         }
       },
       { $group: { _id: null, total: { $sum: '$total_harga' } } }

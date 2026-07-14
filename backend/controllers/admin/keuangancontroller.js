@@ -1,6 +1,7 @@
 import Transaksi from "../../models/datatransaksi.js";
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Settings from "../../models/settings.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getKeuanganSummary = async (req, res) => {
   try {
@@ -15,6 +16,7 @@ export const getKeuanganSummary = async (req, res) => {
 
     const transaksiMatch = {
       status: "selesai",
+      ...buildBranchFilter(req.user),
       tanggal_transaksi: { $gte: startDate, $lte: endDate }
     };
 
@@ -35,12 +37,12 @@ export const getKeuanganSummary = async (req, res) => {
     const total_hpp = Number(itemsObj.total_hpp || 0);
 
     const pengeluaranAgg = await PengeluaranBiaya.aggregate([
-      { $match: { tanggal: { $gte: startDate, $lte: endDate } } },
+      { $match: { ...buildBranchFilter(req.user), tanggal: { $gte: startDate, $lte: endDate } } },
       { $group: { _id: null, total_pengeluaran: { $sum: "$jumlah" } } }
     ]);
     const total_pengeluaran = (pengeluaranAgg && pengeluaranAgg[0] && pengeluaranAgg[0].total_pengeluaran) ? Number(pengeluaranAgg[0].total_pengeluaran) : 0;
 
-    const settingsDoc = await Settings.findOne();
+    const settingsDoc = await Settings.findOne(buildBranchFilter(req.user));
     const target_omzet = settingsDoc?.targetOmzetBulanan ?? 0;
 
     return res.json({

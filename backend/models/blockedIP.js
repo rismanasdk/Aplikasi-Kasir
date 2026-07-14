@@ -46,6 +46,11 @@ const blockedIPSchema = new Schema({
     type: Date,
     default: null,
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    default: null,
+  },
 });
 
 export default model("BlockedIP", blockedIPSchema);

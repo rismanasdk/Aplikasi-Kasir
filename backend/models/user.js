@@ -23,10 +23,28 @@ const userSchema = new Schema({
     default: "nonaktif",
   },
 
+  // 🔹 RBAC source of truth: role assignment via role_id
+  role_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Role",
+    default: null,
+  },
+
+  // 🔹 Legacy role string kept only for backward compatibility during migration
   role: {
     type: String,
-    enum: ["user", "admin", "kasir", "manajer", "chef", "security", "super-admin"], 
+    enum: ["user", "admin", "kasir", "manajer", "chef", "security", "super-admin"],
     default: "user",
+  },
+
+  // 🔹 Branch reference - WAJIB untuk semua user, termasuk cabang Pusat
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    default: null,
+    required: function () {
+      return String(this.role).toLowerCase() !== "user";
+    },
   },
 
   profilePicture: { type: String },
@@ -36,10 +54,23 @@ const userSchema = new Schema({
       updatedAt: { type: Date, default: Date.now },
     },
   ],
+
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
+
+  updated_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 userSchema.pre("save", async function (next) {
   try {
+    // Update updated_at
+    this.updated_at = Date.now();
+
     // Set default foto profil
     if (this.isNew && !this.profilePicture) {
       const settings = await Settings.findOne();

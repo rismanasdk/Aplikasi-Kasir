@@ -9,7 +9,8 @@ import {
   updateBarangStatus,
 } from "../controllers/databarangControllers.js";
 import verifyToken from "../middleware/verifyToken.js";
-import authorize from "../middleware/authorize.js";
+import { requirePermission } from "../middleware/authorization.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 
 const upload = multer({ dest: "uploads/" });
 const router = express.Router();
@@ -18,11 +19,11 @@ const router = express.Router();
 const handleFormData = upload.any();
 
 router.get("/", getAllBarang);
-router.post("/", verifyToken, authorize(["admin"]), upload.single("gambar"), createBarang);
-router.put("/:id", verifyToken, authorize(["admin"]), handleFormData, updateBarang);
-router.post("/:id/update", verifyToken, authorize(["admin"]), handleFormData, updateBarang);
-router.put("/:id/status", verifyToken, authorize(["admin"]), updateBarangStatus);
-router.delete("/:id", verifyToken, authorize(["admin"]), deleteBarang);
-router.post("/:id/decrement", verifyToken, authorize(["admin", "kasir"]), decrementStock);
+router.post("/", verifyToken, requirePermission(PERMISSIONS.PRODUCT_CREATE), upload.single("gambar"), createBarang);
+router.put("/:id", verifyToken, requirePermission(PERMISSIONS.PRODUCT_UPDATE), handleFormData, updateBarang);
+router.post("/:id/update", verifyToken, requirePermission(PERMISSIONS.PRODUCT_UPDATE), handleFormData, updateBarang);
+router.put("/:id/status", verifyToken, requirePermission(PERMISSIONS.PRODUCT_UPDATE), updateBarangStatus);
+router.delete("/:id", verifyToken, requirePermission(PERMISSIONS.PRODUCT_DELETE), deleteBarang);
+router.post("/:id/decrement", verifyToken, requirePermission(PERMISSIONS.STOCK_ADJUST), decrementStock);
 
 export default router;

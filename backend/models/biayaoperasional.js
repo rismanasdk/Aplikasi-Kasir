@@ -5,6 +5,7 @@ const biayaKategoriSchema = new Schema(
   {
     nama: { type: String, required: true, trim: true },
     isActive: { type: Boolean, default: true },
+    branch_id: { type: Schema.Types.ObjectId, ref: "Branch", default: null },
   },
   { timestamps: true }
 );

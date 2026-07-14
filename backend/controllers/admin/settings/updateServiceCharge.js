@@ -2,15 +2,21 @@ import Settings from "../../../models/settings.js";
 import Barang from "../../../models/databarang.js";
 import PengeluaranBiaya from "../../../models/pengeluaranbiaya.js";
 import { updateAllBarangHargaFinal } from "../settings/utils/calculateHarga.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
 
 const DEFAULT_TARGET_OMZET_BULANAN = 15000000;
 const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
 export const updateServiceCharge = async (req, res) => {
   try {
-    let settings = await Settings.findOne();
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    let settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
-      settings = await Settings.create({});
+      settings = await Settings.create({ branch_id: req.user.branch_id });
     }
 
     // 🔹 Hitung total pengeluaran operasional untuk bulan berjalan dari collection pengeluaran_biaya
@@ -18,7 +24,7 @@ export const updateServiceCharge = async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23,59,59,999);
     const agg = await PengeluaranBiaya.aggregate([
-      { $match: { tanggal: { $gte: startOfMonth, $lte: endOfMonth } } },
+      { $match: { ...buildBranchFilter(req.user), tanggal: { $gte: startOfMonth, $lte: endOfMonth } } },
       { $group: { _id: null, total: { $sum: "$jumlah" } } }
     ]);
     const totalBiayaOperasional = agg && agg[0] ? agg[0].total : 0;

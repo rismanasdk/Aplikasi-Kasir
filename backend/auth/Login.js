@@ -1,5 +1,62 @@
 import User from "../models/user.js";
 import jwt from "jsonwebtoken";
+import Branch from "../models/branch.js";
+import { getRoleByCode } from "../utils/roleHelper.js";
+
+const LEGACY_ROLE_TO_RBAC_CODE = {
+  "super-admin": "super_admin",
+  super_admin: "super_admin",
+  admin: "admin",
+  manajer: "manager",
+  manager: "manager",
+  kasir: "kasir",
+  chef: "chef",
+  security: "security",
+};
+
+const getOrCreateDefaultBranch = async () => {
+  return Branch.findOneAndUpdate(
+    { nama: "Pusat" },
+    {
+      $setOnInsert: {
+        nama: "Pusat",
+        alamat: "Jakarta",
+        telepon: "",
+        status: "aktif",
+      },
+    },
+    { new: true, upsert: true }
+  );
+};
+
+const ensureLoginRbacContext = async (user) => {
+  const updates = {};
+
+  if (String(user.role || "").toLowerCase() === "user") {
+    if (user.branch_id) {
+      updates.branch_id = null;
+      user.branch_id = null;
+    }
+  } else if (!user.branch_id) {
+    const defaultBranch = await getOrCreateDefaultBranch();
+    user.branch_id = defaultBranch._id;
+    updates.branch_id = defaultBranch._id;
+  }
+
+  if (!user.role_id) {
+    const roleCode = LEGACY_ROLE_TO_RBAC_CODE[String(user.role || "").toLowerCase()];
+    const rbacRole = roleCode ? await getRoleByCode(roleCode) : null;
+
+    if (rbacRole?._id) {
+      user.role_id = rbacRole._id;
+      updates.role_id = rbacRole._id;
+    }
+  }
+
+  if (Object.keys(updates).length) {
+    await User.updateOne({ _id: user._id }, { $set: updates });
+  }
+};
 
 export const login = async (req, res) => {
   try {
@@ -17,11 +74,20 @@ export const login = async (req, res) => {
       return;
     }
 
+    await ensureLoginRbacContext(user);
+
     user.status = "aktif";
-    await user.save();
+    await User.updateOne({ _id: user._id }, { $set: { status: "aktif" } });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, username: user.username },
+      {
+        user_id: user._id,
+        username: user.username,
+        branch_id: user.branch_id || null,
+        role_id: user.role_id || null,
+        role_version: user.role_id ? user.role_id.toString() : null,
+        permission_version: user.role_id ? user.role_id.toString() : null,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );

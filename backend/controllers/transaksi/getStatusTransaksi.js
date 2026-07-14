@@ -1,5 +1,7 @@
 import Transaksi from "../../models/datatransaksi.js";
 import mongoose from "mongoose";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getStatusTransaksi = async (req, res) => {
   try {
@@ -9,18 +11,16 @@ export const getStatusTransaksi = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized, silakan login dulu" });
     }
 
-    let filter = { order_id };
-    const normalizedRole = String(req.user.role || "").toLowerCase();
+    let filter = { order_id, ...buildBranchFilter(req.user) };
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    const canReadAllTransactions = permissionCodes.includes(PERMISSIONS.TRANSACTION_READ);
 
-    if (normalizedRole === "kasir") {
-      filter.kasir_id = req.user.username || req.user.id;
-    } else if (normalizedRole === "user") {
-      if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
-        return res.status(400).json({ message: "User ID tidak valid" });
-      }
-      filter.user_id = new mongoose.Types.ObjectId(req.user.id);
-    } else if (!["admin", "manager", "manajer"].includes(normalizedRole)) {
-      return res.status(403).json({ message: "Role Anda tidak diizinkan melihat status transaksi ini" });
+    if (!canReadAllTransactions) {
+      // Show only transactions owned by this user
+      filter.$or = [
+        { user_id: req.user.id },
+        { kasir_id: req.user.username || req.user.id },
+      ];
     }
 
     console.log("Filter query:", filter);

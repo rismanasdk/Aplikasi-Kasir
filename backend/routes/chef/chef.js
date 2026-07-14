@@ -6,14 +6,15 @@ import {
   ambilBahanBaku, 
   updateProductionStatus
 } from "../../controllers/chef/chefcontroller.js";
-import authorize from "../../middleware/authorize.js";
+import { requirePermission } from "../../middleware/authorization.js";
 import verifyToken from "../../middleware/verifyToken.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 
 const router = express.Router();
 
 // All routes require authentication and chef role
 router.use(verifyToken);
-router.use(authorize(["chef", "admin"]));
+router.use(requirePermission(PERMISSIONS.STOCK_ADJUST));
 
 router.get("/productions", getProductions);
 router.get("/bahan-baku/available", getAvailableBahanBaku);

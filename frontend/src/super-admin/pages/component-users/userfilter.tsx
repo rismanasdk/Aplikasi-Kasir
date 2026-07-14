@@ -1,16 +1,82 @@
 // src/admin/users/component/userfilter.tsx
-import React, { useState } from 'react'; // Menghapus useEffect yang tidak digunakan
+import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../../config/api';
+import { getStoredToken } from '../../../auth/storage';
+
+const API_KEY = import.meta.env.VITE_API_KEY;
+
+interface Branch {
+  id: string;
+  name: string;
+}
+
+// Tipe untuk response raw dari API
+interface RawBranch {
+  _id?: string;
+  id?: string;
+  nama?: string;
+  name?: string;
+}
 
 interface UserFilterProps {
-  onFilter: (filters: { role: string; status: string }) => void;
+  onFilter: (filters: { role: string; status: string; branch: string }) => void;
   onReset: () => void;
 }
+
+// Tipe untuk response API yang bisa berupa array langsung atau nested di data
+interface ApiResponse {
+  data?: RawBranch[];
+}
+
+const isRawBranchArray = (value: unknown): value is RawBranch[] => {
+  return Array.isArray(value);
+};
 
 const UserFilter: React.FC<UserFilterProps> = ({ onFilter, onReset }) => {
   const [filters, setFilters] = useState({
     role: '',
-    status: ''
+    status: '',
+    branch: ''
   });
+
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(true);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        setLoadingBranches(true);
+        const token = getStoredToken();
+        const response = await fetch(`${API_URL}/api/super-admin/cabang`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+          },
+        });
+        if (!response.ok) throw new Error('Failed to fetch branches');
+        const data: ApiResponse | RawBranch[] = await response.json();
+        
+        const rawBranches = isRawBranchArray(data) 
+          ? data 
+          : isRawBranchArray((data as ApiResponse).data) 
+            ? (data as ApiResponse).data! 
+            : [];
+
+        const normalizedBranches: Branch[] = rawBranches.map((branch) => ({
+          id: String(branch._id || branch.id || ''),
+          name: branch.nama || branch.name || 'Cabang'
+        }));
+        
+        setBranches(normalizedBranches);
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+      } finally {
+        setLoadingBranches(false);
+      }
+    };
+
+    fetchBranches();
+  }, []);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -19,16 +85,21 @@ const UserFilter: React.FC<UserFilterProps> = ({ onFilter, onReset }) => {
       [name]: value
     };
     setFilters(newFilters);
-    // Langsung terapkan filter saat nilai berubah (live search)
     onFilter(newFilters);
   };
 
   const handleReset = () => {
     setFilters({
       role: '',
-      status: ''
+      status: '',
+      branch: ''
     });
     onReset();
+  };
+
+  const getBranchName = (branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    return branch ? branch.name : branchId;
   };
 
   return (
@@ -78,6 +149,33 @@ const UserFilter: React.FC<UserFilterProps> = ({ onFilter, onReset }) => {
             </div>
           </div>
         </div>
+
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filter Cabang</label>
+          <div className="relative">
+            <select
+              name="branch"
+              value={filters.branch}
+              onChange={handleFilterChange}
+              disabled={loadingBranches}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {loadingBranches ? 'Memuat cabang...' : 'Semua Cabang'}
+              </option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
         
         <div className="flex gap-2">
           <button
@@ -93,8 +191,7 @@ const UserFilter: React.FC<UserFilterProps> = ({ onFilter, onReset }) => {
         </div>
       </div>
       
-      {/* Menampilkan status filter aktif */}
-      {(filters.role || filters.status) && (
+      {(filters.role || filters.status || filters.branch) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {filters.role && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -125,6 +222,24 @@ const UserFilter: React.FC<UserFilterProps> = ({ onFilter, onReset }) => {
                   onFilter(newFilters);
                 }}
                 className="ml-2 text-green-600 hover:text-green-900"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          {filters.branch && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              Cabang: {getBranchName(filters.branch)}
+              <button
+                type="button"
+                onClick={() => {
+                  const newFilters = { ...filters, branch: '' };
+                  setFilters(newFilters);
+                  onFilter(newFilters);
+                }}
+                className="ml-2 text-purple-600 hover:text-purple-900"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

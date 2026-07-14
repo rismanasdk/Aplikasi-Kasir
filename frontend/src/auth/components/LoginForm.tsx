@@ -1,5 +1,5 @@
 // src/auth/components/LoginForm.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { User, Lock, Eye, EyeOff, Home } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -17,6 +17,17 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const resolveDashboardPath = (roleCode?: string | null): string | null => {
+  const normalized = (roleCode || '').toLowerCase();
+  if (normalized === 'admin') return '/admin/dashboard';
+  if (normalized === 'super-admin' || normalized === 'super_admin') return '/super-admin/dashboard';
+  if (normalized === 'manajer' || normalized === 'manager') return '/meneger/dashboard';
+  if (normalized === 'kasir') return '/kasir/dashboard';
+  if (normalized === 'chef') return '/chef/bahan-baku';
+  if (normalized === 'security') return '/security/dashboard';
+  return null;
+};
+
 export default function LoginForm() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
@@ -28,6 +39,7 @@ export default function LoginForm() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const lastRedirectTarget = useRef<string | null>(null);
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768);
@@ -41,22 +53,18 @@ export default function LoginForm() {
     };
   }, [isGoogleLoading]);
 
-  useEffect(() => {
-    if (auth.user && !auth.isLoading) {
-      const from = location.state?.from?.pathname || '/';
-      if (auth.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (auth.user.role === 'manajer') {
-        navigate('/meneger/dashboard');
-      } else if (auth.user.role === 'chef') {
-        navigate('/chef/bahan-baku');
-      } else if (auth.user.role === 'kasir') {
-        navigate('/kasir/dashboard');
-      } else {
-        navigate(from);
-      }
+useEffect(() => {
+  if (auth.user && !auth.isLoading) {
+    const from = location.state?.from?.pathname || '/';
+    const roleCode = (auth.role?.code || auth.user?.role || '').toLowerCase();
+    const target = resolveDashboardPath(roleCode) || from;
+
+    if (target && location.pathname !== target && lastRedirectTarget.current !== target) {
+      lastRedirectTarget.current = target;
+      navigate(target, { replace: true });
     }
-  }, [auth.user, auth.isLoading, navigate, location]);
+  }
+}, [auth.user, auth.isLoading, auth.role?.code, auth.user?.role, navigate, location.pathname, location.state]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });

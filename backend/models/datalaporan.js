@@ -1,6 +1,13 @@
 import {Schema, model} from "mongoose";
 
 const laporanSchema = new Schema({
+  // 🔹 NEW: Branch reference (MANDATORY for multi-branch support)
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    required: true,
+  },
+
   laporan_penjualan: {
     // Harian: beberapa controller menggunakan tanggal sebagai Date + jumlah/total,
     // beberapa lain menyimpan tanggal sebagai string 'YYYY-MM-DD' dan menyertakan array `transaksi`.
@@ -86,6 +93,8 @@ const laporanSchema = new Schema({
     }
   ]
 }, { timestamps: true });
-
+// 🔹 Create compound index for branch + date filtering
+laporanSchema.index({ branch_id: 1, "periode.start": -1 });
+laporanSchema.index({ branch_id: 1, "periode.end": 1 });
 const Laporan = model("Laporan", laporanSchema, "Data-Laporan");
 export default Laporan;

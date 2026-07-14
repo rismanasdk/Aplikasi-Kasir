@@ -4,13 +4,14 @@ import BiayaOperasional from "../../models/biayaoperasional.js"; // kategori
 import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Barang from "../../models/databarang.js";
 import Settings from "../../models/settings.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
 // --- KATEGORI (MASTER) CRUD ---
 export const getCategories = async (req, res) => {
   try {
-    const list = await BiayaOperasional.find().sort({ createdAt: -1 });
+    const list = await BiayaOperasional.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
     res.json(list);
   } catch (err) {
     res.status(500).json({ message: "Gagal mengambil kategori", error: err.message });
@@ -19,10 +20,11 @@ export const getCategories = async (req, res) => {
 
 export const createCategory = async (req, res) => {
   try {
+    validateAndInjectBranch(req, true);
     const { nama, isActive } = req.body;
     if (!nama || !nama.trim()) return res.status(400).json({ message: "Nama wajib diisi" });
 
-    const newCat = new BiayaOperasional({ nama: nama.trim(), isActive: isActive !== false });
+    const newCat = new BiayaOperasional({ nama: nama.trim(), isActive: isActive !== false, branch_id: req.body.branch_id || req.user?.branch_id || null });
     await newCat.save();
     res.json({ message: "Kategori berhasil dibuat", data: newCat });
   } catch (err) {
@@ -32,9 +34,10 @@ export const createCategory = async (req, res) => {
 
 export const updateCategory = async (req, res) => {
   try {
+    validateAndInjectBranch(req, true);
     const { id } = req.params;
     const { nama, isActive } = req.body;
-    const updated = await BiayaOperasional.findByIdAndUpdate(id, { nama, isActive }, { new: true });
+    const updated = await BiayaOperasional.findOneAndUpdate({ _id: id, ...buildBranchFilter(req.user) }, { nama, isActive, branch_id: req.body.branch_id || req.user?.branch_id || null }, { new: true });
     res.json({ message: "Kategori diperbarui", data: updated });
   } catch (err) {
     res.status(500).json({ message: "Gagal memperbarui kategori", error: err.message });
@@ -43,8 +46,9 @@ export const updateCategory = async (req, res) => {
 
 export const softDeleteCategory = async (req, res) => {
   try {
+    validateAndInjectBranch(req, true);
     const { id } = req.params;
-    const updated = await BiayaOperasional.findByIdAndUpdate(id, { isActive: false }, { new: true });
+    const updated = await BiayaOperasional.findOneAndUpdate({ _id: id, ...buildBranchFilter(req.user) }, { isActive: false, branch_id: req.body.branch_id || req.user?.branch_id || null }, { new: true });
     res.json({ message: "Kategori dinonaktifkan", data: updated });
   } catch (err) {
     res.status(500).json({ message: "Gagal menonaktifkan kategori", error: err.message });

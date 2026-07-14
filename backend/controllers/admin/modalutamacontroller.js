@@ -1,5 +1,6 @@
 import ModalUtama from "../../models/modalutama.js";
 import BahanBaku from "../../models/bahanbaku.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // ✅ Ambil semua data modal utama
 export const getModalUtama = async (req, res) => {
@@ -19,13 +20,14 @@ export const createModalUtama = async (req, res) => {
   try {
     const { total_modal } = req.body;
 
-    const existing = await ModalUtama.findOne();
+    const existing = await ModalUtama.findOne(buildBranchFilter(req.user));
     if (existing) {
       return res
         .status(400)
         .json({ message: "Modal utama sudah ada, gunakan update saja." });
     }
 
+    validateAndInjectBranch(req, true);
     const modal = new ModalUtama({
       total_modal,
       // when owner sets modal, kas must be increased by same amount
@@ -40,6 +42,7 @@ export const createModalUtama = async (req, res) => {
           saldo_setelah: total_modal,
         },
       ],
+      branch_id: req.body.branch_id || req.user?.branch_id || null,
     });
 
     await modal.save();
@@ -111,7 +114,7 @@ export const tambahBahanBaku = async (req, res) => {
         const total_stok = bahan.reduce((sum, b) => sum + (b.jumlah || 0), 0);
 
         // Cek apakah produk dengan nama yang sama sudah ada di BahanBaku
-        const existingProduk = await BahanBaku.findOne({ nama: nama_produk });
+        const existingProduk = await BahanBaku.findOne({ nama: nama_produk, ...buildBranchFilter(req.user) });
         
         if (existingProduk) {
           // Produk sudah ada - tambahkan bahan baru ke array bahan yang sudah ada
@@ -205,7 +208,7 @@ export const editBahanBaku = async (req, res) => {
       const total_stok = bahanArray.reduce((sum, b) => sum + (b.jumlah || 0), 0);
 
       // Cari dokumen di BahanBaku berdasarkan nama lama atau nama baru
-      const existingProduk = await BahanBaku.findOne({ $or: [{ nama: oldName }, { nama: produk.nama_produk }] });
+      const existingProduk = await BahanBaku.findOne({ ...buildBranchFilter(req.user), $or: [{ nama: oldName }, { nama: produk.nama_produk }] });
 
       if (existingProduk) {
         existingProduk.nama = produk.nama_produk;
@@ -268,7 +271,7 @@ export const hapusBahanBaku = async (req, res) => {
 
     // Hapus dokumen produk pada koleksi Bahan-Baku jika ada
     try {
-      await BahanBaku.findOneAndDelete({ nama: produk.nama_produk });
+      await BahanBaku.findOneAndDelete({ nama: produk.nama_produk, ...buildBranchFilter(req.user) });
     } catch (syncErr) {
       console.error(`Error deleting BahanBaku document for ${produk.nama_produk}:`, syncErr);
     }
@@ -318,13 +321,13 @@ export const hapusBahanDariProduk = async (req, res) => {
 
     // Sinkronisasi dengan koleksi Bahan-Baku: hapus bahan yang sesuai dari dokumen produk
     try {
-      const produkBaku = await BahanBaku.findOne({ nama: produk.nama_produk });
+      const produkBaku = await BahanBaku.findOne({ nama: produk.nama_produk, ...buildBranchFilter(req.user) });
       if (produkBaku) {
         // Hapus bahan berdasarkan nama (karena _id subdoc mungkin berbeda)
         produkBaku.bahan = (produkBaku.bahan || []).filter(b => b.nama !== bahan.nama);
         produkBaku.total_stok = (produkBaku.bahan || []).reduce((sum, b) => sum + (b.jumlah || 0), 0);
         if (produkBaku.bahan.length === 0) {
-          await BahanBaku.findByIdAndDelete(produkBaku._id);
+          await BahanBaku.findOneAndDelete({ _id: produkBaku._id, ...buildBranchFilter(req.user) });
         } else {
           await produkBaku.save();
         }

@@ -17,6 +17,11 @@ const biayaLayananSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      default: null,
+    },
   },
   { timestamps: true }
 );

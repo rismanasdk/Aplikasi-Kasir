@@ -21,7 +21,8 @@ npm run build
 Gunakan environment berikut:
 
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_BACKEND_HOST=192.168.0.9
+VITE_API_URL=http://192.168.0.9:5000
 VITE_API_KEY=
 ```
 

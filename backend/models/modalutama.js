@@ -88,6 +88,11 @@ const modalUtamaSchema = new mongoose.Schema(
         saldo_setelah: Number,
       },
     ],
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      default: null,
+    },
   },
   { timestamps: true }
 );

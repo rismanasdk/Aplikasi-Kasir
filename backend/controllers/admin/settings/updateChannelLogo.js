@@ -1,6 +1,7 @@
 import Settings from "../../../models/settings.js";
 import cloudinary from "../../../config/cloudinary.js";
 import streamifier from "streamifier";
+import { buildBranchFilter } from "../../../utils/rbacHelper.js";
 
 export const updateChannelLogo = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ export const updateChannelLogo = async (req, res) => {
     });
 
     // Cari settings
-    const settings = await Settings.findOne();
+    const settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       return res.status(404).json({ message: "Settings tidak ditemukan" });
     }

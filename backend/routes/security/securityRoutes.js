@@ -1,6 +1,7 @@
 import express from "express";
 import verifyToken from "../../middleware/verifyToken.js";
-import authorize from "../../middleware/authorize.js";
+import { requirePermission } from "../../middleware/authorization.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 import {
   getServerLogs,
   getSuspiciousActivities,
@@ -18,7 +19,7 @@ const router = express.Router();
 
 // All routes require authentication and security role
 router.use(verifyToken);
-router.use(authorize(["security", "admin"]));
+router.use(requirePermission(PERMISSIONS.SECURITY_VIEW));
 
 // Logs and monitoring
 router.get("/logs", getServerLogs);

@@ -1,4 +1,5 @@
 import Kategori from "../../models/kategori.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 // ✅ Tambah kategori baru
 export const tambahKategori = async (req, res) => {
@@ -9,12 +10,17 @@ export const tambahKategori = async (req, res) => {
       return res.status(400).json({ message: "Nama kategori wajib diisi" });
     }
 
-    const cekKategori = await Kategori.findOne({ nama });
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    const cekKategori = await Kategori.findOne({ nama, ...buildBranchFilter(req.user) });
     if (cekKategori) {
       return res.status(400).json({ message: "Kategori sudah ada" });
     }
 
-    const kategoriBaru = new Kategori({ nama, deskripsi });
+    const kategoriBaru = new Kategori({ nama, deskripsi, branch_id: req.user?.branch_id });
     await kategoriBaru.save();
 
     res.status(201).json({
@@ -29,7 +35,7 @@ export const tambahKategori = async (req, res) => {
 // ✅ Ambil semua kategori
 export const getSemuaKategori = async (req, res) => {
   try {
-    const kategori = await Kategori.find().sort({ createdAt: -1 });
+    const kategori = await Kategori.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
     res.json(kategori);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -40,7 +46,7 @@ export const getSemuaKategori = async (req, res) => {
 export const hapusKategori = async (req, res) => {
   try {
     const { id } = req.params;
-    await Kategori.findByIdAndDelete(id);
+    await Kategori.findOneAndDelete({ _id: id, ...buildBranchFilter(req.user) });
     res.json({ message: "Kategori berhasil dihapus" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -53,8 +59,8 @@ export const editKategori = async (req, res) => {
     const { id } = req.params;
     const { nama, deskripsi } = req.body;
 
-    const kategori = await Kategori.findByIdAndUpdate(
-      id,
+    const kategori = await Kategori.findOneAndUpdate(
+      { _id: id, ...buildBranchFilter(req.user) },
       { nama, deskripsi },
       { new: true }
     );

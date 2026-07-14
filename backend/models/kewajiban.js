@@ -47,6 +47,7 @@ const kewajibanSchema = new Schema(
     bahan_baku_id: { type: Schema.Types.ObjectId, ref: "BahanBaku", default: null },
     keterangan: { type: String, default: "" },
     pembayaran: { type: [pembayaranKewajibanSchema], default: [] },
+    branch_id: { type: Schema.Types.ObjectId, ref: "Branch", default: null },
   },
   { timestamps: true }
 );

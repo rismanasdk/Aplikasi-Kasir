@@ -30,6 +30,7 @@ passport.use(
             profilePicture: foto_profile,
             role: "user",
             status: "aktif",
+            branch_id: null,
           });
         } else {
           // Update data jika berubah

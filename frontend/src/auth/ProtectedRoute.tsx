@@ -5,9 +5,27 @@ import NotFound from '../auth/notif/404notfound';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'super-admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security')[];
+  allowedRoles?: string[];
   requireAuth?: boolean;
 }
+
+const normalizeRoleCode = (roleCode?: string | null): string => {
+  const normalized = (roleCode || '').toLowerCase();
+  if (normalized === 'super_admin') return 'super-admin';
+  if (normalized === 'manager') return 'manajer';
+  return normalized;
+};
+
+const resolveDashboardPath = (roleCode?: string | null): string | null => {
+  const normalized = normalizeRoleCode(roleCode);
+  if (normalized === 'admin') return '/admin/dashboard';
+  if (normalized === 'super-admin' || normalized === 'super_admin') return '/super-admin/dashboard';
+  if (normalized === 'manajer' || normalized === 'manager') return '/meneger/dashboard';
+  if (normalized === 'kasir') return '/kasir/dashboard';
+  if (normalized === 'chef') return '/chef/bahan-baku';
+  if (normalized === 'security') return '/security/dashboard';
+  return null;
+};
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
@@ -23,15 +41,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     if (auth.user && (location.pathname === '/login' || location.pathname === '/register')) {
-      let path = '/';
-      if (auth.user.role === 'admin') path = '/admin/dashboard';
-      else if (auth.user.role === 'super-admin') path = '/super-admin/dashboard';
-      else if (auth.user.role === 'manajer') path = '/meneger/dashboard';
-      else if (auth.user.role === 'kasir') path = '/kasir/dashboard';
-      else if (auth.user.role === 'chef') path = '/chef/bahan-baku';
-      else if (auth.user.role === 'security') path = '/security/dashboard';
-      
-      return { shouldRedirect: true, redirectPath: path, showLoading: false, showNotFound: false };
+      const path = resolveDashboardPath(auth.role?.code || auth.user?.role);
+
+      if (path && path !== location.pathname) {
+        return { shouldRedirect: true, redirectPath: path, showLoading: false, showNotFound: false };
+      }
     }
 
     if (requireAuth && !auth.user) {
@@ -59,7 +73,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       }
     }
 
-    if (auth.user && !allowedRoles.includes(auth.user.role)) {
+    const currentRole = normalizeRoleCode(auth.role?.code || auth.user?.role || '');
+    const allowedRoleCodes = allowedRoles.map((role) => normalizeRoleCode(role));
+    if (auth.user && !allowedRoleCodes.includes(currentRole)) {
       return { shouldRedirect: false, redirectPath: null, showLoading: false, showNotFound: true };
     }
 

@@ -2,6 +2,14 @@ import { Schema, model } from "mongoose";
 
 const cartSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  
+  // 🔹 NEW: Branch reference (MANDATORY for multi-branch support)
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    required: true,
+  },
+
   items: [
     {
       barangId: { type: Schema.Types.ObjectId, ref: "Barang", required: true },
@@ -12,6 +20,9 @@ const cartSchema = new Schema({
     },
   ],
 }, { timestamps: true });
+
+// 🔹 Create index for branch + user filtering
+cartSchema.index({ branch_id: 1, userId: 1 });
 
 const Cart = model("Cart", cartSchema, "Cart");
 export default Cart;

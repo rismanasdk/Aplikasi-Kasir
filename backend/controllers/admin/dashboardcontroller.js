@@ -2,6 +2,7 @@ import Transaksi from "../../models/datatransaksi.js";
 import Laporan from "../../models/datalaporan.js";
 import Barang from "../../models/databarang.js";
 import Kategori from "../../models/kategori.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getDashboardOmzet = async (req, res) => {
   try {
@@ -29,7 +30,8 @@ export const getDashboardOmzet = async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
-    const trx = await Transaksi.find({ status: "selesai" });
+    const branchFilter = buildBranchFilter(req.user);
+    const trx = await Transaksi.find({ status: "selesai", ...branchFilter });
 
     const omzetHarian = trx
       .filter(t => t.tanggal_transaksi >= startOfDay && t.tanggal_transaksi <= endOfDay)
@@ -60,7 +62,7 @@ export const getDashboardOmzet = async (req, res) => {
 export const getTransaksi = async (req, res) => {
   try {
     // Semua orang bisa lihat semua transaksi
-    const transaksi = await Transaksi.find();
+    const transaksi = await Transaksi.find(buildBranchFilter(req.user));
     res.json(transaksi);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -147,7 +149,7 @@ export const getLaporanPenjualan = async (req, res) => {
     }
 
     // Ambil laporan terbaru
-    const laporan = await Laporan.find().sort({ createdAt: -1 }).limit(1);
+    const laporan = await Laporan.find(buildBranchFilter(req.user)).sort({ createdAt: -1 }).limit(1);
 
     if (!laporan || laporan.length === 0) {
       return res.status(404).json({ message: "Laporan belum tersedia" });
@@ -164,7 +166,7 @@ export const getLaporanPenjualan = async (req, res) => {
 export const getBreakdownMetodePembayaran = async (req, res) => {
   try {
     // Ambil hanya transaksi selesai
-    const transaksiSelesai = await Transaksi.find({ status: "selesai" });
+    const transaksiSelesai = await Transaksi.find({ status: "selesai", ...buildBranchFilter(req.user) });
 
     const breakdown = {};
 
@@ -186,7 +188,7 @@ export const getBreakdownMetodePembayaran = async (req, res) => {
 export const getLatestTransaksi = async (req, res) => {
   try {
     // Ambil hanya 10 transaksi terbaru, urut dari yang paling baru
-    const transaksi = await Transaksi.find()
+    const transaksi = await Transaksi.find(buildBranchFilter(req.user))
       .sort({ createdAt: -1 }) // urut dari terbaru
       .limit(10);
 

@@ -21,6 +21,8 @@ interface User {
   umur?: number;
   alamat?: string;
   password?: string;
+  branch_id?: { _id?: string; nama?: string } | string | null;
+  cabang?: string;
 }
 
 interface FormData {
@@ -31,6 +33,7 @@ interface FormData {
   status: string;
   umur: string;
   alamat: string;
+  branch_id: string;
 }
 
 interface UserPayload {
@@ -41,6 +44,7 @@ interface UserPayload {
   password?: string;
   umur?: number;
   alamat?: string;
+  branch_id?: string;
 }
 
 const UsersPage: React.FC = () => {
@@ -49,9 +53,11 @@ const UsersPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [branchNameMap, setBranchNameMap] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState({
     role: '',
-    status: ''
+    status: '',
+    branch: ''
   });
   
   // Pagination states
@@ -72,6 +78,64 @@ const UsersPage: React.FC = () => {
     };
   };
 
+  const resolveBranchName = useCallback((user: User) => {
+    if (user.role?.toLowerCase() === 'super-admin') {
+      return 'Global';
+    }
+
+    if (!user.branch_id) {
+      return '-';
+    }
+
+    if (typeof user.branch_id === 'object' && user.branch_id?.nama) {
+      return user.branch_id.nama;
+    }
+
+    if (typeof user.branch_id === 'string') {
+      return branchNameMap[user.branch_id] || '-';
+    }
+
+    return '-';
+  }, [branchNameMap]);
+
+  const fetchBranches = useCallback(async () => {
+    try {
+      const token = getStoredToken();
+      if (!token) {
+        throw new Error('Sesi login tidak ditemukan.');
+      }
+
+      const response = await fetch(`${API_URL}/api/super-admin/cabang`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data cabang');
+      }
+
+      const data = await response.json();
+      const branches: Array<{ _id?: string; nama?: string }> = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : [];
+
+      const nextBranchMap = branches.reduce<Record<string, string>>((acc, branch) => {
+        if (branch?._id) {
+          acc[String(branch._id)] = branch.nama || 'Cabang';
+        }
+        return acc;
+      }, {});
+
+      setBranchNameMap(nextBranchMap);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   // Fetch users from API
   const fetchUsers = useCallback(async () => {
     try {
@@ -83,8 +147,13 @@ const UsersPage: React.FC = () => {
         throw new Error('Gagal mengambil data user');
       }
       const data = await response.json();
-      // Filter out users with role 'user'
-      const filteredData = data.filter((user: User) => user.role !== 'user');
+      // Filter out users with role 'user' and map branch name for table display
+      const filteredData = data
+        .filter((user: User) => user.role !== 'user')
+        .map((user: User) => ({
+          ...user,
+          cabang: resolveBranchName(user)
+        }));
       setUsers(filteredData);
       applyFilters(filteredData, filters);
       // Reset to first page when fetching new data
@@ -95,10 +164,10 @@ const UsersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, API_URL_USERS]);
+  }, [filters, API_URL_USERS, resolveBranchName]);
 
   // Apply filters to users
-  const applyFilters = (userList: User[], currentFilters: { role: string; status: string }) => {
+  const applyFilters = (userList: User[], currentFilters: { role: string; status: string; branch: string }) => {
     let result = [...userList];
     
     if (currentFilters.role) {
@@ -108,6 +177,22 @@ const UsersPage: React.FC = () => {
     if (currentFilters.status) {
       result = result.filter(user => user.status === currentFilters.status);
     }
+
+    if (currentFilters.branch) {
+      result = result.filter((user) => {
+        const branchId = typeof user.branch_id === 'object' && user.branch_id
+          ? user.branch_id._id
+          : typeof user.branch_id === 'string'
+            ? user.branch_id
+            : null;
+
+        const resolvedBranchName = resolveBranchName(user);
+
+        return branchId === currentFilters.branch
+          || resolvedBranchName === branchNameMap[currentFilters.branch]
+          || resolvedBranchName === currentFilters.branch;
+      });
+    }
     
     setFilteredUsers(result);
     // Reset to first page when applying filters
@@ -115,22 +200,38 @@ const UsersPage: React.FC = () => {
   };
 
   // Handle filter change
-  const handleFilter = (newFilters: { role: string; status: string }) => {
+  const handleFilter = (newFilters: { role: string; status: string; branch: string }) => {
     setFilters(newFilters);
     applyFilters(users, newFilters);
   };
 
   // Reset filters
   const handleResetFilter = () => {
-    setFilters({ role: '', status: '' });
+    const resetFilters = { role: '', status: '', branch: '' };
+    setFilters(resetFilters);
     setFilteredUsers(users);
     // Reset to first page when resetting filters
     setCurrentPage(1);
   };
 
   useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    if (users.length) {
+      const remappedUsers = users.map((user) => ({
+        ...user,
+        cabang: resolveBranchName(user)
+      }));
+      setUsers(remappedUsers);
+      applyFilters(remappedUsers, filters);
+    }
+  }, [branchNameMap, filters, resolveBranchName]);
 
   // Submit form (create or update user)
   const handleSubmit = async (formData: FormData) => {
@@ -141,9 +242,13 @@ const UsersPage: React.FC = () => {
       const payload: UserPayload = {
         nama_lengkap: formData.nama_lengkap,
         username: formData.username,
-        role: formData.role,
+        role: formData.role.toLowerCase(),
         status: formData.status
       };
+
+      if (formData.role !== 'super-admin' && formData.role !== 'user' && formData.branch_id) {
+        payload.branch_id = formData.branch_id;
+      }
 
       // Tambahkan umur jika ada
       if (formData.umur) {

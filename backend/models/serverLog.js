@@ -52,6 +52,11 @@ const serverLogSchema = new Schema({
     type: Schema.Types.Mixed,
     default: null,
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Branch",
+    default: null,
+  },
 });
 
 export default model("ServerLog", serverLogSchema);

@@ -1,6 +1,17 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+
+const resolveDashboardPath = (roleCode?: string | null): string | null => {
+  const normalized = (roleCode || '').toLowerCase();
+  if (normalized === 'admin') return '/admin/dashboard';
+  if (normalized === 'super-admin' || normalized === 'super_admin') return '/super-admin/dashboard';
+  if (normalized === 'manajer' || normalized === 'manager') return '/meneger/dashboard';
+  if (normalized === 'kasir') return '/kasir/dashboard';
+  if (normalized === 'chef') return '/chef/bahan-baku';
+  if (normalized === 'security') return '/security/dashboard';
+  return null;
+};
 
 interface AuthOnlyRouteProps {
   children: React.ReactNode;
@@ -8,6 +19,7 @@ interface AuthOnlyRouteProps {
 
 const AuthOnlyRoute: React.FC<AuthOnlyRouteProps> = ({ children }) => {
   const auth = useAuth();
+  const location = useLocation();
 
   if (auth.isLoading) {
     return (
@@ -18,15 +30,13 @@ const AuthOnlyRoute: React.FC<AuthOnlyRouteProps> = ({ children }) => {
   }
 
   if (auth.user) {
-    let redirectPath = '/';
-    if (auth.user.role === 'admin') redirectPath = '/admin/dashboard';
-    else if (auth.user.role === 'manajer') redirectPath = '/meneger/dashboard';
-    else if (auth.user.role === 'kasir') redirectPath = '/kasir/dashboard';
-    else if (auth.user.role === 'chef') redirectPath = '/chef/bahan-baku';
-    else if (auth.user.role === 'security') redirectPath = '/security/dashboard';
-    else if (auth.user.role === 'super-admin') redirectPath = '/super-admin/dashboard';
-    
-    return <Navigate to={redirectPath} replace />;
+    const roleCode = (auth.role?.code || auth.user?.role || '').toLowerCase();
+    const redirectPath = resolveDashboardPath(roleCode);
+
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+    if (isAuthPage && redirectPath && redirectPath !== location.pathname) {
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   return <>{children}</>;

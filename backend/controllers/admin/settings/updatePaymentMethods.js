@@ -1,5 +1,6 @@
 import Settings from "../../../models/settings.js";
 import cloudinary from "../../../config/cloudinary.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
 
 export const updatePaymentMethods = async (req, res) => {
   try {
@@ -28,9 +29,14 @@ export const updatePaymentMethods = async (req, res) => {
       });
     }
 
-    let settings = await Settings.findOne();
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    let settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
-      settings = await Settings.create({ payment_methods: methods });
+      settings = await Settings.create({ payment_methods: methods, branch_id: req.user.branch_id });
     } else {
       settings.payment_methods = methods;
       await settings.save();

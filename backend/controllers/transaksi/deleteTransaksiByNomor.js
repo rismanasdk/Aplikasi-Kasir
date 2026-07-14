@@ -1,22 +1,29 @@
 import Transaksi from "../../models/datatransaksi.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const deleteTransaksiByNomor = async (req, res) => {
   try {
-    const normalizedRole = String(req.user?.role || "").toLowerCase();
-    if (!["admin", "kasir"].includes(normalizedRole)) {
-      return res.status(403).json({ message: "Role Anda tidak diizinkan menghapus transaksi" });
+    const permissionCodes = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    const canDeleteAllTransactions = permissionCodes.includes(PERMISSIONS.TRANSACTION_DELETE);
+
+    if (!canDeleteAllTransactions) {
+      return res.status(403).json({ message: "Anda tidak diizinkan menghapus transaksi" });
     }
 
-    const transaksi = await Transaksi.findOne({ nomor_transaksi: req.params.nomor_transaksi });
+    const branchFilter = buildBranchFilter(req.user);
+    const transaksi = await Transaksi.findOne({ nomor_transaksi: req.params.nomor_transaksi, ...branchFilter });
     if (!transaksi) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan" });
     }
 
-    if (normalizedRole === "kasir") {
-      const kasirKey = req.user.username || req.user.id;
-      if (transaksi.kasir_id !== kasirKey) {
-        return res.status(403).json({ message: "Anda tidak bisa menghapus transaksi milik kasir lain" });
-      }
+    // Allow only if user has permission OR owns the transaction
+    const isOwner =
+      transaksi.kasir_id === (req.user.username || req.user.id) ||
+      String(transaksi.user_id) === String(req.user.id);
+
+    if (!canDeleteAllTransactions && !isOwner) {
+      return res.status(403).json({ message: "Anda tidak diizinkan menghapus transaksi ini" });
     }
 
     await transaksi.deleteOne();

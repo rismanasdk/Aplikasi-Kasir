@@ -13,6 +13,8 @@ import SuperAdminNeraca from '../pages/neraca';
 import SuperAdmin404 from '../pages/404notfound';
 import SuperAdminDashboardAnalytics from '../pages/DashboardAnalytics';
 import SuperAdminProducts from '../pages/products';
+import SuperAdminBranchPage from '../pages/branch'
+import SuperAdminPermissions from '../pages/permissions'
 import BIDashboard from '../bi/BIDashboard';
 
 const SuperAdminRouter: React.FC = () => {
@@ -48,6 +50,12 @@ const SuperAdminRouter: React.FC = () => {
 
         {/* Liabilitas Route */}
         <Route path="liabilitas" element={<SuperAdminLiabilitas />} />
+
+        {/* Cabang Restoran */}
+        <Route path="cabang" element={<SuperAdminBranchPage />} />
+
+        {/* Permission User */}
+        <Route path="permissions" element={<SuperAdminPermissions />} />
         
         {/* Users Route */}
         <Route path="users" element={<SuperAdminUsersPage />} />

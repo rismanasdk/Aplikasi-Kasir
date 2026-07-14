@@ -1,6 +1,7 @@
 import Transaksi from "../../models/datatransaksi.js";
 import Barang from "../../models/databarang.js";
 import { processCompletedTransaction } from "../transaksi/helpers/transactionLifecycleHelper.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 /**
  * Ambil semua pesanan berdasarkan status
  * Contoh: GET /status?status=pending
@@ -12,7 +13,7 @@ import { processCompletedTransaction } from "../transaksi/helpers/transactionLif
 
 export const getAllPesanan = async (req, res) => {
   try {
-    const pesanan = await Transaksi.find().sort({ createdAt: -1 }).limit(10);
+    const pesanan = await Transaksi.find(buildBranchFilter(req.user)).sort({ createdAt: -1 }).limit(10);
     res.json(pesanan);
   } catch (error) {
     console.error("Error getAllPesanan:", error);
@@ -37,8 +38,9 @@ export const updateStatusPesanan = async (req, res) => {
       updateObj.tanggal_transaksi = new Date();
     }
 
-    const pesanan = await Transaksi.findByIdAndUpdate(
-      id,
+    const branchFilter = buildBranchFilter(req.user);
+    const pesanan = await Transaksi.findOneAndUpdate(
+      { _id: id, ...branchFilter },
       updateObj,
       { new: true }
     );
@@ -62,7 +64,8 @@ export const approvePesanan = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const pesanan = await Transaksi.findById(id);
+    const branchFilter = buildBranchFilter(req.user);
+    const pesanan = await Transaksi.findOne({ _id: id, ...branchFilter });
     if (!pesanan) {
       return res.status(404).json({ message: "Pesanan tidak ditemukan" });
     }
@@ -94,7 +97,8 @@ export const cancelPesanan = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const pesanan = await Transaksi.findById(id);
+    const branchFilter = buildBranchFilter(req.user);
+    const pesanan = await Transaksi.findOne({ _id: id, ...branchFilter });
     if (!pesanan) {
       return res.status(404).json({ message: "Pesanan tidak ditemukan" });
     }

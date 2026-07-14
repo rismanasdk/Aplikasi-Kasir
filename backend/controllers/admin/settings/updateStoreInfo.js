@@ -1,5 +1,6 @@
 import Settings from "../../../models/settings.js";
 import cloudinary from "../../../config/cloudinary.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
 
 export const updateStoreInfo = async (req, res) => {
   try {
@@ -18,7 +19,12 @@ export const updateStoreInfo = async (req, res) => {
       });
       storeLogo = uploadResult.secure_url;
     }
-    let settings = await Settings.findOne();
+    const branchValidation = validateAndInjectBranch(req, true);
+    if (!branchValidation.isValid) {
+      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
+    }
+
+    let settings = await Settings.findOne(buildBranchFilter(req.user));
     if (!settings) {
       settings = await Settings.create({
         storeName,
@@ -27,6 +33,7 @@ export const updateStoreInfo = async (req, res) => {
         defaultUser,
         storeAddress,
         storePhone,
+        branch_id: req.user.branch_id,
       });
     } else {
       if (storeName !== undefined) settings.storeName = storeName;

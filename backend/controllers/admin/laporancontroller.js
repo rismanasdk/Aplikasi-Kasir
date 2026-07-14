@@ -9,10 +9,11 @@ import Kewajiban from "../../models/kewajiban.js";
 import BiRingkasan from "../../models/biRingkasan.js";
 import Settings from "../../models/settings.js";
 import { buildAiUrl, fetchWithTimeout, parseAiServiceResponse } from "../../services/aiService.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getAllLaporan = async (req, res) => {
   try {
-    const laporan = await Laporan.find().sort({ createdAt: -1 });
+    const laporan = await Laporan.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
     res.json(laporan);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -31,6 +32,7 @@ export const getLaporanByPeriode = async (req, res) => {
     const endDate = new Date(end);
 
     const laporan = await Laporan.find({
+      ...buildBranchFilter(req.user),
       "periode.start": { $lte: endDate },
       "periode.end": { $gte: startDate }
     }).sort({ "periode.start": -1 });
@@ -86,7 +88,8 @@ export const getRingkasanPenjualan = async (req, res) => {
     // Pipeline menggunakan $facet untuk efisiensi: pendapatan dan item-level agregasi
     const transaksiMatch = {
       status: "selesai",
-      tanggal_transaksi: { $gte: startDate, $lte: endDate }
+      tanggal_transaksi: { $gte: startDate, $lte: endDate },
+      ...buildBranchFilter(req.user)
     };
 
     const transaksiFacet = await Transaksi.aggregate([

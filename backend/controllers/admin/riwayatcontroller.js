@@ -1,9 +1,10 @@
 import Transaksi from "../../models/datatransaksi.js";
+import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 // 🔹 Ambil semua transaksi
 export const getAllTransaksi = async (req, res) => {
   try {
-    const transaksi = await Transaksi.find()
+    const transaksi = await Transaksi.find(buildBranchFilter(req.user))
       .populate("kasir_id", "nama_lengkap username")
       .sort({ createdAt: -1 });
 
