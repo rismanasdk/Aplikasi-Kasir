@@ -78,8 +78,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const _meta = import.meta as { env?: { VITE_API_BASE_URL?: string; VITE_API_KEY?: string } };
-const API_BASE_URL = _meta.env?.VITE_API_BASE_URL ?? API_URL;
+const _meta = import.meta as { env?: { VITE_API_KEY?: string } };
+const API_BASE_URL = API_URL;
 const API_KEY = _meta.env?.VITE_API_KEY ?? `${ApiKey}`;
 
 function isAxiosError(error: unknown): error is { isAxiosError: true; response?: { data?: ErrorResponse }; message?: string } {
@@ -162,7 +162,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const token = getStoredToken();
       const storedAuth = getStoredAuth<AuthSession>();
       const currentRole = role?.code || auth?.role?.code || storedAuth?.role?.code || auth?.user?.role;
-      const canReadCommonSettings = currentRole === "admin" || currentRole === "super-admin";
+      const normalizedRole = String(currentRole || '').toLowerCase();
+      const canReadCommonSettings = normalizedRole === "admin" || normalizedRole === "super-admin" || normalizedRole === "super_admin";
 
       if (!token || !canReadCommonSettings) {
         return { success: false, message: "Default profile picture hanya untuk admin" };

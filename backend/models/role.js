@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import "./permission.js";
 
 const roleSchema = new Schema({
   code: {

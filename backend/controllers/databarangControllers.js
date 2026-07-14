@@ -9,15 +9,25 @@ import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.
 // Ambil semua barang, menggabungkan stok dari Firebase RTDB jika tersedia
 export const getAllBarang = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, includePending } = req.query;
     let query = {};
-    
-    // Jika ada filter status, tambahkan ke query
+
+    const shouldIncludePending = includePending === "true" || includePending === "1";
+
+    // Default: hanya tampilkan barang yang sudah dipublish untuk endpoint publik/dashboard user.
+    // Jika ada request eksplisit untuk includePending, izinkan semua status.
     if (status) {
       query = {
         $or: [
           { status_publish: status },
           { status },
+        ],
+      };
+    } else if (!shouldIncludePending) {
+      query = {
+        $or: [
+          { status_publish: "publish" },
+          { status: "publish" },
         ],
       };
     }
@@ -43,18 +53,22 @@ export const getAllBarang = async (req, res) => {
       const stokFromRTDB = stokMap[id];
       const stok = (typeof stokFromRTDB === 'number') ? stokFromRTDB : item.stok;
 
-      let status = "aman";
-      if (stok === 0) status = "habis";
-      else if (stok <= (item.stok_minimal || 5)) status = "hampir habis";
+      // Calculate stock status
+      let statusStok = "aman";
+      if (stok === 0) statusStok = "habis";
+      else if (stok <= (item.stok_minimal || 5)) statusStok = "hampir habis";
+      
+      // Get publish status from database
       const statusPublish = item.status_publish || item.status || "pending";
 
       return {
         ...item,
         stok,
         hargaFinal: Math.round(item.hargaFinal),
-        status,
+        // Return publish status as status field for consistency with admin API
+        status: statusPublish,
         status_publish: statusPublish,
-        status_stok: item.status_stok || status
+        status_stok: item.status_stok || statusStok
       };
     });
 
@@ -256,9 +270,13 @@ export const updateBarangStatus = async (req, res) => {
       return res.status(400).json({ message: "Status tidak valid. Gunakan 'pending' atau 'publish'" });
     }
 
+    // Update both status dan status_publish untuk memastikan konsistensi
     const barang = await Barang.findByIdAndUpdate(
       id, 
-      { status }, 
+      { 
+        status, 
+        status_publish: status 
+      }, 
       { new: true }
     );
 

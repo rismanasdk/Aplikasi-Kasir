@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
+
+const API_KEY = import.meta.env.VITE_API_KEY;
   
 interface MenuItem {
   id: string;
@@ -36,6 +38,10 @@ interface UserProfile {
 interface StoreSettings {
   storeLogo?: string;
 }
+
+const hasUsableToken = (token: string | null): token is string => {
+  return !!token && token !== 'null' && token !== 'undefined';
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const navigate = useNavigate();
@@ -72,10 +78,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       if (user) {
         try {
           const token = getStoredToken();
+          if (!hasUsableToken(token)) {
+            setLoadingProfile(false);
+            return;
+          }
+
           const response = await fetch(`${API_URL}/api/update-profile`, {
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(API_KEY ? { 'x-api-key': API_KEY } : {})
             }
           });
           
@@ -102,8 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     const fetchStoreLogo = async () => {
       try {
         const token = getStoredToken();
-        const hasValidToken = !!token && token !== 'null' && token !== 'undefined';
-        if (!hasValidToken) {
+        if (!hasUsableToken(token)) {
           setLoadingLogo(false);
           return;
         }
@@ -111,6 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         const response = await fetch(`${API_URL}/api/common/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`,
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
           }
         });
         
@@ -122,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
               : `${API_URL}${settingsData.storeLogo}`;
             setStoreLogo(logoUrl);
           }
-        } else {
+        } else if (response.status !== 401 && response.status !== 403) {
           console.error('Failed to fetch store settings');
         }
       } catch (error) {

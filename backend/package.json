@@ -5,6 +5,7 @@
     "dev": "nodemon bootstrap.js",
     "start": "node bootstrap.js",
     "check:syntax": "node scripts/check-syntax.js",
+    "repair:rbac": "node scripts/repairRBAC.js",
     "check": "npm run check:syntax"
   },
   "author": "",

@@ -40,6 +40,8 @@ import superAdminModalUtamaRoutes from "./routes/super-admin/modalutama.js";
 import superAdminKewajiban from "./routes/super-admin/kewajiban.js";
 import superAdminProductsRoutes from "./routes/super-admin/products.js";
 import superAdminKategoriRouter from "./routes/super-admin/kategori.js";
+import superAdminBranchRouter from "./routes/super-admin/branch.js"
+import superAdminPermissionRouter from "./routes/super-admin/permission.js"
 import chefRoutes from "./routes/chef/chef.js";
 import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
@@ -54,7 +56,7 @@ import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
 import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
-import { requirePermission } from "./middleware/authorization.js";
+import { requireAuth, requirePermission } from "./middleware/authorization.js";
 import { PERMISSIONS } from "../shared/permissionRegistry.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import BlockedIP from "./models/blockedIP.js";
@@ -276,8 +278,8 @@ app.use("/api/manager/riwayat", verifyToken, requirePermission(PERMISSIONS.REPOR
 app.use("/api/manager/stok-barang", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), stokBarang);
 app.use("/api/manager/laporan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), laporanManagerRoutes);
 app.use("/api/manager/biaya-operasional", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), biayaoperasional);
-app.use("/api/manager/settings", verifyToken, requirePermission(PERMISSIONS.BRANCH_UPDATE), managerSettingsRoutes);
-app.use("/api/common", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), commonRoutes);
+app.use("/api/manager/settings", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), managerSettingsRoutes);
+app.use("/api/common", verifyToken, requireAuth, commonRoutes);
 
 // admin
 app.use("/api/admin/dashboard", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), adminDashboardRoutes);
@@ -309,6 +311,8 @@ app.use("/api/super-admin/pengeluaran-biaya", verifyToken, requirePermission(PER
 app.use("/api/super-admin/kewajiban", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), superAdminKewajiban);
 app.use("/api/super-admin/stok-barang", verifyToken, requirePermission(PERMISSIONS.STOCK_VIEW), superAdminProductsRoutes);
 app.use("/api/super-admin/kategori", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), superAdminKategoriRouter);
+app.use("/api/super-admin/cabang", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), superAdminBranchRouter)
+app.use("/api/super-admin/permission", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), superAdminPermissionRouter)
 
 // chef
 app.use("/api/chef", chefRoutes);

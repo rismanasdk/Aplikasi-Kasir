@@ -7,15 +7,32 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // ip backend - gunakan IP lokal untuk network access
+const DEFAULT_BACKEND_HOST = process.env.VITE_BACKEND_HOST || process.env.VITE_NETWORK_IP || '192.168.0.9'
+
+const normalizeAPITarget = (target?: string) => {
+  if (!target) {
+    return `http://${DEFAULT_BACKEND_HOST}:5000`
+  }
+
+  try {
+    const parsed = new URL(target)
+    if (['localhost', '127.0.0.1', '0.0.0.0'].includes(parsed.hostname)) {
+      parsed.hostname = DEFAULT_BACKEND_HOST
+    }
+    return parsed.toString().replace(/\/$/, '')
+  } catch {
+    return `http://${DEFAULT_BACKEND_HOST}:5000`
+  }
+}
+
 const getAPITarget = () => {
   // Jika di-set via environment variable, gunakan itu
-  if (process.env.VITE_API_URL) {
-    return process.env.VITE_API_URL
+  const configuredTarget = process.env.VITE_API_BASE_URL || process.env.VITE_API_URL || process.env.VITE_IPBE
+  if (configuredTarget) {
+    return normalizeAPITarget(configuredTarget)
   }
-  // Default: localhost untuk development lokal
-  return process.env.VITE_NETWORK_IP 
-    ? `http://${process.env.VITE_NETWORK_IP}:5000`
-    : 'http://localhost:5000'
+  // Default: IP LAN untuk development agar tidak mentok ke localhost.
+  return normalizeAPITarget()
 }
 
 const API_TARGET = getAPITarget()

@@ -6,29 +6,34 @@ Aplikasi Kasir adalah aplikasi Point of Sale (POS) full-stack untuk operasional 
 
 ## Ringkasan Fitur
 
-- Multi-role login: `super admin`, `admin`, `manajer`, `kasir`, `chef`, `user`, `security`
+- Multi-role login: `super-admin`, `admin`, `manager`, `kasir`, `chef`, `user`, `security`
+- Sistem Role-Based Access Control (RBAC) dengan **permission dinamis** yang dapat diatur oleh super-admin
+- Dukungan **Multi Branch (Multi Cabang)** dengan isolasi data berdasarkan `branch_id` untuk setiap cabang restoran
+- Manajemen cabang restoran beserta penempatan user ke cabang tertentu
 - Login manual berbasis JWT dan login dengan Google OAuth
-- Dashboard publik / pelanggan untuk lihat produk, checkout, dan riwayat pesanan
+- Dashboard publik / pelanggan untuk melihat produk, checkout, dan riwayat pesanan
 - Keranjang belanja, checkout, dan proses transaksi dengan status pesanan
-- Pembayaran `Tunai`, `Virtual Account`, `QRIS`, dan `E-Wallet` dengan channel yang bisa diatur dari settings
-- Integrasi Midtrans untuk pembuatan pembayaran dan callback update status transaksi
-- Sinkronisasi stok real-time memakai `Socket.IO` dan transaksi atomik di `Firebase RTDB`
-- Manajemen produk, kategori, stok barang, bahan baku, produksi, data satuan, modal utama
+- Pembayaran `Tunai`, `Virtual Account`, `QRIS`, dan `E-Wallet` dengan channel yang dapat diatur melalui settings
+- Integrasi Midtrans untuk pembuatan pembayaran dan callback pembaruan status transaksi
+- Sinkronisasi stok real-time menggunakan `Socket.IO` dan transaksi atomik di `Firebase RTDB`
+- Manajemen produk, kategori, stok barang, bahan baku, produksi, data satuan, modal utama, serta pengelolaan stok antar cabang
 - Pengelolaan modal utama, saldo kas, tambah modal, prive, aset tetap, dan riwayat kas
 - Pengelolaan kategori biaya operasional dan pencatatan pengeluaran biaya yang memotong saldo kas
-- Pengelolaan data kewajiban/liabilitas, termasuk utang supplier yang bisa terhubung ke pembelian bahan baku
+- Pengelolaan data kewajiban/liabilitas, termasuk utang supplier yang dapat terhubung ke pembelian bahan baku
 - Dashboard admin untuk omzet, top barang, transaksi, breakdown pembayaran, laporan penjualan, dan input penjualan
-- Dashboard manajer untuk monitoring stok, riwayat, laporan HPP/laba, dan settings terbatas
-- Panel chef untuk bahan baku tersedia, pengambilan bahan baku, dan update status produksi
-- Laporan HPP, laba kotor, laba bersih, rekap metode pembayaran, cash flow kasir, dan neraca
-- Pengaturan toko: informasi toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon global, service charge, low stock alert, bahasa, format tanggal
+- Dashboard manager untuk monitoring stok, riwayat, laporan HPP/laba, dan pengaturan terbatas sesuai permission
+- Panel chef untuk melihat bahan baku tersedia, pengambilan bahan baku, dan pembaruan status produksi
+- Laporan HPP, laba kotor, laba bersih, rekap metode pembayaran, cash flow kasir, neraca, serta laporan bisnis per cabang
+- Pengaturan toko meliputi informasi toko, logo, struk, metode pembayaran, channel pembayaran, pajak, diskon global, service charge, low stock alert, bahasa, dan format tanggal
 - Upload gambar produk, logo toko, logo channel pembayaran, dan foto profil
-- Export laporan ke `PDF`, `Excel`, dan sebagian area ke `CSV`
-- Block IP address otomatis ketika terkena trap routes
-- Dashboard security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
-- Smart Notifikasi pada role super-admin yang meliputi Uang Kas, Liabilitas, Stok Barang/Produk
-- Business Intelligence dengan mengimplementasikan model AI `Gemini, GPT` kedalam analis data
-- Machine Learning pada model AI agar analisis data dapat lebih tajam dan lebih sempurna
+- Export laporan ke format `PDF`, `Excel`, dan sebagian data ke `CSV`
+- Block IP Address otomatis ketika terdeteksi mengakses trap routes
+- Dashboard Security untuk log server, suspicious activities, statistik IP, block/unblock IP, real-time alerts, dan system health
+- Smart Notification pada role `super-admin` yang meliputi Uang Kas, Liabilitas, serta Stok Barang/Produk
+- Business Intelligence (BI) dengan integrasi model AI seperti `Gemini` dan `GPT` untuk analisis data bisnis
+- Machine Learning untuk forecasting, anomaly detection, dan peningkatan kualitas analisis bisnis
+- Arsitektur AI Service terpisah (`FastAPI`) sehingga model AI dapat dikembangkan tanpa mengubah backend utama
+- Automated Testing menggunakan `Playwright` sebagai fondasi pengujian End-to-End (E2E)
 
 ## Fitur Per Area
 
@@ -44,6 +49,8 @@ Aplikasi Kasir adalah aplikasi Point of Sale (POS) full-stack untuk operasional 
 - Kelola Data Kewajiban/liabilitas, termasuk pembayaran kewajiban
 - Kelola Neraca berbasis aset, liabilitas, dan ekuitas
 - Akses dashboard Business Intelligence
+- Menambahkan Permission antar role(RBAC)
+- Menambahkan Cabang baru
 
 ### Admin
 

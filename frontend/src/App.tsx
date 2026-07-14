@@ -5,6 +5,7 @@ import { initializeSocket } from './utils/socket';
 import { API_URL } from "./config/api";
 import { getStoredToken, getStoredAuth } from "./auth/storage";
 import { useAuth } from './auth/hooks/useAuth';
+import { resolveBarangFetchMode } from './utils/barangFetchConfig';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
@@ -46,16 +47,44 @@ function App() {
         ''
       )?.toLowerCase();
 
-      const allowedRoles = ['admin', 'super-admin', 'super_admin', 'manajer', 'manager', 'kasir', 'chef'];
+      const mode = resolveBarangFetchMode({ token, roleCode });
 
       // Avoid re-fetching repeatedly for the same role if it previously errored
       if (fetchErroredRef.current && lastFetchRoleRef.current === roleCode) {
         return;
       }
 
-      if (!token || !roleCode || !allowedRoles.includes(roleCode)) {
-        // Clear data if not allowed or not authenticated
-        setDataBarang([]);
+      if (mode === 'public') {
+        const res = await fetch(`${STOK_BARANG_URL}?includePending=false`, {
+          headers: {
+            ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data: BarangAPI[] = await res.json();
+        const mapped: Barang[] = data.map((item) => ({
+          _id: item._id,
+          kode: item.kode_barang,
+          nama: item.nama_barang,
+          kategori: item.kategori,
+          hargaBeli: item.harga_beli,
+          hargaJual: item.harga_jual,
+          hargaFinal: item.hargaFinal,
+          stok: item.stok,
+          stok_awal: item.stok_awal,
+          stokMinimal: item.stok_minimal || 5,
+          gambarUrl: item.gambar_url,
+          status: item.stok <= 0 ? "habis" : item.stok <= (item.stok_minimal || 5) ? "hampir habis" : "aman",
+          statusBarang: item.status || "pending"
+        }));
+
+        fetchErroredRef.current = false;
+        lastFetchRoleRef.current = roleCode;
+        setDataBarang(mapped);
         return;
       }
 

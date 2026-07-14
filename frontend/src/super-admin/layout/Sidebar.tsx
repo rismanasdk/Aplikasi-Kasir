@@ -15,6 +15,8 @@ import {
   FileSpreadsheet,
   ChartNoAxesCombined,
   Package,
+  Store,
+  UserRoundKey,
   ChartColumnBig
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
@@ -166,9 +168,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: <CogIcon size={20} />,
     },
     {
+      name: 'Cabang Restoran',
+      path: '/super-admin/cabang',
+      icon: <Store size={20} />,
+    },
+    {
       name: 'User Management',
       icon: <Users size={20} />,
       path: '/super-admin/users',
+    },
+    {
+      name: 'Permission User',
+      icon: <UserRoundKey size={20} />,
+      path: '/super-admin/permissions',
     },
     {
       name: 'Konfigurasi',

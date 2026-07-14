@@ -41,7 +41,10 @@ const userSchema = new Schema({
   branch_id: {
     type: Schema.Types.ObjectId,
     ref: "Branch",
-    required: true,
+    default: null,
+    required: function () {
+      return String(this.role).toLowerCase() !== "user";
+    },
   },
 
   profilePicture: { type: String },

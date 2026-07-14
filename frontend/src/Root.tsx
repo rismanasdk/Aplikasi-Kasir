@@ -29,7 +29,7 @@ const Root: React.FC = () => {
         const roleCode = storedAuth?.role?.code || storedAuth?.user?.role;
         const normalizedRole = roleCode?.toLowerCase();
         const isSuperAdmin = normalizedRole === "super-admin" || normalizedRole === "super_admin";
-        const isManager = normalizedRole === "manajer" || normalizedRole === "manager";
+        const isManager = normalizedRole === "manajer" || normalizedRole === "manager" || normalizedRole === "meneger";
 
         if (!isSuperAdmin && !isManager) {
           document.title = fallbackTitle;

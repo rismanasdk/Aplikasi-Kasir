@@ -18,6 +18,7 @@ router.put(
 
 router.put("/user/:id", userMiddleware, updateUser)
 router.get("/", userMiddleware, getUserProfilePicture);
-
+router.get("", userMiddleware, getUserProfilePicture);
+router.get("/me", userMiddleware, getUserProfilePicture);
 
 export default router;

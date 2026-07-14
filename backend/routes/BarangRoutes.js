@@ -18,7 +18,7 @@ const router = express.Router();
 // Middleware untuk handle FormData pada PUT request
 const handleFormData = upload.any();
 
-router.get("/", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), getAllBarang);
+router.get("/", getAllBarang);
 router.post("/", verifyToken, requirePermission(PERMISSIONS.PRODUCT_CREATE), upload.single("gambar"), createBarang);
 router.put("/:id", verifyToken, requirePermission(PERMISSIONS.PRODUCT_UPDATE), handleFormData, updateBarang);
 router.post("/:id/update", verifyToken, requirePermission(PERMISSIONS.PRODUCT_UPDATE), handleFormData, updateBarang);

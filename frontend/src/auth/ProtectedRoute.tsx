@@ -5,11 +5,16 @@ import NotFound from '../auth/notif/404notfound';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'super-admin' | 'manajer' | 'kasir' | 'user' | 'chef' | 'security')[];
+  allowedRoles?: string[];
   requireAuth?: boolean;
 }
 
-const normalizeRoleCode = (roleCode?: string | null): string => (roleCode || '').toLowerCase();
+const normalizeRoleCode = (roleCode?: string | null): string => {
+  const normalized = (roleCode || '').toLowerCase();
+  if (normalized === 'super_admin') return 'super-admin';
+  if (normalized === 'manager') return 'manajer';
+  return normalized;
+};
 
 const resolveDashboardPath = (roleCode?: string | null): string | null => {
   const normalized = normalizeRoleCode(roleCode);

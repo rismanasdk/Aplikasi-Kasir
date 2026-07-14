@@ -657,8 +657,9 @@ export const publishBarang = async (req, res) => {
       return res.status(404).json({ message: "Barang pending tidak ditemukan" });
     }
 
-    // Update status barang menjadi active
-    barangPending.status = 'active';
+    // Update status barang menjadi publish dan pastikan field publish tetap konsisten
+    barangPending.status = 'publish';
+    barangPending.status_publish = 'publish';
     barangPending.updatedAt = new Date();
     await barangPending.save();
 

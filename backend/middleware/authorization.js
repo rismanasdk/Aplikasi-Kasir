@@ -4,6 +4,16 @@ import Branch from "../models/branch.js";
 import { PERMISSIONS, PERMISSION_LIST } from "../../shared/permissionRegistry.js";
 
 const normalizePermission = (value) => String(value || "").trim();
+const LEGACY_ROLE_TO_RBAC_CODE = {
+  "super-admin": "super_admin",
+  super_admin: "super_admin",
+  admin: "admin",
+  manajer: "manager",
+  manager: "manager",
+  kasir: "kasir",
+  chef: "chef",
+  security: "security",
+};
 
 const getUserAuthorizationContext = async (user) => {
   if (!user || !user.id) {
@@ -18,7 +28,17 @@ const getUserAuthorizationContext = async (user) => {
     return null;
   }
 
-  const role = dbUser.role_id || null;
+  let role = dbUser.role_id || null;
+  if (!role && dbUser.role) {
+    const roleCode = LEGACY_ROLE_TO_RBAC_CODE[String(dbUser.role).toLowerCase()];
+    role = roleCode ? await Role.findOne({ code: roleCode }) : null;
+
+    if (role?._id) {
+      dbUser.role_id = role._id;
+      await User.updateOne({ _id: dbUser._id }, { $set: { role_id: role._id } });
+    }
+  }
+
   const permissions = (role?.permissions || []).map((permission) => {
     if (typeof permission === "string") {
       return permission;

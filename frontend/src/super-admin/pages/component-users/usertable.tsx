@@ -9,6 +9,7 @@ interface User {
   username?: string;
   role: string;
   status: string;
+  cabang?: string;
   umur?: number;
   alamat?: string;
   password?: string;
@@ -24,6 +25,8 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete }) => {
   // Fungsi untuk mendapatkan kelas warna berdasarkan role
   const getRoleClass = (role: string) => {
     switch (role) {
+      case 'super-admin':
+        return 'bg-black text-white';
       case 'admin':
         return 'bg-purple-100 text-purple-800';
       case 'manajer':
@@ -45,10 +48,11 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete }) => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cabang</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
             </tr>
           </thead>
@@ -77,6 +81,11 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete }) => {
                       user.status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
                       {user.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleClass(user.role)}`}>
+                      {user.cabang || '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
