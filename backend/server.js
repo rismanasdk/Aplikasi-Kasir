@@ -75,6 +75,7 @@ const configuredOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL |
 
 // Regex untuk match local network IPs lebih fleksibel
 const isLocalNetworkOrigin = (origin) => {
+  console.log("Origin Log:", origin);
   if (!origin) return true;
   
   // Check direct match
