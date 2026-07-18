@@ -70,19 +70,25 @@ const port = process.env.PORT || 5000;
 // Parse allowed origins dari environment atau gunakan default
 const configuredOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
-
+  console.log("Configured Origins:", configuredOrigins);
+  console.log("Origin:", origin);
+  console.log("Includes?", configuredOrigins.includes(origin));
 // Regex untuk match local network IPs lebih fleksibel
 const isLocalNetworkOrigin = (origin) => {
-  console.log("Origin Log:", origin);
   if (!origin) return true;
-  
-  // Check direct match
-  if (configuredOrigins.includes(origin)) return true;
-  
-  // Match any local/private IP
-  return /^https?:\/\/(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(origin);
+
+  const normalizedOrigin = origin.replace(/\/$/, "");
+
+  console.log("Configured:", configuredOrigins);
+  console.log("Incoming:", normalizedOrigin);
+
+  if (configuredOrigins.includes(normalizedOrigin)) {
+    return true;
+  }
+
+  return /^https?:\/\/(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(normalizedOrigin);
 };
 
 const corsOptions = {
