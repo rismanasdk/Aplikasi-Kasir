@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 import Role from "../models/role.js";
-import { PERMISSIONS, PERMISSION_LIST } from "../../shared/permissionRegistry.js";
+import { PERMISSIONS, PERMISSION_LIST } from "../shared/permissionRegistry.js";
 
 const normalizePermission = (value) => String(value || "").trim();
 

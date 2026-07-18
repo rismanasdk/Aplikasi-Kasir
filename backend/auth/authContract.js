@@ -1,4 +1,4 @@
-import { PERMISSIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "./../shared/permissionRegistry.js";
 
 export const buildAuthMePayload = (user, role, branch) => {
   const permissions = (role?.permissions || [])

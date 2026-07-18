@@ -3,7 +3,7 @@ import Transaksi from "../../models/datatransaksi.js";
 import Barang from "../../models/databarang.js"; 
 import db from "../../config/firebaseAdmin.js";
 import { io } from "../../server.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 

@@ -1,7 +1,7 @@
 import express from "express";
 import { addTransaksiToHpp, getHppHarian, getHppSummary, resetMonthlyBeban } from "../../controllers/admin/hpptotalcontroller.js";
 import { requirePermission } from "../../middleware/authorization.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 
 const router = express.Router();
 

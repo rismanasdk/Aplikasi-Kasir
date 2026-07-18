@@ -1,6 +1,6 @@
 import Transaksi from "./../../models/datatransaksi.js";
 import mongoose from "mongoose";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const getAllTransaksi = async (req, res) => {

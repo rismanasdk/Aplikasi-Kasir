@@ -1,7 +1,7 @@
 import Settings from "../../../models/settings.js";
 import cloudinary from "../../../config/cloudinary.js";
 import streamifier from "streamifier";
-import { PERMISSIONS } from "../../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
 
 
 export const updateDefaultProfilePicture = async (req, res) => {

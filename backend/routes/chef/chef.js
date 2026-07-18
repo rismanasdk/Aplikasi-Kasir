@@ -8,7 +8,7 @@ import {
 } from "../../controllers/chef/chefcontroller.js";
 import { requirePermission } from "../../middleware/authorization.js";
 import verifyToken from "../../middleware/verifyToken.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import Transaksi from "./../../models/datatransaksi.js";
 import { io } from "./../../server.js";
 import { processCompletedTransaction } from "./helpers/transactionLifecycleHelper.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const updateStatusTransaksi = async (req, res) => {

@@ -4,7 +4,7 @@ import Branch from "../models/branch.js";
 import Permission from "../models/permission.js";
 import Role from "../models/role.js";
 import User from "../models/user.js";
-import { PERMISSION_DEFINITIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSION_DEFINITIONS } from "./../shared/permissionRegistry.js";
 
 dotenv.config();
 

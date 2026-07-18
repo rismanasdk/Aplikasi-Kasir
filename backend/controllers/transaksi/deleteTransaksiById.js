@@ -1,5 +1,5 @@
 import Transaksi from "../../models/datatransaksi.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
 export const deleteTransaksiById = async (req, res) => {

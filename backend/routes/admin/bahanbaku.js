@@ -8,7 +8,7 @@ import {
   updateBahanBakuStatus,
 } from "../../controllers/admin/bahanbakumanager.js";
 import { requirePermission } from "../../middleware/authorization.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import verifyToken from "../../middleware/verifyToken.js";
 
 const router = express.Router();

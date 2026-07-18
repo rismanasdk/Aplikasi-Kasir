@@ -58,7 +58,7 @@ import { debugTokenLogger } from "./middleware/debugTokenLogger.js";
 import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
 import { requireAuth, requirePermission } from "./middleware/authorization.js";
-import { PERMISSIONS } from "../shared/permissionRegistry.js";
+import { PERMISSIONS } from "./shared/permissionRegistry.js";
 import { syncPermissionsFromRegistry } from "./utils/permissionUtils.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import BlockedIP from "./models/blockedIP.js";
