@@ -1,0 +1,1 @@
+export { getAllRoles } from "../admin/setpermissioncontroller.js";

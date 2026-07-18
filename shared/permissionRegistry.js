@@ -265,6 +265,13 @@ export const PERMISSION_DEFINITIONS = Object.freeze([
     modul: "security",
     deskripsi: "Dapat mengelola keamanan",
   },
+  {
+    key: "TESTING.VIEW",
+    code: "testing.view",
+    nama: "Testing",
+    modul: "testing",
+    deskripsi: "testing",
+  }
 ]);
 
 export const PERMISSIONS = Object.freeze(

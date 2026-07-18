@@ -18,7 +18,15 @@ const permissionSchema = new Schema({
   },
   modul: {
     type: String,
+    trim: true,
     // e.g., "dashboard", "transaction", "product", "report", "branch", "role"
+  },
+  mode: {
+    type: String,
+    enum: ["active", "deprecated", "hidden"],
+    default: "active",
+    lowercase: true,
+    trim: true,
   },
   created_at: {
     type: Date,

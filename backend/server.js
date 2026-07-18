@@ -42,6 +42,7 @@ import superAdminProductsRoutes from "./routes/super-admin/products.js";
 import superAdminKategoriRouter from "./routes/super-admin/kategori.js";
 import superAdminBranchRouter from "./routes/super-admin/branch.js"
 import superAdminPermissionRouter from "./routes/super-admin/permission.js"
+import superAdminSetRolesRouter from "./routes/super-admin/setroles.js"
 import chefRoutes from "./routes/chef/chef.js";
 import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
@@ -58,6 +59,7 @@ import verifyToken from "./middleware/verifyToken.js";
 import authorize from "./middleware/authorize.js";
 import { requireAuth, requirePermission } from "./middleware/authorization.js";
 import { PERMISSIONS } from "../shared/permissionRegistry.js";
+import { syncPermissionsFromRegistry } from "./utils/permissionUtils.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import BlockedIP from "./models/blockedIP.js";
 import aiBiRoutes from "./routes/aiBiRoutes.js";
@@ -313,6 +315,7 @@ app.use("/api/super-admin/stok-barang", verifyToken, requirePermission(PERMISSIO
 app.use("/api/super-admin/kategori", verifyToken, requirePermission(PERMISSIONS.PRODUCT_READ), superAdminKategoriRouter);
 app.use("/api/super-admin/cabang", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), superAdminBranchRouter)
 app.use("/api/super-admin/permission", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), superAdminPermissionRouter)
+app.use("/api/super-admin/setroles", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), superAdminSetRolesRouter)
 
 // chef
 app.use("/api/chef", chefRoutes);
@@ -383,6 +386,16 @@ setInterval(performAutoUnblock, 1 * 60 * 1000); // Every 1 minute
 
 const startServer = async () => {
   await connectDB();
+
+  try {
+    const result = await syncPermissionsFromRegistry();
+    console.log(
+      `Permission registry sync complete: ${result.synced} definitions synced, ${result.hidden} removed/hidden permissions.`
+    );
+  } catch (error) {
+    console.error("Permission registry sync gagal:", error);
+    process.exit(1);
+  }
 
   httpServer.listen(port, "0.0.0.0", () => {
     console.log(`Server running at http://0.0.0.0:${port}`);
