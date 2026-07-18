@@ -10,7 +10,7 @@ import {
 } from "../controllers/databarangControllers.js";
 import verifyToken from "../middleware/verifyToken.js";
 import { requirePermission } from "../middleware/authorization.js";
-import { PERMISSIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../shared/permissionRegistry.js";
 
 const upload = multer({ dest: "uploads/" });
 const router = express.Router();

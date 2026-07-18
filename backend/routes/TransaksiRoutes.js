@@ -12,7 +12,7 @@ import {
   getStatusTransaksiPublic,
   getAllTransaksiPublic,
 } from "../controllers/datatransaksiController.js";
-import { PERMISSIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../shared/permissionRegistry.js";
 import requirePermission from "../middleware/requirePermission.js";
 // import apiMiddleware from "../middleware/api.js";
 

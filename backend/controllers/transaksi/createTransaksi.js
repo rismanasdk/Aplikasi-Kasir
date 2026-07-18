@@ -10,7 +10,7 @@ import {
   reserveStockForItems,
   restoreStockForItems,
 } from "./helpers/transactionLifecycleHelper.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import { validateAndInjectBranch } from "../../utils/rbacHelper.js";
 
 export const createTransaksi = async (req, res) => {

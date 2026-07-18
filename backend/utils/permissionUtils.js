@@ -1,5 +1,5 @@
 import Permission from "../models/permission.js";
-import { PERMISSION_DEFINITIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSION_DEFINITIONS } from "./../shared/permissionRegistry.js";
 
 export const normalizePermissionCode = (value = "") => value.trim().toLowerCase();
 

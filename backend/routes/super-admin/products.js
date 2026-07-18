@@ -12,7 +12,7 @@ import {
 } from "../../controllers/super-admin/productscontroller.js";
 import { updateBarangStatus } from "../../controllers/databarangControllers.js";
 import { requirePermission } from "../../middleware/authorization.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import verifyToken from "../../middleware/verifyToken.js";
 
 const router = express.Router();

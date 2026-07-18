@@ -3,7 +3,7 @@
  * 
  * Gunakan fungsi-fungsi ini di controller untuk membangun query yang sesuai dengan branch user
  */
-import { PERMISSIONS } from "../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "./../shared/permissionRegistry.js";
 
 /**
  * Build query filter berdasarkan user role dan branch_id

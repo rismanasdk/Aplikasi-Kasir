@@ -1,7 +1,7 @@
 import express from "express";
 import verifyToken from "../../middleware/verifyToken.js";
 import { requirePermission } from "../../middleware/authorization.js";
-import { PERMISSIONS } from "../../../shared/permissionRegistry.js";
+import { PERMISSIONS } from "../../shared/permissionRegistry.js";
 import {
   getDailyCashFlow,
   getCashFlowRange,
