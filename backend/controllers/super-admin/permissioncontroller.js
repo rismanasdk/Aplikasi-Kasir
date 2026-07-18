@@ -1,7 +1,2 @@
-export {
-    getSemuaPermission,
-    getPermissionById,
-    tambahPermission,
-    editPermission,
-    hapusPermission
-} from "../admin/permissionusercontroller.js"
+export { getAllRoles } from "../admin/setpermissioncontroller.js";
+export { getSemuaPermission, getPermissionById } from "../admin/permissionusercontroller.js";

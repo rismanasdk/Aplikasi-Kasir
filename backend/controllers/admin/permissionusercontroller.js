@@ -1,10 +1,11 @@
 import Permission from "../../models/permission.js";
+import { buildPermissionPayload } from "../../utils/permissionUtils.js";
 
 // GET /api/super-admin/permission
 export const getSemuaPermission = async (req, res) => {
   try {
-    const { search, modul } = req.query;
-    const filter = {};
+    const { search, modul, mode } = req.query;
+    const filter = { mode: { $ne: "hidden" } };
 
     if (search) {
       filter.$or = [
@@ -15,6 +16,16 @@ export const getSemuaPermission = async (req, res) => {
     }
 
     if (modul) filter.modul = modul;
+    if (mode && typeof mode === "string") {
+      const normalizedMode = mode.trim().toLowerCase();
+      if (["active", "deprecated", "hidden"].includes(normalizedMode)) {
+        if (normalizedMode === "hidden") {
+          filter.mode = "hidden";
+        } else {
+          filter.mode = normalizedMode;
+        }
+      }
+    }
 
     const permissions = await Permission.find(filter).sort({ modul: 1, code: 1 });
 
@@ -50,7 +61,8 @@ export const getPermissionById = async (req, res) => {
 // POST /api/super-admin/permission
 export const tambahPermission = async (req, res) => {
   try {
-    const { code, nama, deskripsi, modul } = req.body;
+    const payload = buildPermissionPayload(req.body);
+    const { code, nama, deskripsi, modul } = payload;
 
     if (!code || code.trim() === "") {
       return res.status(400).json({ success: false, message: "Code permission wajib diisi" });
@@ -88,7 +100,8 @@ export const tambahPermission = async (req, res) => {
 export const editPermission = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, nama, deskripsi, modul } = req.body;
+    const payload = buildPermissionPayload(req.body);
+    const { code, nama, deskripsi, modul } = payload;
 
     const permission = await Permission.findById(id);
     if (!permission) {
