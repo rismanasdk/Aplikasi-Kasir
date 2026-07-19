@@ -52,8 +52,11 @@ export default function BeriSaranPage() {
     try {
       setIsSubmitting(true);
       const token = getStoredToken();
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20000);
       const response = await fetch(`${API_URL}/api/feedback`, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -63,6 +66,7 @@ export default function BeriSaranPage() {
           saran: saran.trim(),
         }),
       });
+      window.clearTimeout(timeoutId);
 
       const data = (await response.json().catch(() => ({}))) as FeedbackResponse;
 
@@ -73,7 +77,9 @@ export default function BeriSaranPage() {
       setMessage(data.message || "Saran berhasil dikirim.");
       setSaran("");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Gagal mengirim saran.";
+      const errorMessage = err instanceof DOMException && err.name === "AbortError"
+        ? "Pengiriman saran terlalu lama. Silakan coba lagi nanti."
+        : err instanceof Error ? err.message : "Gagal mengirim saran.";
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
