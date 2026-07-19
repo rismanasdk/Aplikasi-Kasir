@@ -65,24 +65,21 @@ import BlockedIP from "./models/blockedIP.js";
 import aiBiRoutes from "./routes/aiBiRoutes.js";
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT;
 
 // Parse allowed origins dari environment atau gunakan default
 const configuredOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
-  console.log("Configured Origins:", configuredOrigins);
-  console.log("Origin:", origin);
-  console.log("Includes?", configuredOrigins.includes(origin));
 // Regex untuk match local network IPs lebih fleksibel
 const isLocalNetworkOrigin = (origin) => {
   if (!origin) return true;
 
   const normalizedOrigin = origin.replace(/\/$/, "");
 
-  console.log("Configured:", configuredOrigins);
-  console.log("Incoming:", normalizedOrigin);
+  // console.log("Configured:", configuredOrigins); // For Debug
+  // console.log("Incoming:", normalizedOrigin); // For Debug
 
   if (configuredOrigins.includes(normalizedOrigin)) {
     return true;
@@ -288,7 +285,7 @@ app.use("/api/manager/stok-barang", verifyToken, requirePermission(PERMISSIONS.S
 app.use("/api/manager/laporan", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), laporanManagerRoutes);
 app.use("/api/manager/biaya-operasional", verifyToken, requirePermission(PERMISSIONS.REPORT_VIEW), biayaoperasional);
 app.use("/api/manager/settings", verifyToken, requirePermission(PERMISSIONS.BRANCH_VIEW), managerSettingsRoutes);
-app.use("/api/common", verifyToken, requireAuth, commonRoutes);
+app.use("/api/common", verifyToken, requirePermission(), commonRoutes);
 
 // admin
 app.use("/api/admin/dashboard", verifyToken, requirePermission(PERMISSIONS.DASHBOARD_VIEW), adminDashboardRoutes);

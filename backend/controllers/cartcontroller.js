@@ -4,7 +4,10 @@ import Barang from "../models/databarang.js";
 // Get cart user
 export const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ userId: req.user.id });
+    // prefer to match both userId and branch_id when available
+    const query = { userId: req.user.id };
+    if (req.user.branch_id) query.branch_id = req.user.branch_id;
+    const cart = await Cart.findOne(query);
     res.json(cart || { items: [] });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -19,9 +22,13 @@ export const addToCart = async (req, res) => {
     const barang = await Barang.findById(barangId);
     if (!barang) return res.status(404).json({ message: "Barang tidak ditemukan" });
 
-    let cart = await Cart.findOne({ userId: req.user.id });
+    // find existing cart for the user and branch (if branch set)
+    const findQuery = { userId: req.user.id };
+    if (req.user.branch_id) findQuery.branch_id = req.user.branch_id;
+
+    let cart = await Cart.findOne(findQuery);
     if (!cart) {
-      cart = new Cart({ userId: req.user.id, items: [] });
+      cart = new Cart({ userId: req.user.id, items: [], branch_id: req.user.branch_id || null });
     }
 
     const itemIndex = cart.items.findIndex(
@@ -47,7 +54,8 @@ export const addToCart = async (req, res) => {
 
     // kalau cart kosong setelah update -> hapus dokumen
     if (cart.items.length === 0) {
-      await Cart.deleteOne({ userId: req.user.id });
+      // delete only the specific cart document
+      await Cart.deleteOne({ _id: cart._id });
       return res.json({ message: "Keranjang dihapus karena kosong" });
     }
 
@@ -63,7 +71,9 @@ export const removeFromCart = async (req, res) => {
   try {
     const { barangId } = req.params;
 
-    const cart = await Cart.findOne({ userId: req.user.id });
+    const findQuery = { userId: req.user.id };
+    if (req.user.branch_id) findQuery.branch_id = req.user.branch_id;
+    const cart = await Cart.findOne(findQuery);
     if (!cart) return res.status(404).json({ message: "Keranjang kosong" });
 
     cart.items = cart.items.filter(
@@ -72,7 +82,7 @@ export const removeFromCart = async (req, res) => {
 
     // kalau udah kosong, hapus dokumen langsung
     if (cart.items.length === 0) {
-      await Cart.deleteOne({ userId: req.user.id });
+      await Cart.deleteOne({ _id: cart._id });
       return res.json({ message: "Keranjang dihapus karena kosong" });
     }
 
@@ -86,7 +96,9 @@ export const removeFromCart = async (req, res) => {
 // Clear cart
 export const clearCart = async (req, res) => {
   try {
-    await Cart.deleteOne({ userId: req.user.id });
+    const findQuery = { userId: req.user.id };
+    if (req.user.branch_id) findQuery.branch_id = req.user.branch_id;
+    await Cart.deleteOne(findQuery);
     res.json({ message: "Keranjang dikosongkan" });
   } catch (error) {
     res.status(500).json({ message: error.message });

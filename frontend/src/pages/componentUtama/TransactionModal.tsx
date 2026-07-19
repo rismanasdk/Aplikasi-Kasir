@@ -177,28 +177,37 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const isCashPayment = selectedMethod.toLowerCase() === 'tunai' || selectedMethod.toLowerCase() === 'va';
 
+  const fetchSettings = async (): Promise<SettingsResponse & SettingsReceipt> => {
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${API_URL}/api/common/settings`, { headers });
+
+    if (!res.ok) {
+      throw new Error(`Settings request failed with status ${res.status}`);
+    }
+
+    return res.json();
+  };
+
   // Fetch payment methods and receipt settings
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       try {
-        const token = getStoredToken();
-        
-        const res = await fetch(`${API_URL}/api/common/settings`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const data: SettingsResponse = await res.json();
+        const data = await fetchSettings();
+        console.log("Raw settings response:", data);
+        console.log("payment_methods:", data.payment_methods);
         
         if (data.kasir_aktif === false) {
           setKasirAktif(false);
         }
         
-        const activePaymentMethods = data.payment_methods.filter(method => method.isActive);
+        const activePaymentMethods = (data.payment_methods || []).filter(method => method.isActive);
         const methodsWithActiveChannels = activePaymentMethods.map(method => {
-          const activeChannels = method.channels.filter(channel => channel.isActive);
+          const activeChannels = (method.channels || []).filter(channel => channel.isActive);
           return { ...method, channels: activeChannels };
         });
         
@@ -215,14 +224,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     
     const fetchReceiptSettings = async () => {
       try {
-        const token = getStoredToken();
-        const headers: Record<string, string> = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
-        const res = await fetch(`${API_URL}/api/manager/settings`, { headers });
-        if (res.ok) {
-          const data: SettingsReceipt = await res.json();
-          setReceiptSettings(data);
-        }
+        const data = await fetchSettings();
+        setReceiptSettings(data);
       } catch (err) {
         console.error("Failed to fetch receipt settings:", err);
       }
@@ -344,29 +347,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     try {
       const parsed = storedKasir ? JSON.parse(storedKasir) : null;
       kasirId = parsed?._id || parsed?.id || null;
-      
-      // If no kasirId from localStorage, try to get from token
-      if (!kasirId) {
-        const token = getStoredToken();
-        if (token) {
-          // Token is usually JWT format, we can decode payload to get kasir ID
-          const base64Url = token.split('.')[1];
-          if (base64Url) {
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split('')
-                .map(function(c) {
-                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                })
-                .join('')
-            );
-            const payload = JSON.parse(jsonPayload);
-            kasirId = payload.kasir_id || payload._id || payload.id;
-          }
-        }
-      }
-      
+
       console.log("Kasir ID to be used:", kasirId);
     } catch (err) {
       console.error("Error getting kasir ID:", err);
@@ -380,7 +361,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       barang_dibeli: barangDibeli,
       total_harga: totalWithBiayaLayanan,
       metode_pembayaran: paymentMethod,
-      kasir_id: kasirId,
       status: "pending",
     };
 

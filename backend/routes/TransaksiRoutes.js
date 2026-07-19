@@ -13,7 +13,7 @@ import {
   getAllTransaksiPublic,
 } from "../controllers/datatransaksiController.js";
 import { PERMISSIONS } from "../shared/permissionRegistry.js";
-import requirePermission from "../middleware/requirePermission.js";
+import { requirePermission } from "../middleware/authorization.js";
 // import apiMiddleware from "../middleware/api.js";
 
 const router = express.Router();

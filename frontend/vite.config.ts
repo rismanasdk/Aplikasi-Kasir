@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // ip backend - gunakan IP lokal untuk network access
-const DEFAULT_BACKEND_HOST = process.env.VITE_BACKEND_HOST || process.env.VITE_NETWORK_IP || '192.168.0.9'
+const DEFAULT_BACKEND_HOST = process.env.VITE_BACKEND_HOST || process.env.VITE_NETWORK_IP || '192.168.0.9' 
 
 const normalizeAPITarget = (target?: string) => {
   if (!target) {

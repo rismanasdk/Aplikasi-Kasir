@@ -13,6 +13,83 @@ const LEGACY_ROLE_TO_RBAC_CODE = {
   kasir: "kasir",
   chef: "chef",
   security: "security",
+  user: "user",
+};
+
+const DEFAULT_ROLE_PERMISSIONS = {
+  super_admin: PERMISSION_LIST,
+  admin: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.DASHBOARD_EXPORT,
+    PERMISSIONS.TRANSACTION_CREATE,
+    PERMISSIONS.TRANSACTION_READ,
+    PERMISSIONS.TRANSACTION_UPDATE,
+    PERMISSIONS.TRANSACTION_DELETE,
+    PERMISSIONS.TRANSACTION_PRINT,
+    PERMISSIONS.PRODUCT_CREATE,
+    PERMISSIONS.PRODUCT_READ,
+    PERMISSIONS.PRODUCT_UPDATE,
+    PERMISSIONS.PRODUCT_DELETE,
+    PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.STOCK_ADJUST,
+    PERMISSIONS.STOCK_TRANSFER,
+    PERMISSIONS.REPORT_VIEW,
+    PERMISSIONS.REPORT_EXPORT,
+    PERMISSIONS.FORECAST_VIEW,
+    PERMISSIONS.FORECAST_GENERATE,
+    PERMISSIONS.BI_VIEW,
+    PERMISSIONS.BRANCH_VIEW,
+    PERMISSIONS.BRANCH_CREATE,
+    PERMISSIONS.BRANCH_UPDATE,
+    PERMISSIONS.BRANCH_DELETE,
+    PERMISSIONS.BRANCH_SWITCH,
+    PERMISSIONS.ROLE_VIEW,
+    PERMISSIONS.ROLE_CREATE,
+    PERMISSIONS.ROLE_UPDATE,
+    PERMISSIONS.ROLE_DELETE,
+    PERMISSIONS.USER_VIEW,
+    PERMISSIONS.USER_CREATE,
+    PERMISSIONS.USER_UPDATE,
+    PERMISSIONS.USER_DELETE,
+    PERMISSIONS.EMPLOYEE_MANAGE,
+    PERMISSIONS.SECURITY_VIEW,
+    PERMISSIONS.SECURITY_MANAGE,
+  ],
+  manager: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.DASHBOARD_EXPORT,
+    PERMISSIONS.TRANSACTION_READ,
+    PERMISSIONS.TRANSACTION_CREATE,
+    PERMISSIONS.PRODUCT_READ,
+    PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.STOCK_ADJUST,
+    PERMISSIONS.REPORT_VIEW,
+    PERMISSIONS.REPORT_EXPORT,
+    PERMISSIONS.FORECAST_VIEW,
+    PERMISSIONS.FORECAST_GENERATE,
+    PERMISSIONS.BI_VIEW,
+    PERMISSIONS.USER_VIEW,
+  ],
+  kasir: [
+    PERMISSIONS.TRANSACTION_READ,
+    PERMISSIONS.TRANSACTION_PRINT,
+    PERMISSIONS.PRODUCT_READ,
+    PERMISSIONS.STOCK_VIEW,
+  ],
+  chef: [
+    PERMISSIONS.TRANSACTION_READ,
+    PERMISSIONS.PRODUCT_READ,
+    PERMISSIONS.STOCK_VIEW,
+  ],
+  security: [
+    PERMISSIONS.SECURITY_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+  ],
+  user: [
+    PERMISSIONS.TRANSACTION_CREATE,
+    PERMISSIONS.TRANSACTION_READ,
+    PERMISSIONS.PRODUCT_READ,
+  ],
 };
 
 const getUserAuthorizationContext = async (user) => {
@@ -39,7 +116,7 @@ const getUserAuthorizationContext = async (user) => {
     }
   }
 
-  const permissions = (role?.permissions || []).map((permission) => {
+  let permissions = (role?.permissions || []).map((permission) => {
     if (typeof permission === "string") {
       return permission;
     }
@@ -49,10 +126,18 @@ const getUserAuthorizationContext = async (user) => {
     return "";
   }).filter(Boolean);
 
+  const roleCode = role?.code || LEGACY_ROLE_TO_RBAC_CODE[String(dbUser.role || "").toLowerCase()];
+  if (roleCode && DEFAULT_ROLE_PERMISSIONS[roleCode]) {
+    permissions = Array.from(new Set([
+      ...DEFAULT_ROLE_PERMISSIONS[roleCode],
+      ...permissions,
+    ]));
+  }
+
   return {
     userId: dbUser._id.toString(),
     roleId: role?._id?.toString() || null,
-    roleName: role?.nama || null,
+    roleName: role?.nama || dbUser.role || null,
     branchId: dbUser.branch_id?._id?.toString() || dbUser.branch_id?.toString() || null,
     branchName: dbUser.branch_id?.nama || null,
     permissions,
