@@ -46,6 +46,7 @@ import LoginSuccess from "./auth/components/LoginSuccess"; // Tambahkan import i
 
 // Profile
 import ProfilePage from "./pages/ProfileUsers/profile/index";
+import BeriSaranPage from "./pages/email/beri-saran";
 
 // Import tipe Barang
 import type { Barang } from "./admin/stok-barang";
@@ -91,6 +92,15 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
             element={
               <AuthGuard>
                 <ProfilePage />
+              </AuthGuard>
+            } 
+          />
+
+          <Route 
+            path="/email" 
+            element={
+              <AuthGuard>
+                <BeriSaranPage />
               </AuthGuard>
             } 
           />

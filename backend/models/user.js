@@ -14,6 +14,8 @@ const userSchema = new Schema({
     },
   },
 
+  email: { type:String, required:true, unique:true },
+
   // 🔹 Simpan ID user dari Google
   googleId: { type: String, default: null },
 
