@@ -6,7 +6,8 @@ import {
   FileText, 
   User, 
   LogOut, 
-  LogIn
+  LogIn,
+  Mail,
 } from 'lucide-react';
 import { API_URL } from '../../config/api';
 import { getStoredToken } from '../../auth/storage';
@@ -61,9 +62,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const { user, logout } = authContext;
   
   const menuItems: MenuItem[] = [
-        { id: 'dashboard', name: 'Dashboard', icon: <Home size={20} />, path: '/' },
+    { id: 'dashboard', name: 'Dashboard', icon: <Home size={20} />, path: '/' },
     { id: 'status-pesanan', name: 'Riwayat', icon: <FileText size={20} />, path: '/pesanan', authRequired: true },
     { id: 'profile', name: 'Profile', icon: <User size={20} />, path: '/profile', authRequired: true },
+    { id: 'Beri Saran', name: 'Beri Saran', icon: <Mail size={20} />, path: '/email', authRequired: true },
   ];
 
   const filteredMenuItems = menuItems.filter(item => {

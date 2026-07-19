@@ -47,6 +47,7 @@ import chefRoutes from "./routes/chef/chef.js";
 import kasirAnalyticsRoutes from "./routes/kasir/analyticsRoutes.js";
 import securityRoutes from "./routes/security/securityRoutes.js";
 import commonRoutes from "./routes/common.js";
+import feedbackRoutes from "./routes/feedback.js";
 import userAuth from "./middleware/user.js";
 import session from "express-session";
 import helmet from "helmet";
@@ -276,6 +277,7 @@ app.use("/api/update-profile", updateProfile);
 app.use("/api/users/history", userAuth, usersRoutes);
 app.use("/api/cart", cartRoutes)
 app.use("/api/kasir/analytics", kasirAnalyticsRoutes);
+app.use("/api/feedback", verifyToken, requirePermission(), feedbackRoutes);
 app.use("/auth", authRoutes);
 
 // manager
