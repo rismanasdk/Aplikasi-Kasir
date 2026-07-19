@@ -7,7 +7,8 @@ const cartSchema = new Schema({
   branch_id: {
     type: Schema.Types.ObjectId,
     ref: "Branch",
-    required: true,
+    required: false,
+    default: null,
   },
 
   items: [

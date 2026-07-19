@@ -25,11 +25,6 @@ export const createTransaksi = async (req, res) => {
       return res.status(403).json({ message: "Anda tidak diizinkan membuat transaksi" });
     }
 
-    const branchValidation = validateAndInjectBranch(req, true);
-    if (!branchValidation.isValid) {
-      return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
-    }
-
     const { barang_dibeli, metode_pembayaran, total_harga } = req.body;
     const grossAmount = Math.round(Number(total_harga));
 
@@ -67,11 +62,13 @@ export const createTransaksi = async (req, res) => {
     }
 
     // PINDAHKAN PENGECEKAN KASIR KE SINI (SEBELUM PENGURANGAN STOK)
+    const isCustomerUser = String(req.user.role || "").toLowerCase() === "user";
+    let kasirData = null;
     let kasirUsername = req.body.kasir_username || req.body.kasir_id;
     if (!kasirUsername) {
       try {
-        const kasirTerpilih = await pilihKasirRoundRobin();
-        kasirUsername = kasirTerpilih?.username || "kasir_default";
+        kasirData = await pilihKasirRoundRobin();
+        kasirUsername = kasirData?.username || "kasir_default";
       } catch (error) {
         // Jika tidak ada kasir aktif, kembalikan error tanpa mengurangi stok
         return res.status(400).json({ 
@@ -80,9 +77,22 @@ export const createTransaksi = async (req, res) => {
       }
     } else {
       // Query kasir by username (not by role name)
-      const kasirData = await User.findOne({ username: kasirUsername });
+      kasirData = await User.findOne({ username: kasirUsername });
       if (!kasirData) {
         return res.status(400).json({ message: `Kasir '${kasirUsername}' tidak ditemukan.` });
+      }
+    }
+
+    let branchId = req.user.branch_id;
+    if (isCustomerUser) {
+      branchId = kasirData?.branch_id;
+      if (!branchId) {
+        return res.status(400).json({ message: "Kasir aktif belum memiliki branch" });
+      }
+    } else {
+      const branchValidation = validateAndInjectBranch(req, true);
+      if (!branchValidation.isValid) {
+        return res.status(403).json({ message: branchValidation.error || "Branch tidak valid" });
       }
     }
 
@@ -124,7 +134,7 @@ export const createTransaksi = async (req, res) => {
 
     const transaksi = new Transaksi({
       ...req.body,
-      branch_id: req.user.branch_id,
+      branch_id: branchId,
       barang_dibeli: barangFinal,
       order_id: nomorTransaksi,
       nomor_transaksi: nomorTransaksi,

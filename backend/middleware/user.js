@@ -17,25 +17,42 @@ const userAuth = (req, res, next) => {
       return res.status(403).json({ message: "Invalid token" });
     }
 
-    // If token contains username, use it. Otherwise look up from DB by id.
-    const setUser = (username) => {
-      req.user = {
-        id: decoded.id,
-        role: decoded.role,
-        username: username || null,
-      };
-      next();
+    // Accept multiple token shapes: { id } (google) or { user_id } (legacy)
+    const tokenUserId = decoded.id || decoded.user_id || decoded.sub;
+    const tokenUsername = decoded.username || decoded.email || null;
+
+    const baseUser = {
+      id: tokenUserId,
+      role: decoded.role || null,
+      username: tokenUsername,
+      branch_id: decoded.branch_id || null,
+      permissions: Array.isArray(decoded.permissions) ? decoded.permissions : [],
     };
 
-    if (decoded.username) {
-      setUser(decoded.username);
-    } else {
-      User.findById(decoded.id).then(user => {
-        setUser(user ? user.username : null);
+    if (baseUser.id) {
+      // try to enrich from DB when possible
+      User.findById(baseUser.id).then(user => {
+        if (user) {
+          req.user = {
+            id: user._id,
+            role: decoded.role || user.role || null,
+            username: user.username || baseUser.username || null,
+            branch_id: user.branch_id || baseUser.branch_id || null,
+            permissions: user.permissions || baseUser.permissions || [],
+          };
+        } else {
+          req.user = baseUser;
+        }
+        next();
       }).catch(e => {
-        console.warn('userAuth: failed lookup user for username fallback', e.message);
-        setUser(null);
+        console.warn('userAuth: failed lookup user for enrichment', e.message);
+        req.user = baseUser;
+        next();
       });
+    } else {
+      // no id in token — still set whatever we can from token
+      req.user = baseUser;
+      next();
     }
   });
 };
