@@ -4,6 +4,7 @@ import LoadingSpinner from "../../../components/LoadingSpinner";
 import { SweetAlert } from "../../../components/SweetAlert";
 import { Calendar, DollarSign, FileText, Plus, Trash2, Search } from "lucide-react";
 import { getStoredToken } from "../../../auth/storage";
+import { formatNumber, parseInputNumber } from "../../utils/formatRupiah";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 interface Kategori { _id: string; nama: string; isActive: boolean }
@@ -59,6 +60,12 @@ const InputBiaya: React.FC = () => {
     if (!kategoriId) return '';
     if (typeof kategoriId === 'string') return kategoriId;
     return kategoriId._id || '';
+  };
+
+  const isCurrentMonth = (dateValue: string): boolean => {
+    const date = new Date(dateValue);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
   };
 
   const fetchCategories = useCallback(async () => {
@@ -151,7 +158,8 @@ const InputBiaya: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const total = filteredHistory.reduce((sum, item) => sum + item.jumlah, 0);
+  const currentMonthHistory = filteredHistory.filter(item => isCurrentMonth(item.tanggal));
+  const totalBulanIni = currentMonthHistory.reduce((sum, item) => sum + item.jumlah, 0);
 
   if (loading) return <div className="p-6"><LoadingSpinner /></div>;
 
@@ -183,9 +191,9 @@ const InputBiaya: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp)</label>
               <div className="relative">
                 <input
-                  type="number"
-                  value={jumlah}
-                  onChange={e => setJumlah(Number(e.target.value))}
+                  type="text"
+                  value={formatNumber(jumlah)}
+                  onChange={e => setJumlah(parseInputNumber(e))}
                   className="mt-1 w-full p-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="0"
                 />
@@ -342,8 +350,11 @@ const InputBiaya: React.FC = () => {
                 <div className="text-sm text-gray-500">
                   Menampilkan {filteredHistory.length} dari {history.length} pengeluaran
                 </div>
-                <div className="text-lg font-semibold text-gray-900">
-                  Total: Rp {total.toLocaleString('id-ID')}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500">Total bulan ini</div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    Rp {totalBulanIni.toLocaleString('id-ID')}
+                  </div>
                 </div>
               </div>
             </div>

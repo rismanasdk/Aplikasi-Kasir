@@ -8,9 +8,19 @@ export const getDashboardOmzet = async (req, res) => {
   try {
     const now = new Date();
 
+    const getRangeTotal = (transactions, start, end) => transactions
+      .filter(t => t.tanggal_transaksi >= start && t.tanggal_transaksi <= end)
+      .reduce((sum, t) => sum + (Number(t.total_harga) || 0), 0);
+
     // Range hari ini
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    // Range kemarin
+    const startOfYesterday = new Date(startOfDay);
+    startOfYesterday.setDate(startOfDay.getDate() - 1);
+    const endOfYesterday = new Date(endOfDay);
+    endOfYesterday.setDate(endOfDay.getDate() - 1);
 
     // Range minggu ini (Senin - Minggu)
     const day = now.getDay(); // Minggu = 0, Senin = 1, dst.
@@ -22,36 +32,50 @@ export const getDashboardOmzet = async (req, res) => {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
+    // Range minggu lalu
+    const startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+    const endOfLastWeek = new Date(endOfWeek);
+    endOfLastWeek.setDate(endOfWeek.getDate() - 7);
+
     // Range bulan ini
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    // Range bulan lalu
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
     // Range tahun ini (1 Januari - 31 Desember)
     const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
+    // Range tahun lalu
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
     const branchFilter = buildBranchFilter(req.user);
     const trx = await Transaksi.find({ status: "selesai", ...branchFilter });
 
-    const omzetHarian = trx
-      .filter(t => t.tanggal_transaksi >= startOfDay && t.tanggal_transaksi <= endOfDay)
-      .reduce((sum, t) => sum + t.total_harga, 0);
-    const omzetMingguan = trx
-      .filter(t => t.tanggal_transaksi >= startOfWeek && t.tanggal_transaksi <= endOfWeek)
-      .reduce((sum, t) => sum + t.total_harga, 0);
-    const omzetBulanan = trx
-      .filter(t => t.tanggal_transaksi >= startOfMonth && t.tanggal_transaksi <= endOfMonth)
-      .reduce((sum, t) => sum + t.total_harga, 0);
-    const omzetTahunan = trx
-      .filter(t => t.tanggal_transaksi >= startOfYear && t.tanggal_transaksi <= endOfYear)
-      .reduce((sum, t) => sum + t.total_harga, 0);
+    const omzetHarian = getRangeTotal(trx, startOfDay, endOfDay);
+    const omzetKemarin = getRangeTotal(trx, startOfYesterday, endOfYesterday);
+    const omzetMingguan = getRangeTotal(trx, startOfWeek, endOfWeek);
+    const omzetMingguLalu = getRangeTotal(trx, startOfLastWeek, endOfLastWeek);
+    const omzetBulanan = getRangeTotal(trx, startOfMonth, endOfMonth);
+    const omzetBulanLalu = getRangeTotal(trx, startOfLastMonth, endOfLastMonth);
+    const omzetTahunan = getRangeTotal(trx, startOfYear, endOfYear);
+    const omzetTahunLalu = getRangeTotal(trx, startOfLastYear, endOfLastYear);
 
     res.json({
       omzet: {
         hari_ini: omzetHarian,
+        kemarin: omzetKemarin,
         minggu_ini: omzetMingguan,
+        minggu_lalu: omzetMingguLalu,
         bulan_ini: omzetBulanan,
-        tahun_ini: omzetTahunan
+        bulan_lalu: omzetBulanLalu,
+        tahun_ini: omzetTahunan,
+        tahun_lalu: omzetTahunLalu
       }
     });
   } catch (error) {

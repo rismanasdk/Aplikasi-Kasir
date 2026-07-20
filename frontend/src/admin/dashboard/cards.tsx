@@ -3,8 +3,13 @@ import React from 'react';
 
 interface OmzetData {
   hari_ini: number;
+  kemarin?: number;
   minggu_ini: number;
+  minggu_lalu?: number;
   bulan_ini: number;
+  bulan_lalu?: number;
+  tahun_ini?: number;
+  tahun_lalu?: number;
   detail_hari: {
     tanggal: string;
     omzet: number;
@@ -50,10 +55,10 @@ const OmzetCards: React.FC<OmzetCardsProps> = ({ omzetData, formatRupiah }) => {
   };
 
   const yesterdayOmzet = getYesterdayOmzet();
-  const lastWeekOmzet = getLastWeekOmzet();
-  const lastMonthOmzet = getLastMonthOmzet();
+  const lastWeekOmzet = omzetData?.minggu_lalu ?? getLastWeekOmzet();
+  const lastMonthOmzet = omzetData?.bulan_lalu ?? getLastMonthOmzet();
 
-  const dayChange = calculateChange(omzetData?.hari_ini || 0, yesterdayOmzet);
+  const dayChange = calculateChange(omzetData?.hari_ini || 0, omzetData?.kemarin ?? yesterdayOmzet);
   const weekChange = calculateChange(omzetData?.minggu_ini || 0, lastWeekOmzet);
   const monthChange = calculateChange(omzetData?.bulan_ini || 0, lastMonthOmzet);
 

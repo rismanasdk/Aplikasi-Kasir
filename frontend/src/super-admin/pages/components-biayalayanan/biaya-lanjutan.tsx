@@ -1,5 +1,6 @@
 // src/admin/biaya/biaya-layanan/components/biaya-lanjutan.tsx
 import React from 'react';
+import { formatRupiahRP } from '../../utils/formatRupiah'
 
 interface BiayaLanjutanProps {
   taxRate: number;
@@ -141,9 +142,9 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
             </label>
             <div className="relative">
               <input
-                type="number"
+                type="text"
                 name="kasWarning"
-                value={kasWarning}
+                value={formatRupiahRP(kasWarning)}
                 onChange={onInputChange}
                 min="0"
                 max="100"
@@ -161,9 +162,9 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
             </label>
             <div className="relative">
               <input
-                type="number"
+                type="text"
                 name="targetOmzetBulanan"
-                value={targetOmzetBulanan}
+                value={formatRupiahRP(targetOmzetBulanan)}
                 onChange={onInputChange}
                 min="0"
                 max="100"

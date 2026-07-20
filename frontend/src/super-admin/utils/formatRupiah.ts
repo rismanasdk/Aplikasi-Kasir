@@ -22,3 +22,9 @@ export const formatNumber = (value: number | string): string => {
   const angka = typeof value === 'string' ? parseFloat(value) || 0 : value;
   return new Intl.NumberFormat('id-ID').format(angka);
 };
+
+// ambil angka bersih dari event input
+export const parseInputNumber = (e: React.ChangeEvent<HTMLInputElement>): number => {
+  const raw = e.target.value.replace(/\D/g, '');
+  return raw === '' ? 0 : Number(raw);
+};
