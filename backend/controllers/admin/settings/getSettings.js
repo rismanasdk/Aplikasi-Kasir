@@ -26,10 +26,10 @@ const findPaymentMethodSettings = async () => {
 export const getSettings = async (req, res) => {
   try {
     const filter = buildBranchFilter(req.user);
-    console.log("User:", req.user?.role, req.user?.branch_id);
-    console.log("Filter used:", filter);
+    // console.log("User:", req.user?.role, req.user?.branch_id);
+    // console.log("Filter used:", filter);
     let settings = await Settings.findOne(filter);
-    console.log("Settings found _id:", settings?._id, "payment_methods count:", settings?.payment_methods?.length);
+    // console.log("Settings found _id:", settings?._id, "payment_methods count:", settings?.payment_methods?.length);
     if (!settings) {
       settings = await Settings.create({ branch_id: req.user?.branch_id });
     }

@@ -14,18 +14,26 @@ import { getSocket } from '../../utils/socket';
 interface ApiOmzetResponse {
   omzet: {
     hari_ini: number;
+    kemarin?: number;
     minggu_ini: number;
+    minggu_lalu?: number;
     bulan_ini: number;
+    bulan_lalu?: number;
     tahun_ini: number;
+    tahun_lalu?: number;
   };
 }
 
 // Interface untuk data omzet — HARUS SAMA dengan cards.tsx & chart.tsx
 interface OmzetData {
   hari_ini: number;
+  kemarin?: number;
   minggu_ini: number;
+  minggu_lalu?: number;
   bulan_ini: number;
+  bulan_lalu?: number;
   tahun_ini: number;
+  tahun_lalu?: number;
   detail_hari: {
     tanggal: string;
     omzet: number;
@@ -78,9 +86,13 @@ const OmzetPage: React.FC = () => {
 
       const processedData: OmzetData = {
         hari_ini: data.omzet.hari_ini || 0,
+        kemarin: data.omzet.kemarin || 0,
         minggu_ini: data.omzet.minggu_ini || 0,
+        minggu_lalu: data.omzet.minggu_lalu || 0,
         bulan_ini: data.omzet.bulan_ini || 0,
+        bulan_lalu: data.omzet.bulan_lalu || 0,
         tahun_ini: data.omzet.tahun_ini || 0,   // ✅ jangan lupa tahun_ini!
+        tahun_lalu: data.omzet.tahun_lalu || 0,
         detail_hari: [],
         detail_minggu: [],
         detail_bulan: [],

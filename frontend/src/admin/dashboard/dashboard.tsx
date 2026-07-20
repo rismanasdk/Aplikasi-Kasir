@@ -14,16 +14,26 @@ import { getStoredToken } from './../../auth/storage';
   interface ApiOmzetResponse {
     omzet: {
       hari_ini: number;
+      kemarin?: number;
       minggu_ini: number;
+      minggu_lalu?: number;
       bulan_ini: number;
+      bulan_lalu?: number;
+      tahun_ini?: number;
+      tahun_lalu?: number;
     };
   }
 
 // Interface untuk data omzet
 interface OmzetData {
   hari_ini: number;
+  kemarin?: number;
   minggu_ini: number;
+  minggu_lalu?: number;
   bulan_ini: number;
+  bulan_lalu?: number;
+  tahun_ini?: number;
+  tahun_lalu?: number;
   // Tambahkan data detail untuk chart dan tabel
   detail_hari: {
     tanggal: string;
@@ -72,8 +82,13 @@ const OmzetPage: React.FC = () => {
       // Map respons menjadi format OmzetData yang dipakai komponen
       const processedData: OmzetData = {
         hari_ini: data.omzet.hari_ini || 0,
+        kemarin: data.omzet.kemarin || 0,
         minggu_ini: data.omzet.minggu_ini || 0,
+        minggu_lalu: data.omzet.minggu_lalu || 0,
         bulan_ini: data.omzet.bulan_ini || 0,
+        bulan_lalu: data.omzet.bulan_lalu || 0,
+        tahun_ini: data.omzet.tahun_ini || 0,
+        tahun_lalu: data.omzet.tahun_lalu || 0,
         detail_hari: [],
         detail_minggu: [],
         detail_bulan: []

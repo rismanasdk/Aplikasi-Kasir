@@ -86,10 +86,15 @@ export const getRingkasanPenjualan = async (req, res) => {
     const endDate = new Date(String(end) + 'T23:59:59.999Z');
 
     // Pipeline menggunakan $facet untuk efisiensi: pendapatan dan item-level agregasi
+    const branchFilter = buildBranchFilter(req.user);
+    const pengeluaranMatch = {
+      tanggal: { $gte: startDate, $lte: endDate },
+      ...branchFilter
+    };
     const transaksiMatch = {
       status: "selesai",
       tanggal_transaksi: { $gte: startDate, $lte: endDate },
-      ...buildBranchFilter(req.user)
+      ...branchFilter
     };
 
     const transaksiFacet = await Transaksi.aggregate([
@@ -114,7 +119,7 @@ export const getRingkasanPenjualan = async (req, res) => {
 
     // Pengeluaran biaya operasional dalam rentang
     const pengeluaranAgg = await PengeluaranBiaya.aggregate([
-      { $match: { tanggal: { $gte: startDate, $lte: endDate } } },
+      { $match: pengeluaranMatch },
       { $group: { _id: null, total_biaya_operasional: { $sum: "$jumlah" } } }
     ]);
     const total_biaya_operasional = (pengeluaranAgg && pengeluaranAgg[0] && pengeluaranAgg[0].total_biaya_operasional) ? Number(pengeluaranAgg[0].total_biaya_operasional) : 0;
@@ -259,8 +264,9 @@ export const getDetailLaba = async (req, res) => {
     const endDate = new Date(String(end) + 'T23:59:59.999Z');
 
     // Aggregate transaksi per day (produk, total_hpp, total_pendapatan)
+    const branchFilter = buildBranchFilter(req.user);
     const transaksiPipeline = [
-      { $match: { status: 'selesai', tanggal_transaksi: { $gte: startDate, $lte: endDate } } },
+      { $match: { status: 'selesai', tanggal_transaksi: { $gte: startDate, $lte: endDate }, ...branchFilter } },
       { $project: { tanggal_transaksi: 1, barang_dibeli: 1 } },
       { $unwind: '$barang_dibeli' },
       { $addFields: { tanggal_str: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal_transaksi' } } } },
@@ -297,7 +303,7 @@ export const getDetailLaba = async (req, res) => {
 
     // Aggregate pengeluaran per day within range
     const pengeluaranAgg = await PengeluaranBiaya.aggregate([
-      { $match: { tanggal: { $gte: startDate, $lte: endDate } } },
+      { $match: { tanggal: { $gte: startDate, $lte: endDate }, ...branchFilter } },
       { $addFields: { tanggal_str: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } } } },
       { $group: { _id: '$tanggal_str', total_beban: { $sum: '$jumlah' } } },
       { $project: { tanggal: '$_id', total_beban: 1, _id: 0 } },
@@ -420,7 +426,7 @@ export const getLaba = async (req, res) => {
     try {
       const start = currentLaporan.periode.start ? new Date(currentLaporan.periode.start) : null;
       const end = currentLaporan.periode.end ? new Date(currentLaporan.periode.end) : null;
-      const match = {};
+      const match = buildBranchFilter(req.user);
       if (start && end) match.tanggal = { $gte: start, $lte: end };
       const agg = await PengeluaranBiaya.aggregate([
         { $match: match },
@@ -452,7 +458,7 @@ export const getLaba = async (req, res) => {
 
 export const getDaftarBulanLaporan = async (req, res) => {
   try {
-    const laporan = await Laporan.find().sort({ "periode.start": -1 });
+    const laporan = await Laporan.find(buildBranchFilter(req.user)).sort({ "periode.start": -1 });
 
     const daftarBulan = laporan.map((lap) => {
       const date = new Date(lap.periode.start);
