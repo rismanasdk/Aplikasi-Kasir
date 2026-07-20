@@ -9,6 +9,7 @@ import { kurangiModalUtama } from "./utils/updatemodalutama.js";
 import Production from "../../models/production.js";
 import Transaksi from "./../../models/datatransaksi.js";
 import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
+import { calculateHargaFinal } from "../helpers/priceHelper.js";
 
 // Fungsi helper untuk menghitung status berdasarkan stok
 const calculateStatus = (stok, stokMinimal) => {
@@ -250,13 +251,18 @@ export const createBarang = async (req, res) => {
     const taxRate = settings?.taxRate ?? 0;
     const globalDiscount = settings?.globalDiscount ?? 0;
     const serviceCharge = settings?.serviceCharge ?? 0;
+    const roundingMode = settings?.roundingMode || 'up';
     const lowStockAlert = settings?.lowStockAlert ?? 5;
     const discountRate = use_discount === "true" || use_discount === true ? globalDiscount : 0;
 
     // Hitung harga final (harga jual + pajak + biaya - diskon)
-    const hargaSetelahDiskon = hargaJual - (hargaJual * discountRate / 100);
-    const hargaSetelahPajak = hargaSetelahDiskon + (hargaSetelahDiskon * taxRate / 100);
-    const hargaFinal = hargaSetelahPajak + (hargaSetelahPajak * serviceCharge / 100);
+    const hargaFinal = calculateHargaFinal({
+      hargaJual,
+      taxRate,
+      discountRate,
+      serviceCharge,
+      roundingMode,
+    });
 
     // Upload gambar (kalau ada)
     let gambarUrl = "";
@@ -282,7 +288,7 @@ export const createBarang = async (req, res) => {
       margin: finalMargin, // Gunakan finalMargin
       harga_beli: Math.round(hargaBeli), // Ini sudah modal per porsi
       harga_jual: Math.round(hargaJual),
-      hargaFinal: Math.round(hargaFinal),
+      hargaFinal: hargaFinal,
       total_harga_beli: Math.round(totalHargaBahan), // Ini total harga bahan
       gambar_url: gambarUrl,
       // Tetap set field `status` untuk kompatibilitas lama (publish state),
@@ -314,7 +320,7 @@ export const createBarang = async (req, res) => {
           stok: barang.stok || 0,
           nama: barang.nama_barang || "",
           harga_jual: barang.harga_jual || 0,
-          harga_final: Math.round(hargaFinal) || 0,
+          harga_final: hargaFinal || 0,
           kategori: barang.kategori || "",
           status: statusStok || "aman", // Status stok untuk Firebase
         };
@@ -426,15 +432,20 @@ export const updateBarang = async (req, res) => {
     const taxRate = settings?.taxRate ?? 0;
     const globalDiscount = settings?.globalDiscount ?? 0;
     const serviceCharge = settings?.serviceCharge ?? 0;
+    const roundingMode = settings?.roundingMode || 'up';
     const lowStockAlert = settings?.lowStockAlert ?? 5;
     
     // Perbaikan: Gunakan discountRate yang sudah memperhitungkan use_discount
     const discountRate = use_discount === "true" || use_discount === true ? globalDiscount : 0;
 
     // Perbaikan: Gunakan discountRate, bukan globalDiscount
-    const hargaSetelahDiskon = hargaJual - (hargaJual * discountRate / 100);
-    const hargaSetelahPajak = hargaSetelahDiskon + (hargaSetelahDiskon * taxRate / 100);
-    const hargaFinal = hargaSetelahPajak + (hargaSetelahPajak * serviceCharge / 100);
+    const hargaFinal = calculateHargaFinal({
+      hargaJual,
+      taxRate,
+      discountRate,
+      serviceCharge,
+      roundingMode,
+    });
 
     // Upload gambar (kalau ada)
     let gambarUrl = barang.gambar_url;
@@ -460,7 +471,7 @@ export const updateBarang = async (req, res) => {
     barang.margin = finalMargin; // Gunakan finalMargin
     barang.harga_beli = Math.round(hargaBeli); // Gunakan hargaBeli yang sudah ada di database
     barang.harga_jual = Math.round(hargaJual);
-    barang.hargaFinal = Math.round(hargaFinal);
+    barang.hargaFinal = hargaFinal;
     if (bahanParsed.length) {
       barang.total_harga_beli = Math.round(totalHargaBahan);
     }
@@ -481,7 +492,7 @@ export const updateBarang = async (req, res) => {
           stok: barang.stok || 0,
           nama: barang.nama_barang || "",
           harga_jual: barang.harga_jual || 0,
-          harga_final: Math.round(hargaFinal) || 0,
+          harga_final: hargaFinal || 0,
           kategori: barang.kategori || "",
           status: statusStok || "aman", // Status stok untuk Firebase
         };

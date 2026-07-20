@@ -5,6 +5,7 @@ import { io } from "../server.js";
 import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
 import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.js";
+import { calculateHargaFinal } from "./helpers/priceHelper.js";
 
 // Ambil semua barang, menggabungkan stok dari Firebase RTDB jika tersedia
 export const getAllBarang = async (req, res) => {
@@ -64,7 +65,13 @@ export const getAllBarang = async (req, res) => {
       return {
         ...item,
         stok,
-        hargaFinal: Math.round(item.hargaFinal),
+        hargaFinal: Number(item.hargaFinal) ? Number(item.hargaFinal) : calculateHargaFinal({
+          hargaJual: item.harga_jual ?? item.hargaJual ?? 0,
+          taxRate: item.taxRate ?? 0,
+          discountRate: item.use_discount ? item.globalDiscount ?? 0 : 0,
+          serviceCharge: item.serviceCharge ?? 0,
+          roundingMode: item.roundingMode ?? 'up',
+        }),
         // Return publish status as status field for consistency with admin API
         status: statusPublish,
         status_publish: statusPublish,

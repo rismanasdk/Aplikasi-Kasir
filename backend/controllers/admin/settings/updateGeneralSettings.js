@@ -4,10 +4,12 @@ import { io } from "../../../server.js";
 import Transaksi from "../../../models/datatransaksi.js";
 import { refreshBiRingkasanByPeriod } from "../laporancontroller.js";
 import { buildBranchFilter, validateAndInjectBranch } from "../../../utils/rbacHelper.js";
+import { normalizeRoundingMode } from "../../helpers/priceHelper.js";
+import { updateAllBarangHargaFinal } from "./utils/calculateHarga.js";
 
 export const updateGeneralSettings = async (req, res) => {
   try {
-    const { lowStockAlert, currency, dateFormat, language, kasWarning, targetOmzetBulanan } = req.body;
+    const { lowStockAlert, currency, dateFormat, language, kasWarning, targetOmzetBulanan, roundingMode } = req.body;
     console.log('>>> Menerima permintaan updateGeneralSettings dengan data:', req.body);
 
     const branchValidation = validateAndInjectBranch(req, true);
@@ -25,6 +27,7 @@ export const updateGeneralSettings = async (req, res) => {
         language,
         kasWarning,
         targetOmzetBulanan,
+        roundingMode: normalizeRoundingMode(roundingMode),
         branch_id: req.user.branch_id
       });
     } else {
@@ -37,8 +40,12 @@ export const updateGeneralSettings = async (req, res) => {
       if (dateFormat !== undefined) settings.dateFormat = dateFormat;
       if (language !== undefined) settings.language = language;
       if (kasWarning !== undefined) settings.kasWarning = kasWarning;
+      if (roundingMode !== undefined) settings.roundingMode = normalizeRoundingMode(roundingMode);
       if (targetOmzetBulanan !== undefined) settings.targetOmzetBulanan = targetOmzetBulanan;
       await settings.save();
+      if (roundingMode !== undefined) {
+        await updateAllBarangHargaFinal(Barang, settings);
+      }
       console.log('>>> Pengaturan berhasil disimpan');
 
       // Emit event via socket untuk notifikasi real-time

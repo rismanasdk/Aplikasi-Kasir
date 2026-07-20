@@ -21,6 +21,7 @@ const BiayaLayanan: React.FC = () => {
   const [lowStockAlert, setLowStockAlert] = useState<number>(0);
   const [kasWarning, setkasWarning] = useState<number>(0);
   const [targetOmzetBulanan, settargetOmzetBulanan] = useState<number>(0);
+  const [roundingMode, setRoundingMode] = useState<string>('up');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [loadingRekomendasi, setLoadingRekomendasi] = useState(false);
 
@@ -87,6 +88,7 @@ const BiayaLayanan: React.FC = () => {
         if (typeof data.lowStockAlert === 'number') setLowStockAlert(data.lowStockAlert);
         if (typeof data.kasWarning === 'number') setkasWarning(data.kasWarning);
         if (typeof data.targetOmzetBulanan === 'number') settargetOmzetBulanan(data.targetOmzetBulanan);
+        if (typeof data.roundingMode === 'string') setRoundingMode(data.roundingMode);
       }
     } catch (error) {
       SweetAlert.error('Gagal memuat data pengaturan');
@@ -119,7 +121,8 @@ const BiayaLayanan: React.FC = () => {
       else if (name === 'serviceCharge') setServiceCharge(parseFloat(value) || 0);
       else if (name === 'lowStockAlert') setLowStockAlert(parseFloat(value) || 0);
       else if (name === 'kasWarning') setkasWarning(parseFloat(value) || 0);
-      else if (name === 'targetOmzetBulanan') settargetOmzetBulanan(parseFloat(value) || 0);
+        else if (name === 'targetOmzetBulanan') settargetOmzetBulanan(parseFloat(value) || 0);
+        else if (name === 'roundingMode') setRoundingMode(String(value));
     }
   };
 
@@ -200,8 +203,8 @@ const handleSaveSettings = async () => {
     const alerttargetOmzetBulanan = await fetch(`${BASE_API_URL}/general`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ targetOmzetBulanan })
-    })
+      body: JSON.stringify({ targetOmzetBulanan, roundingMode })
+    });
 
     if (!alerttargetOmzetBulanan.ok) {
       const errorData = await alerttargetOmzetBulanan.json();
@@ -258,6 +261,7 @@ const handleSaveSettings = async () => {
               lowStockAlert={lowStockAlert}
               kasWarning={kasWarning}
               targetOmzetBulanan={targetOmzetBulanan}
+              roundingMode={roundingMode}
               totalBiayaOperasional={totalBiayaOperasional}
               onGunakanRekomendasi={handleGunakanRekomendasi}
               loadingRekomendasi={loadingRekomendasi}

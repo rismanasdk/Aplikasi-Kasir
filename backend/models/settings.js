@@ -10,6 +10,7 @@ const settingsSchema = new Schema({
   taxRate: { type: Number, default: 0 },
   globalDiscount: { type: Number, default: 0 },
   serviceCharge: { type: Number, default: 0 },
+  roundingMode: { type: String, enum: ['up', 'nearest', 'down'], default: 'up' },
   calculatedServiceCharge: { type: Number, default: 0 }, // Service charge dari biaya operasional
   targetOmzetBulanan: { type: Number, default: 15000000 },
   receiptHeader: { type: String, default: "Aplikasi Kasir" },

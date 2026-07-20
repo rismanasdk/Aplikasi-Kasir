@@ -10,6 +10,7 @@ interface BiayaLanjutanProps {
   kasWarning: number;
   totalBiayaOperasional: number;
   targetOmzetBulanan: number;
+  roundingMode?: string;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onGunakanRekomendasi?: () => void; 
   loadingRekomendasi?: boolean;
@@ -26,6 +27,7 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
   onInputChange,
   onGunakanRekomendasi,
   loadingRekomendasi,
+  roundingMode,
 }) => {
   return (
     <div className="space-y-8">
@@ -105,6 +107,20 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
             </div>
             <p className="text-xs text-blue-600 mt-2">Dihitung otomatis dari biaya operasional</p>
           </div>
+        </div>
+        <div className="mt-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Mode Pembulatan</label>
+          <select
+            name="roundingMode"
+            value={roundingMode}
+            onChange={onInputChange}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 bg-white"
+          >
+            <option value="up">Ke Atas (Pembulatan ke atas)</option>
+            <option value="nearest">Ke Tengah (Pembulatan ke terdekat)</option>
+            <option value="down">Ke Bawah (Pembulatan ke bawah)</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-2">Pilih cara pembulatan harga final pada perhitungan backend.</p>
         </div>
       </div>
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
