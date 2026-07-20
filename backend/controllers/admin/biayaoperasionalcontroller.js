@@ -5,6 +5,7 @@ import PengeluaranBiaya from "../../models/pengeluaranbiaya.js";
 import Barang from "../../models/databarang.js";
 import Settings from "../../models/settings.js";
 import { buildBranchFilter, validateAndInjectBranch } from "../../utils/rbacHelper.js";
+import { calculateHargaFinal } from "../helpers/priceHelper.js";
 
 const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
@@ -60,6 +61,7 @@ export const updateAllBarangHargaFinal = async () => {
   const settings = (await Settings.findOne()) || (await Settings.create({}));
   const taxRate = settings?.taxRate ?? 0;
   const globalDiscount = settings?.globalDiscount ?? 0;
+  const roundingMode = settings?.roundingMode || 'up';
 
   // Compute total pengeluaran operasional for current month using aggregation
   const now = new Date();
@@ -109,16 +111,20 @@ export const updateAllBarangHargaFinal = async () => {
   let totalUpdated = 0;
   for (const barang of allBarang) {
     const hargaJual = Number(barang.harga_jual) || 0;
-    const hargaSetelahDiskon = hargaJual - (hargaJual * globalDiscount) / 100;
-    const hargaSetelahPajak = hargaSetelahDiskon + (hargaSetelahDiskon * taxRate) / 100;
-    const hargaFinal = hargaSetelahPajak + (hargaSetelahPajak * activeServiceCharge) / 100;
+    const hargaFinal = calculateHargaFinal({
+      hargaJual,
+      taxRate,
+      discountRate: globalDiscount,
+      serviceCharge: activeServiceCharge,
+      roundingMode,
+    });
 
-    barang.hargaFinal = Math.round(hargaFinal);
+    barang.hargaFinal = hargaFinal;
 
     if (db) {
       try {
         const id = barang._id.toString();
-        await db.ref(`/barang/${id}`).update({ harga_final: Math.round(hargaFinal) });
+        await db.ref(`/barang/${id}`).update({ harga_final: hargaFinal });
       } catch (e) {
         console.warn(`⚠️ Gagal update harga di Firebase untuk barang ${barang._id}:`, e.message);
       }

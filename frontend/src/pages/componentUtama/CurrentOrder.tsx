@@ -81,6 +81,8 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
     }, 400);
   }, [onCheckout, isCheckoutProcessing, cartItems.length, isLoading]);
 
+  const formatDisplayPrice = (value: number) => Math.ceil(value).toLocaleString("id-ID");
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
@@ -130,7 +132,7 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
                       <div>
                         <h3 className="font-medium text-gray-800 text-sm">{item.nama}</h3>
                         <p className="text-xs text-gray-500">
-                          Rp {(item.hargaFinal || item.hargaJual).toLocaleString("id-ID")}
+                          Rp {formatDisplayPrice(item.hargaFinal || item.hargaJual)}
                         </p>
                       </div>
                       <button 
@@ -170,7 +172,7 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
                         </button>
                       </div>
                       <span className="font-bold text-amber-600 text-sm">
-                        Rp {(item.quantity * (item.hargaFinal || item.hargaJual)).toLocaleString("id-ID")}
+                        Rp {formatDisplayPrice(item.quantity * (item.hargaFinal || item.hargaJual))}
                       </span>
                     </div>
                   </div>
@@ -185,7 +187,7 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
         <div className="space-y-2 mb-4">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal:</span>
-            <span className="font-medium">Rp {totalValue.toLocaleString("id-ID")}</span>
+            <span className="font-medium">Rp {formatDisplayPrice(totalValue)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Total Items:</span>
@@ -194,7 +196,7 @@ const CurrentOrder: React.FC<CurrentOrderProps> = ({
           <div className="border-t border-gray-300 pt-2 mt-2">
             <div className="flex justify-between font-bold">
               <span>Total:</span>
-              <span className="text-amber-600">Rp {totalValue.toLocaleString("id-ID")}</span>
+              <span className="text-amber-600">Rp {formatDisplayPrice(totalValue)}</span>
             </div>
           </div>
         </div>

@@ -139,6 +139,11 @@ const normalizeBarangData = (barang: BarangInput): Barang => {
   };
 };
 
+const roundUpPrice = (value?: number | null) => {
+  const numericValue = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
+  return Math.ceil(numericValue);
+};
+
 const Dashboard = ({ dataBarang }: DashboardProps) => {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext);
@@ -912,7 +917,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
             className="pointer-events-auto touch-pan-y mx-auto w-full max-w-md bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-2xl px-4 py-2.5 flex items-center justify-between"
           >
             <span className="font-semibold text-sm">Keranjang ({totalCartItems})</span>
-            <span className="font-bold text-sm">Rp {totalCartValue.toLocaleString("id-ID")}</span>
+            <span className="font-bold text-sm">Rp {roundUpPrice(totalCartValue).toLocaleString("id-ID")}</span>
           </button>
         </div>
       )}
@@ -962,7 +967,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
                 <h3 className="text-xl font-bold text-gray-800">{selectedProduct.nama}</h3>
                 <p className="text-gray-500">{selectedProduct.kategori}</p>
                 <div className="text-2xl font-bold text-amber-600 mt-1">
-                  Rp {(selectedProduct.hargaFinal || selectedProduct.hargaJual).toLocaleString("id-ID")}
+                  Rp {roundUpPrice(selectedProduct.hargaFinal || selectedProduct.hargaJual).toLocaleString("id-ID")}
                 </div>
               </div>
             </div>
@@ -995,7 +1000,7 @@ const Dashboard = ({ dataBarang }: DashboardProps) => {
               </div>
               <div className="text-center mt-3 text-sm text-gray-500">
                 Total: <span className="font-semibold text-amber-600">
-                  Rp {(quantity * (selectedProduct.hargaFinal || selectedProduct.hargaJual)).toLocaleString("id-ID")}
+                  Rp {roundUpPrice(quantity * (selectedProduct.hargaFinal || selectedProduct.hargaJual)).toLocaleString("id-ID")}
                 </span>
               </div>
             </div>

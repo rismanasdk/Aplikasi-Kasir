@@ -26,6 +26,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     ? Math.round((1 - product.hargaFinal / product.hargaJual) * 100)
     : 0;
 
+  const formatDisplayPrice = (value?: number | null) => Math.ceil(value ?? 0).toLocaleString("id-ID");
+
   // const stockStatus = product.stok > 10 ? 'Tersedia' :
   //                    product.stok > 0 ? `Stok ${product.stok}` : 'Habis';
 
@@ -112,15 +114,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           {product.hargaFinal && product.hargaFinal < product.hargaJual ? (
             <div>
               <span className="text-base sm:text-lg font-bold text-amber-600">
-                Rp {product.hargaFinal.toLocaleString("id-ID")}
+                Rp {formatDisplayPrice(product.hargaFinal)}
               </span>
               <div className="text-xs text-gray-500 line-through">
-                Rp {product.hargaJual.toLocaleString("id-ID")}
+                Rp {formatDisplayPrice(product.hargaJual)}
               </div>
             </div>
           ) : (
             <span className="text-base sm:text-lg font-bold text-amber-600">
-              Rp {(product.hargaFinal || product.hargaJual).toLocaleString("id-ID")}
+              Rp {formatDisplayPrice(product.hargaFinal || product.hargaJual)}
             </span>
           )}
         </div>
