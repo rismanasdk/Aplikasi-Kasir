@@ -55,7 +55,7 @@ const BIDashboard: React.FC = () => {
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
               }`}
             >
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span>{tab.label}</span> 
             </button>
           ))}
         </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getProduk, generateAiProduk } from '../biApi';
 import { StatCard, NarasiBox, Skeleton, EmptyState } from './SharedComponents';
 import { currentMonthValue, monthToRange } from '../utils/dateUtils';
+import { ShoppingCart, SparklesIcon } from 'lucide-react';
 
 type ProdukApiResponse = {
   data?: any;
@@ -15,6 +16,12 @@ type AiProdukResponse = {
   rekomendasi?: string[];
   narasi?: string;
 };
+
+function formatMonthDisplay(value: string): string {
+  const [year, month] = value.split('-');
+  const date = new Date(Number(year), Number(month) - 1);
+  return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+}
 
 export default function ProdukAnalysis() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -70,15 +77,51 @@ export default function ProdukAnalysis() {
 
   return (
     <div className="space-y-6">
+      {/* HEADER - SUDAH DIPERBAIKI SESUAI REFERENSI */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 p-6 shadow-xl">
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white">Business Intelligence - Produk</h2>
-            <p className="mt-0.5 text-sm text-white">Analisis performa produk dan rekomendasi</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => void handleGenerateAiAnalysis()} disabled={aiLoading || !data?.data} className="rounded-xl bg-white/10 px-4 py-2 text-white">{aiLoading ? 'Menganalisis...' : 'Analisis AI'}</button>
-            <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="rounded-xl border px-3 py-2" />
+        {/* Background pattern sama seperti referensi */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+        
+        <div className="relative z-10">
+          {/* Flex Utama: Kolom di Mobile, Baris di Desktop */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            
+            {/* Kiri: Icon + Judul + Bulan (Dibungkus rapi) */}
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+                <ShoppingCart className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Analisis Produk</h2>
+                <p className="mt-0.5 text-sm text-white">
+                  {formatMonthDisplay(selectedMonth)}
+                </p>
+              </div>
+            </div>
+
+            {/* Kanan: Tombol AI + Input Bulan */}
+            <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:w-auto">
+              <button
+                type="button"
+                onClick={() => void handleGenerateAiAnalysis()}
+                disabled={aiLoading || !data?.data}
+                className="group w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-xl border border-blue-500 bg-blue-500 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <SparklesIcon className={`h-4 w-4 ${aiLoading ? 'animate-pulse' : 'group-hover:rotate-12 transition-transform'}`} />
+                <span>{aiLoading ? 'Menganalisis...' : 'Analisis AI'}</span>
+              </button>
+              
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  /* Class input sudah dibenahi, bukan class tombol lagi */
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800/50 py-2.5 pl-10 pr-3 text-sm text-slate-200 backdrop-blur-sm transition-colors hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
