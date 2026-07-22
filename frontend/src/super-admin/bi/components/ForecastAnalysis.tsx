@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { generateAiForecast, getForecast } from '../biApi';
 import { StatCard, NarasiBox, Skeleton, EmptyState } from './SharedComponents';
 import { currentMonthValue, monthToRange } from '../utils/dateUtils';
+import { TrendingUpDown } from 'lucide-react';
+
 
 type ForecastData = {
   histori: Array<{ tanggal: string; total_penjualan: number }>;
@@ -32,16 +34,6 @@ function RefreshIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-    </svg>
-  );
-}
-
-function CrystalBallIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <circle cx="12" cy="12" r="2" />
     </svg>
   );
 }
@@ -123,7 +115,7 @@ export default function ForecastAnalysis() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <CrystalBallIcon className="h-6 w-6 text-white" />
+                <TrendingUpDown className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Forecast Penjualan</h2>
@@ -132,12 +124,12 @@ export default function ForecastAnalysis() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:w-auto">
               <button
                 type="button"
                 onClick={() => void handleGenerateAiAnalysis()}
                 disabled={aiLoading || !data}
-                className="group inline-flex items-center gap-2 rounded-xl border border-purple-500 bg-purple-500 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:border-purple-500/50 hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="group w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-xl border border-blue-500 bg-blue-500 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <SparklesIcon className={`h-4 w-4 ${aiLoading ? 'animate-pulse' : 'group-hover:rotate-12 transition-transform'}`} />
                 <span>{aiLoading ? 'Menganalisis...' : 'Analisis AI'}</span>
@@ -147,7 +139,7 @@ export default function ForecastAnalysis() {
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="rounded-xl border border-slate-600 bg-slate-800/50 py-2.5 pl-10 pr-3 text-sm text-slate-200 backdrop-blur-sm transition-colors hover:border-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                  className="group w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/50 px-4 py-2.5 text-sm font-medium text-slate-200 backdrop-blur-sm transition-colors hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
