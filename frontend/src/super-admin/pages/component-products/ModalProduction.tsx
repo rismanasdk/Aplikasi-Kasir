@@ -1,4 +1,4 @@
-// src/admin/stok-barang/ModalProduction.tsx
+// src/super-admin/pages/component-products/ModalProduction.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { API_URL } from '../../../config/api';

@@ -1,3 +1,4 @@
+// Halaman products.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import BarangTable from "./component-products/BarangTable";
 import ModalBarang, { type BahanBakuItem } from "./component-products/ModalBarang";
@@ -789,7 +790,7 @@ const SuperAdminProducts: React.FC = () => {
   }, [dataBarang, searchTerm, kategoriFilter, lowStockAlert]);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       {actionLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <LoadingSpinner />
@@ -797,136 +798,134 @@ const SuperAdminProducts: React.FC = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-800">Daftar Barang</h1>
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-800">Daftar Barang</h1>
             </div>
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
-            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
-              <div className="flex gap-2">
-                <select
-                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full"
-                  value={kategoriFilter}
-                  onChange={(e) => setKategoriFilter(e.target.value)}
-                  disabled={actionLoading}
-                >
-                  <option value="">Semua Kategori</option>
-                  {kategoriList.map((kategori) => (
-                    <option key={kategori} value={kategori}>
-                      {kategori}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Cari barang..."
-                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  disabled={actionLoading}
-                />
-              </div>
-              <div className="flex gap-2 items-center flex-wrap">
-                {/* ===== FILTER STOK STATUS (BARU) ===== */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-                  <button
-                    onClick={() => setStockFilter("all")}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      stockFilter === "all"
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    Semua
-                  </button>
-                  <button
-                    onClick={() => setStockFilter("low-stock")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      stockFilter === "low-stock"
-                        ? "bg-yellow-500 text-white shadow-sm"
-                        : "text-gray-500 hover:text-yellow-600"
-                    }`}
-                    title="Produk dengan stok di bawah batas minimum"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Hampir Habis</span>
-                    <span className="sm:hidden">Low</span>
-                    {stockCounts.lowStock > 0 && stockFilter !== "low-stock" && (
-                      <span className="ml-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[9px] font-bold text-yellow-700 bg-yellow-100 rounded-full">
-                        {stockCounts.lowStock > 9 ? '9+' : stockCounts.lowStock}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setStockFilter("available")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      stockFilter === "available"
-                        ? "bg-green-500 text-white shadow-sm"
-                        : "text-gray-500 hover:text-green-600"
-                    }`}
-                    title="Produk dengan stok di atas batas minimum"
-                  >
-                    <PackageCheck className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Tersedia</span>
-                    <span className="sm:hidden">Ok</span>
-                  </button>
-                </div>
+          <div className="flex flex-col gap-4 mb-6">
+  {/* Baris 1: Search & Kategori */}
+  <div className="flex flex-col sm:flex-row gap-3">
+    <select
+      className="px-3 py-2 border border-gray-300 rounded-lg w-full sm:w-48 text-sm"
+      value={kategoriFilter}
+      onChange={(e) => setKategoriFilter(e.target.value)}
+      disabled={actionLoading}
+    >
+      <option value="">Semua Kategori</option>
+      {kategoriList.map((kategori) => (
+        <option key={kategori} value={kategori}>
+          {kategori}
+        </option>
+      ))}
+    </select>
+    <input
+      type="text"
+      placeholder="Cari barang..."
+      className="px-3 py-2 border border-gray-300 rounded-lg w-auto text-sm"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      disabled={actionLoading}
+    />
+    <button
+      onClick={() => setShowCategoryModal(true)}
+      className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
+      disabled={actionLoading}
+    >
+      Tambah Kategori
+    </button>
+  </div>
 
-                {/* ===== FILTER SALES PERFORMANCE ===== */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-                  <button
-                    onClick={() => setSalesFilter("all")}
-                    disabled={salesLoading}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      salesFilter === "all"
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    Semua
-                  </button>
-                  <button
-                    onClick={() => setSalesFilter("slow-moving")}
-                    disabled={salesLoading}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      salesFilter === "slow-moving"
-                        ? "bg-amber-500 text-white shadow-sm"
-                        : "text-gray-500 hover:text-amber-600"
-                    }`}
-                    title="20% produk dengan penjualan paling sedikit dalam 30 hari"
-                  >
-                    <TrendingDown className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Slow Moving</span>
-                    <span className="sm:hidden">Slow</span>
-                  </button>
-                  <button
-                    onClick={() => setSalesFilter("never-sold")}
-                    disabled={salesLoading}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      salesFilter === "never-sold"
-                        ? "bg-red-500 text-white shadow-sm"
-                        : "text-gray-500 hover:text-red-600"
-                    }`}
-                    title="Produk yang tidak terjual sama sekali dalam 30 hari"
-                  >
-                    <Ban className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Never Sold</span>
-                    <span className="sm:hidden">0 Sold</span>
-                  </button>
-                </div>
-                {salesLoading && (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-500"></div>
-                )}
-                <button
-                  onClick={() => setShowCategoryModal(true)}
-                  className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center"
-                  disabled={actionLoading}
-                >
-                  Kategori
-                </button>
-              </div>
-            </div>
-          </div>
+  {/* Baris 2: Filter grup + tombol kategori */}
+  <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:flex-wrap">
+    {/* ===== FILTER STOK STATUS ===== */}
+    <div className="grid grid-cols-3 sm:flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 gap-0.5">
+      <button
+        onClick={() => setStockFilter("all")}
+        className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          stockFilter === "all"
+            ? "bg-white text-gray-800 shadow-sm"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+      >
+        Semua
+      </button>
+      <button
+        onClick={() => setStockFilter("low-stock")}
+        className={`flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          stockFilter === "low-stock"
+            ? "bg-yellow-500 text-white shadow-sm"
+            : "text-gray-500 hover:text-yellow-600"
+        }`}
+        title="Produk dengan stok di bawah batas minimum"
+      >
+        <AlertTriangle className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Hampir Habis</span>
+        <span className="sm:hidden">Low</span>
+        {stockCounts.lowStock > 0 && stockFilter !== "low-stock" && (
+          <span className="ml-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[9px] font-bold text-yellow-700 bg-yellow-100 rounded-full">
+            {stockCounts.lowStock > 9 ? '9+' : stockCounts.lowStock}
+          </span>
+        )}
+      </button>
+      <button
+        onClick={() => setStockFilter("available")}
+        className={`flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          stockFilter === "available"
+            ? "bg-green-500 text-white shadow-sm"
+            : "text-gray-500 hover:text-green-600"
+        }`}
+        title="Produk dengan stok di atas batas minimum"
+      >
+        <PackageCheck className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Tersedia</span>
+        <span className="sm:hidden">Ok</span>
+      </button>
+    </div>
+
+    {/* ===== FILTER SALES PERFORMANCE ===== */}
+    <div className="grid grid-cols-3 sm:flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 gap-0.5">
+      <button
+        onClick={() => setSalesFilter("all")}
+        disabled={salesLoading}
+        className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          salesFilter === "all"
+            ? "bg-white text-gray-800 shadow-sm"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+      >
+        Semua
+      </button>
+      <button
+        onClick={() => setSalesFilter("slow-moving")}
+        disabled={salesLoading}
+        className={`flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          salesFilter === "slow-moving"
+            ? "bg-amber-500 text-white shadow-sm"
+            : "text-gray-500 hover:text-amber-600"
+        }`}
+        title="20% produk dengan penjualan paling sedikit dalam 30 hari"
+      >
+        <TrendingDown className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Slow Moving</span>
+        <span className="sm:hidden">Slow</span>
+      </button>
+      <button
+        onClick={() => setSalesFilter("never-sold")}
+        disabled={salesLoading}
+        className={`flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+          salesFilter === "never-sold"
+            ? "bg-red-500 text-white shadow-sm"
+            : "text-gray-500 hover:text-red-600"
+        }`}
+        title="Produk yang tidak terjual sama sekali dalam 30 hari"
+      >
+        <Ban className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Never Sold</span>
+        <span className="sm:hidden">0 Sold</span>
+      </button>
+    </div>
+  </div>
+</div>
 
           {serverError ? (
             <div className="text-center py-8">
@@ -1041,7 +1040,7 @@ const SuperAdminProducts: React.FC = () => {
                       <span className="hidden sm:inline">Sebelumnya</span>
                     </button>
                     
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-center">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -1054,19 +1053,19 @@ const SuperAdminProducts: React.FC = () => {
                           pageNum = currentPage - 2 + i;
                         }
                         
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => paginate(pageNum)}
-                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                              currentPage === pageNum 
-                                ? 'bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow-md scale-105' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
+    return (
+      <button
+        key={pageNum}
+        onClick={() => paginate(pageNum)}
+        className={`w-8 h-8 sm:w-10 sm:h-10 text-sm sm:text-base rounded-lg font-medium transition-all ${
+          currentPage === pageNum 
+            ? 'bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow-md scale-105' 
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }`}
+      >
+        {pageNum}
+      </button>
+    );
                       })}
                     </div>
                     
