@@ -201,29 +201,24 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto max-h-[95vh] overflow-hidden border border-gray-200">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-4xl mx-auto sm:max-h-[95vh] overflow-hidden border-0 sm:border border-gray-200 flex flex-col">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-2xl bg-purple-100 text-purple-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50 shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+              <div className="min-w-0">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
                   Manajemen Kategori
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 hidden sm:block">
                   Kelola kategori produk Anda
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-3 hover:bg-white rounded-2xl transition-all duration-200 text-gray-400 hover:text-gray-600"
+              className="p-2 sm:p-3 hover:bg-white rounded-xl sm:rounded-2xl transition-all duration-200 text-gray-400 hover:text-gray-600 shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -233,10 +228,10 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
         </div>
 
         {/* Content */}
-        <div className="p-8 overflow-y-auto max-h-[70vh]">
+        <div className="p-4 sm:p-8 overflow-y-auto flex-1 sm:max-h-[70vh]">
           {showForm ? (
             // Form Tambah/Edit Kategori
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">
                   Nama Kategori <span className="text-red-500">*</span>
@@ -245,7 +240,7 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                   type="text"
                   value={formData.nama}
                   onChange={(e) => handleInputChange("nama", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 disabled:opacity-50 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 disabled:opacity-50 bg-white text-base"
                   required
                   disabled={actionLoading}
                   placeholder="Masukkan nama kategori"
@@ -259,7 +254,7 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                 <textarea
                   value={formData.deskripsi}
                   onChange={(e) => handleInputChange("deskripsi", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 disabled:opacity-50 bg-white resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 disabled:opacity-50 bg-white resize-none text-base"
                   rows={4}
                   disabled={actionLoading}
                   placeholder="Masukkan deskripsi kategori (opsional)"
@@ -267,11 +262,11 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 shadow-sm"
+                  className="w-full sm:w-auto px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 shadow-sm"
                   disabled={actionLoading}
                 >
                   Batal
@@ -279,7 +274,7 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 shadow-lg shadow-purple-500/25 flex items-center space-x-2 min-w-[120px] justify-center"
+                  className="w-full sm:w-auto px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 shadow-lg shadow-purple-500/25 flex items-center space-x-2 justify-center"
                 >
                   {actionLoading ? (
                     <>
@@ -300,16 +295,16 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
           ) : (
             // Daftar Kategori
             <>
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8">
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900">Daftar Kategori</h4>
-                  <p className="text-gray-600 mt-1">
+                  <h4 className="text-lg sm:text-xl font-bold text-gray-900">Daftar Kategori</h4>
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">
                     {categories.length} kategori tersedia
                   </p>
                 </div>
                 <button
                   onClick={handleAdd}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 flex items-center space-x-2 font-medium"
+                  className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 flex items-center justify-center space-x-2 font-medium"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -319,14 +314,14 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
               </div>
 
               {serverError ? (
-                <div className="text-center py-12 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl border border-red-200">
+                <div className="text-center py-10 sm:py-12 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl border border-red-200 px-4">
                   <div className="p-3 rounded-full bg-red-100 text-red-600 inline-flex mb-4">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Koneksi Terputus</h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto">Tidak dapat terhubung ke server. Periksa koneksi internet Anda.</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Koneksi Terputus</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-6 max-w-md mx-auto">Tidak dapat terhubung ke server. Periksa koneksi internet Anda.</p>
                   <button
                     onClick={fetchCategories}
                     className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg shadow-red-500/25 font-medium"
@@ -335,106 +330,161 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                   </button>
                 </div>
               ) : loading ? (
-                <div className="text-center py-16">
+                <div className="text-center py-12 sm:py-16">
                   <div className="inline-flex items-center justify-center mb-4">
                     <LoadingSpinner />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Memuat Kategori</h3>
-                  <p className="text-gray-600">Sedang mengambil data kategori...</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Memuat Kategori</h3>
+                  <p className="text-sm sm:text-base text-gray-600">Sedang mengambil data kategori...</p>
                 </div>
               ) : categories.length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
+                <div className="text-center py-12 sm:py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 px-4">
                   <div className="p-4 rounded-full bg-gray-100 text-gray-600 inline-flex mb-4">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Belum Ada Kategori</h3>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda.</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Belum Ada Kategori</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-8 max-w-md mx-auto">Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda.</p>
                   <button
                     onClick={handleAdd}
-                    className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 font-semibold text-lg"
+                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 font-semibold text-base sm:text-lg"
                   >
                     Tambah Kategori Pertama
                   </button>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
-                        <tr>
-                          <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                            Nama Kategori
-                          </th>
-                          <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                            Deskripsi
-                          </th>
-                          <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {categories.map((category) => (
-                          <tr 
-                            key={category._id}
-                            className="transition-all duration-200 hover:bg-purple-50/30 group"
-                          >
-                            <td className="px-8 py-5 whitespace-nowrap">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 rounded-lg bg-purple-100 text-purple-600 group-hover:bg-purple-200 transition-colors">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <div className="text-base font-semibold text-gray-900">
-                                    {category.nama}
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Dibuat: {new Date(category.createdAt).toLocaleDateString('id-ID')}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-5">
-                              <div className="max-w-md">
-                                <div className="text-sm text-gray-600 line-clamp-2">
-                                  {category.deskripsi || (
-                                    <span className="text-gray-400 italic">Tidak ada deskripsi</span>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-5 whitespace-nowrap">
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  onClick={() => handleEdit(category._id)}
-                                  className="inline-flex items-center justify-center w-10 h-10 text-blue-600 hover:text-white hover:bg-blue-600 rounded-xl border border-blue-200 hover:border-blue-600 transition-all duration-200 group/edit"
-                                  title="Edit kategori"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(category._id)}
-                                  className="inline-flex items-center justify-center w-10 h-10 text-red-600 hover:text-white hover:bg-red-600 rounded-xl border border-red-200 hover:border-red-600 transition-all duration-200 group/delete"
-                                  title="Hapus kategori"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </td>
+                <>
+                  {/* ===== VERSI TABEL (sm ke atas) ===== */}
+                  <div className="hidden sm:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
+                          <tr>
+                            <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
+                              Nama Kategori
+                            </th>
+                            <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
+                              Deskripsi
+                            </th>
+                            <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
+                              Aksi
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {categories.map((category) => (
+                            <tr
+                              key={category._id}
+                              className="transition-all duration-200 hover:bg-purple-50/30 group"
+                            >
+                              <td className="px-8 py-5 whitespace-nowrap">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 rounded-lg bg-purple-100 text-purple-600 group-hover:bg-purple-200 transition-colors">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <div className="text-base font-semibold text-gray-900">
+                                      {category.nama}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Dibuat: {new Date(category.createdAt).toLocaleDateString('id-ID')}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-8 py-5">
+                                <div className="max-w-md">
+                                  <div className="text-sm text-gray-600 line-clamp-2">
+                                    {category.deskripsi || (
+                                      <span className="text-gray-400 italic">Tidak ada deskripsi</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-8 py-5 whitespace-nowrap">
+                                <div className="flex items-center space-x-3">
+                                  <button
+                                    onClick={() => handleEdit(category._id)}
+                                    className="inline-flex items-center justify-center w-10 h-10 text-blue-600 hover:text-white hover:bg-blue-600 rounded-xl border border-blue-200 hover:border-blue-600 transition-all duration-200 group/edit"
+                                    title="Edit kategori"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(category._id)}
+                                    className="inline-flex items-center justify-center w-10 h-10 text-red-600 hover:text-white hover:bg-red-600 rounded-xl border border-red-200 hover:border-red-600 transition-all duration-200 group/delete"
+                                    title="Hapus kategori"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+
+                  {/* ===== VERSI KARTU (di bawah sm) ===== */}
+                  <div className="sm:hidden space-y-3">
+                    {categories.map((category) => (
+                      <div
+                        key={category._id}
+                        className="bg-white rounded-xl border border-gray-200 p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-purple-100 text-purple-600 shrink-0">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {category.nama}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              Dibuat: {new Date(category.createdAt).toLocaleDateString('id-ID')}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => handleEdit(category._id)}
+                              className="w-8 h-8 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg border border-blue-200 active:bg-blue-100"
+                              title="Edit kategori"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(category._id)}
+                              className="w-8 h-8 flex items-center justify-center text-red-600 bg-red-50 rounded-lg border border-red-200 active:bg-red-100"
+                              title="Hapus kategori"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {category.deskripsi && (
+                          <div className="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-100 line-clamp-3">
+                            {category.deskripsi}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </>
           )}

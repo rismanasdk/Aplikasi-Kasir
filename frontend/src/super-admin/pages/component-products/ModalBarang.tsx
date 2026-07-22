@@ -1,4 +1,4 @@
-// src/admin/stok-barang/ModalBarang.tsx
+// src/super-admin/pages/component-products/ModalBarang.tsx
 import React, { useState, useEffect, useRef } from "react";
 
 export interface BahanBakuItem {
