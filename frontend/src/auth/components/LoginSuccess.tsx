@@ -2,14 +2,22 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { clearStoredAuthSession } from "../storage";
+import { useRef } from "react";
 
 export default function LoginSuccess() {
   const navigate = useNavigate();
   const auth = useAuth();
+  const processed = useRef(false);
 
   useEffect(() => {
+    if (processed.current) return; 
+    processed.current = true;
+
     const processLogin = async () => {
+      
       try {
+        console.log("LoginSuccess mounted");
+        console.log("Current URL:", window.location.href);
         const queryParams = new URLSearchParams(window.location.search);
         const token = queryParams.get("token");
         const error = queryParams.get("error");
@@ -21,16 +29,17 @@ export default function LoginSuccess() {
           return;
         }
 
+        
         if (!token) {
           console.error("No token found in URL");
           navigate("/login");
           return;
         }
-
+        
         // Bersihkan token dari URL
-        window.history.replaceState({}, document.title, "/login-success");
-
         const authSession = await auth.handleGoogleToken(token);
+        
+        window.history.replaceState({}, document.title, "/login-success");
         if (!authSession) {
           console.error("No auth session after handleGoogleToken");
           navigate("/login");
