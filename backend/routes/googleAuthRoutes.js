@@ -31,7 +31,6 @@ router.get(
   (req, res) => {
     try {
       const token = buildAuthToken(req.user);
-      // Token dikirim langsung via hash route untuk static SPA hosting fallback
       res.redirect(`${FRONTEND_URL}/login-success?token=${encodeURIComponent(token)}`);
     } catch (err) {
       console.error("Error building token:", err);
