@@ -208,129 +208,138 @@ const UnifiedNotificationBell: React.FC<UnifiedNotificationBellProps> = ({
       </button>
 
       {open && (
-        <div
-          ref={panelRef}
-          className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-yellow-50">
-            <div className="flex items-center gap-2">
-              <Bell size={16} className="text-orange-600" />
-              <h3 className="text-sm font-semibold text-gray-800">Notifikasi</h3>
-              {totalUnread > 0 && (
-                <span className="text-xs font-medium text-white bg-red-500 rounded-full px-2 py-0.5">
-                  {totalUnread} baru
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              aria-label="Tutup"
-            >
-              <X size={16} />
-            </button>
-          </div>
+        <>
+          {/* Overlay khusus mobile, biar bisa tap-outside-to-close & fokus ke panel */}
+          <div
+            className="fixed inset-0 z-40 bg-black/20 sm:hidden"
+            onClick={() => setOpen(false)}
+          />
 
-          {/* Action bar */}
-          {totalUnread > 0 && (
-            <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
+          <div
+            ref={panelRef}
+            className="fixed inset-x-4 top-16 z-50 max-h-[calc(100vh-5rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl
+                       sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96 sm:max-h-[32rem]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-yellow-50">
+              <div className="flex items-center gap-2 min-w-0">
+                <Bell size={16} className="text-orange-600 shrink-0" />
+                <h3 className="text-sm font-semibold text-gray-800 truncate">Notifikasi</h3>
+                {totalUnread > 0 && (
+                  <span className="shrink-0 text-xs font-medium text-white bg-red-500 rounded-full px-2 py-0.5">
+                    {totalUnread} baru
+                  </span>
+                )}
+              </div>
               <button
-                onClick={handleMarkAllAsRead}
-                className="flex items-center gap-1.5 text-xs font-medium text-orange-600 hover:text-orange-700"
+                onClick={() => setOpen(false)}
+                className="shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Tutup"
               >
-                <CheckCheck size={14} />
-                Tandai semua dibaca
+                <X size={16} />
               </button>
             </div>
-          )}
 
-          {/* List */}
-          <div className="max-h-96 overflow-y-auto">
-            {items.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCheck size={24} className="text-green-600" />
-                </div>
-                <p className="text-sm font-medium text-gray-700">Semua aman</p>
-                <p className="text-xs text-gray-500 mt-1">Tidak ada notifikasi</p>
+            {/* Action bar */}
+            {totalUnread > 0 && (
+              <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="flex items-center gap-1.5 text-xs font-medium text-orange-600 hover:text-orange-700"
+                >
+                  <CheckCheck size={14} />
+                  Tandai semua dibaca
+                </button>
               </div>
-            ) : (
-              <ul className="divide-y divide-gray-100">
-                {items.map((item) => {
-                  const isRed = item.badgeColor === 'red';
-                  const isStok = item.source === 'stok';
-                  const isLiabilitas = item.source === 'liabilitas';
+            )}
 
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={item.onClick}
-                        className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-orange-50 transition-colors ${
-                          item.isUnread ? 'bg-orange-50/40' : ''
-                        }`}
-                      >
-                        <div
-                          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                            isRed ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+            {/* List */}
+            <div className="max-h-[70vh] sm:max-h-96 overflow-y-auto">
+              {items.length === 0 ? (
+                <div className="px-4 py-10 text-center">
+                  <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCheck size={24} className="text-green-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">Semua aman</p>
+                  <p className="text-xs text-gray-500 mt-1">Tidak ada notifikasi</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {items.map((item) => {
+                    const isRed = item.badgeColor === 'red';
+                    const isStok = item.source === 'stok';
+                    const isLiabilitas = item.source === 'liabilitas';
+
+                    return (
+                      <li key={item.id}>
+                        <button
+                          onClick={item.onClick}
+                          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-orange-50 transition-colors ${
+                            item.isUnread ? 'bg-orange-50/40' : ''
                           }`}
                         >
-                          {isStok ? (
-                            <PackageX size={18} />
-                          ) : isLiabilitas ? (
-                            <Clock size={18} />
-                          ) : (
-                            <AlertTriangle size={18} />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-gray-800 truncate">
-                              {item.title}
-                            </p>
-                            {item.isUnread && (
-                              <span className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500" />
+                          <div
+                            className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                              isRed ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                            }`}
+                          >
+                            {isStok ? (
+                              <PackageX size={18} />
+                            ) : isLiabilitas ? (
+                              <Clock size={18} />
+                            ) : (
+                              <AlertTriangle size={18} />
                             )}
                           </div>
 
-                          {item.subtitle && (
-                            <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-semibold text-gray-800 truncate">
+                                {item.title}
+                              </p>
+                              {item.isUnread && (
+                                <span className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500" />
+                              )}
+                            </div>
 
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span
-                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                isRed ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
-                            {item.meta && (
-                              <span className="text-xs text-gray-600">{item.meta}</span>
+                            {item.subtitle && (
+                              <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
                             )}
-                          </div>
 
-                          <div className="flex items-center justify-between mt-1.5">
-                            <p className="text-[11px] text-gray-400">
-                              {formatRelativeTime(item.updatedAt)}
-                            </p>
-                            <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-orange-600 hover:text-orange-700">
-                              Lihat Detail <ArrowRight size={11} />
-                            </span>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span
+                                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  isRed ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                                }`}
+                              >
+                                {item.badge}
+                              </span>
+                              {item.meta && (
+                                <span className="text-xs text-gray-600">{item.meta}</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-1.5">
+                              <p className="text-[11px] text-gray-400">
+                                {formatRelativeTime(item.updatedAt)}
+                              </p>
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-orange-600 hover:text-orange-700">
+                                Lihat Detail <ArrowRight size={11} />
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 };
 
-export default UnifiedNotificationBell
+export default UnifiedNotificationBell;
