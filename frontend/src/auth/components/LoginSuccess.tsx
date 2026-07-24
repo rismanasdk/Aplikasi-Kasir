@@ -10,10 +10,18 @@ export default function LoginSuccess() {
   useEffect(() => {
     const processLogin = async () => {
       try {
-        // Ambil token dari URL query param
         const queryParams = new URLSearchParams(window.location.search);
-        const token = queryParams.get("token");
-        const error = queryParams.get("error");
+        let token = queryParams.get("token");
+        let error = queryParams.get("error");
+
+        if (!token && !error && window.location.hash) {
+          const hashQuery = window.location.hash.split("?")[1];
+          if (hashQuery) {
+            const hashParams = new URLSearchParams(hashQuery);
+            token = token || hashParams.get("token");
+            error = error || hashParams.get("error");
+          }
+        }
 
         // Handle error dari Google
         if (error) {
@@ -29,7 +37,9 @@ export default function LoginSuccess() {
         }
 
         // Bersihkan token dari URL
-        window.history.replaceState({}, document.title, "/login-success");
+        const cleanedHash = window.location.hash ? window.location.hash.split("?")[0] : "";
+        const newUrl = `${window.location.pathname}${cleanedHash}`;
+        window.history.replaceState({}, document.title, newUrl || "/");
 
         const authSession = await auth.handleGoogleToken(token);
         if (!authSession) {
