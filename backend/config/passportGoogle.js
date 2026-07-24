@@ -2,14 +2,21 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/user.js";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+const BACKEND_URL = (process.env.BACKEND_URL || "").replace(/\/+$/, "");
+const GOOGLE_CALLBACK_URL = (process.env.GOOGLE_CALLBACK_URL || `${BACKEND_URL}/api/auth/google/callback`).replace(/\/+$/, "");
+
+if (!GOOGLE_CALLBACK_URL || GOOGLE_CALLBACK_URL === "/api/auth/google/callback") {
+  console.warn(
+    "[passportGoogle] WARNING: GOOGLE_CALLBACK_URL is not configured. Set GOOGLE_CALLBACK_URL env to your deployed callback URL."
+  );
+}
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${BACKEND_URL}/api/auth/google/callback`,
+      callbackURL: GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
