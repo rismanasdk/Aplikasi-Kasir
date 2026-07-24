@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import connectDB from "./database/db.js";
@@ -67,6 +70,10 @@ import aiBiRoutes from "./routes/aiBiRoutes.js";
 
 const app = express();
 const port = process.env.PORT;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDistPath = path.resolve(__dirname, "../frontend/dist");
+const hasFrontendBuild = fs.existsSync(frontendDistPath);
 
 // Parse allowed origins dari environment atau gunakan default
 const configuredOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173,http://127.0.0.1:5173")
@@ -332,6 +339,18 @@ app.use("/api/security", securityRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Welcome To API" });
 });
+
+if (hasFrontendBuild) {
+  app.use(express.static(frontendDistPath));
+
+  app.get(/^\/(?!api\/|auth\/|socket\.io).*/, (req, res, next) => {
+    if (req.path.includes(".")) {
+      return next();
+    }
+
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(" Error:", err.stack);
