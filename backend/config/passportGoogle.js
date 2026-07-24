@@ -13,9 +13,10 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails?.[0]?.value;
-        const username = email ? email.split("@")[0] : profile.id;
-        const nama_lengkap = profile.displayName;
+        const rawEmail = profile.emails?.[0]?.value;
+        const email = rawEmail ? String(rawEmail).trim().toLowerCase() : `${profile.id}@google-oauth.no-email`;
+        const username = profile.username || (email ? email.split("@")[0] : profile.id);
+        const nama_lengkap = profile.displayName || username;
         const foto_profile = profile.photos?.[0]?.value || null;
 
         // 🔍 Cari user berdasarkan googleId
@@ -36,7 +37,7 @@ passport.use(
           // Update data jika berubah
           user.nama_lengkap = nama_lengkap;
           user.profilePicture = foto_profile;
-          user.email = email;
+          user.email = email || user.email || `${user._id}@google-oauth.no-email`;
           user.status = "aktif";
           await user.save();
         }
