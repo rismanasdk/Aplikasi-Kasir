@@ -19,8 +19,14 @@ export const addTransaksiToLaporan = async (transaksi) => {
 
     const startBulan = new Date(tanggal.getFullYear(), tanggal.getMonth(), 1, 0, 0, 0, 0);
     const endBulan = new Date(tanggal.getFullYear(), tanggal.getMonth() + 1, 0, 23, 59, 59, 999);
+    const branchId = transaksi.branch_id;
+
+    if (!branchId) {
+      throw new Error("Transaksi tidak memiliki branch_id yang valid");
+    }
 
     let laporan = await Laporan.findOne({
+      branch_id: branchId,
       "periode.start": { $lte: tanggal },
       "periode.end": { $gte: tanggal }
     });
@@ -30,6 +36,7 @@ export const addTransaksiToLaporan = async (transaksi) => {
       const totalPengeluaran = semuaBarang.reduce((acc, b) => acc + (b.harga_beli * b.stok), 0);
 
       laporan = new Laporan({
+        branch_id: branchId,
         periode: { start: startBulan, end: endBulan },
         laporan_penjualan: { harian: [], mingguan: [], bulanan: [] },
         // store immutable snapshots in laba.detail; do NOT store derived profit values
