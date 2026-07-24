@@ -122,8 +122,7 @@ export const logout = async (req, res) => {
       return;
     }
 
-    user.status = "nonaktif";
-    await user.save();
+    await User.updateOne({ _id: user._id }, { $set: { status: "nonaktif" } });
 
     res.json({ message: "Logout berhasil, status user dinonaktifkan" });
   } catch (err) {
