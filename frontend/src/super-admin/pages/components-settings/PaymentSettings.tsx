@@ -261,14 +261,14 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Detail Metode Pembayaran</h2>
-          <div className="flex space-x-3">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Detail Metode Pembayaran</h2>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setShowAddPaymentMethod(!showAddPaymentMethod)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 flex items-center"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 flex items-center justify-center"
             >
               <Plus className="h-5 w-5 mr-2" />
               Tambah Metode
@@ -276,7 +276,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
             <button
               type="button"
               onClick={() => setShowAddChannel(!showAddChannel)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 flex items-center"
+              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 flex items-center justify-center"
             >
               <Plus className="h-5 w-5 mr-2" />
               Tambah Channel
@@ -311,19 +311,19 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
               </div>
               
               {newPaymentMethodChannels.map((channel, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-3">
+                <div key={index} className="flex items-center gap-2 mb-3">
                   <input
                     type="text"
                     value={channel}
                     onChange={(e) => handlePaymentMethodChannelChange(index, e.target.value)}
                     placeholder="Nama channel"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 min-w-0 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {newPaymentMethodChannels.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removePaymentMethodChannel(index)}
-                      className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                      className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
                       title="Hapus"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -333,14 +333,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
               ))}
             </div>
             
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleAddPaymentMethod}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-              >
-                Simpan
-              </button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -348,9 +341,16 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   setNewPaymentMethod('');
                   setNewPaymentMethodChannels(['']);
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
+                className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
               >
                 Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleAddPaymentMethod}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+              >
+                Simpan
               </button>
             </div>
           </div>
@@ -388,7 +388,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
             
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Logo Channel</label>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 {newChannelLogoPreview ? (
                   <img 
                     src={newChannelLogoPreview} 
@@ -401,7 +401,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   </div>
                 )}
                 
-                <div>
+                <div className="flex gap-2">
                   <input
                     type="file"
                     ref={channelLogoInputRef}
@@ -412,7 +412,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   <button
                     type="button"
                     onClick={triggerChannelLogoInput}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200 mr-2"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
                   >
                     {newChannelLogoPreview ? 'Ganti Logo' : 'Pilih Logo'}
                   </button>
@@ -429,14 +429,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
               </div>
             </div>
             
-            <div className="flex justify-end space-x-3 mt-4">
-              <button
-                type="button"
-                onClick={handleAddChannel}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-              >
-                Simpan
-              </button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
               <button
                 type="button"
                 onClick={() => {
@@ -446,9 +439,16 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   setNewChannelLogoFile(null);
                   setNewChannelLogoPreview('');
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
+                className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
               >
                 Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleAddChannel}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+              >
+                Simpan
               </button>
             </div>
           </div>
@@ -456,10 +456,10 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         
         <div className="space-y-6">
           {formData.payment_methods.map((pm) => (
-            <div key={pm._id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-                <h3 className="font-medium text-gray-900 text-lg">{pm.method}</h3>
-                <div className="flex items-center space-x-3">
+            <div key={pm._id} className="border border-gray-200 rounded-lg p-4 sm:p-5 hover:shadow-md transition duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+                <h3 className="font-medium text-gray-900 text-base sm:text-lg">{pm.method}</h3>
+                <div className="flex items-center justify-between sm:justify-end gap-3">
                   {/* Toggle untuk status metode pembayaran */}
                   <div className="flex items-center">
                     <span className={`mr-2 text-sm font-medium ${pm.isActive ? 'text-green-600' : 'text-red-600'}`}>
@@ -480,7 +480,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   <button
                     type="button"
                     onClick={() => onDeletePaymentMethod(pm.method)}
-                    className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
                     title="Hapus Metode Pembayaran"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -495,31 +495,31 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                   const currentLogo = isEditingLogo ? tempLogos[tempKey] : channel.logo;
                   
                   return (
-                    <div key={channel._id} className={`p-4 rounded-lg ${isEditingLogo ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
+                    <div key={channel._id} className={`p-3 sm:p-4 rounded-lg ${isEditingLogo ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        <div className="flex items-center min-w-0">
                           {currentLogo ? (
                             <img 
                               src={currentLogo} 
                               alt={channel.name} 
-                              className="h-10 w-10 object-contain mr-4 border border-gray-200 rounded-md p-1 bg-white"
+                              className="h-10 w-10 shrink-0 object-contain mr-4 border border-gray-200 rounded-md p-1 bg-white"
                             />
                           ) : (
-                            <div className="h-10 w-10 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center mr-4 bg-white">
+                            <div className="h-10 w-10 shrink-0 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center mr-4 bg-white">
                               <Image className="h-5 w-5 text-gray-400" />
                             </div>
                           )}
                           
                           {isEditingName ? (
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-2 min-w-0">
                               <input
                                 type="text"
                                 value={tempChannelName}
                                 onChange={handleChannelNameChange}
-                                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 autoFocus
                               />
-                              <div className="ml-2 flex space-x-1">
+                              <div className="flex gap-1 shrink-0">
                                 <button
                                   type="button"
                                   onClick={saveChannelName}
@@ -539,11 +539,11 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                               </div>
                             </div>
                           ) : (
-                            <span className="text-sm font-medium text-gray-800">{channel.name}</span>
+                            <span className="text-sm font-medium text-gray-800 truncate">{channel.name}</span>
                           )}
                         </div>
                         
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-between lg:justify-end gap-3 flex-wrap">
                           {/* Toggle untuk status channel */}
                           <div className="flex items-center">
                             <span className={`mr-2 text-sm font-medium ${channel.isActive ? 'text-green-600' : 'text-red-600'}`}>
@@ -561,18 +561,18 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                           </div>
                           
                           {!isEditingName && (
-                            <>
+                            <div className="flex items-center gap-2 flex-wrap">
                               <button
                                 type="button"
                                 onClick={() => startEditingChannelName(pm._id, channel._id, channel.name)}
-                                className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200"
+                                className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200"
                                 title="Edit Nama"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               
                               {isEditingLogo ? (
-                                <div className="flex space-x-2">
+                                <div className="flex gap-2 flex-wrap">
                                   <input
                                     type="file"
                                     ref={fileInputRef}
@@ -583,7 +583,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                   <button
                                     type="button"
                                     onClick={triggerFileInput}
-                                    className="inline-flex items-center justify-center w-8 h-8 text-gray-600 hover:text-white hover:bg-gray-600 rounded-lg border border-gray-200 hover:border-gray-600 transition-all duration-200"
+                                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-gray-600 hover:text-white hover:bg-gray-600 rounded-lg border border-gray-200 hover:border-gray-600 transition-all duration-200"
                                     title={currentLogo ? 'Ganti Logo' : 'Pilih Logo'}
                                   >
                                     <Camera className="w-4 h-4" />
@@ -592,7 +592,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                     <button
                                       type="button"
                                       onClick={removeLogo}
-                                      className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                                      className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
                                       title="Hapus Logo"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -601,7 +601,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                   <button
                                     type="button"
                                     onClick={saveLogo}
-                                    className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-lg border border-green-200 hover:border-green-600 transition-all duration-200"
+                                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-green-600 hover:text-white hover:bg-green-600 rounded-lg border border-green-200 hover:border-green-600 transition-all duration-200"
                                     title="Simpan"
                                   >
                                     <Save className="w-4 h-4" />
@@ -609,7 +609,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                   <button
                                     type="button"
                                     onClick={cancelEditing}
-                                    className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
                                     title="Batal"
                                   >
                                     <X className="w-4 h-4" />
@@ -620,7 +620,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => startEditing(pm._id, channel._id, channel.logo)}
-                                    className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-lg border border-green-200 hover:border-green-600 transition-all duration-200"
+                                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-green-600 hover:text-white hover:bg-green-600 rounded-lg border border-green-200 hover:border-green-600 transition-all duration-200"
                                     title={channel.logo ? 'Edit Logo' : 'Tambah Logo'}
                                   >
                                     <Camera className="w-4 h-4" />
@@ -628,40 +628,40 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteChannel(pm.method, channel.name)}
-                                    className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                                    className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
                                     title="Hapus Channel"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
                                 </>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                       </div>
                       
                       {isEditingLogo && (
-                        <div className="mt-4 p-4 bg-white border border-gray-200 rounded-md">
-                          <div className="flex items-center space-x-4">
+                        <div className="mt-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-md">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             {currentLogo ? (
                               <img 
                                 src={currentLogo} 
                                 alt="Channel Logo Preview" 
-                                className="h-20 w-20 object-contain border border-gray-200 rounded-md p-2 bg-white"
+                                className="h-20 w-20 shrink-0 object-contain border border-gray-200 rounded-md p-2 bg-white"
                               />
                             ) : (
-                              <div className="h-20 w-20 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center bg-white">
+                              <div className="h-20 w-20 shrink-0 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center bg-white">
                                 <Image className="h-8 w-8 text-gray-400" />
                               </div>
                             )}
                             
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <p className="text-sm text-gray-600 mb-2">
                                 {currentLogo 
                                   ? "Logo saat ini. Klik 'Ganti Logo' untuk mengubah atau 'Hapus' untuk menghapus logo."
                                   : "Belum ada logo. Klik 'Pilih Logo' untuk menambahkan logo."}
                               </p>
-                              <div className="flex space-x-2">
+                              <div className="flex gap-2">
                                 <input
                                   type="file"
                                   ref={fileInputRef}
@@ -689,20 +689,20 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
                             </div>
                           </div>
                           
-                          <div className="flex justify-end space-x-3 mt-4 pt-3 border-t border-gray-100">
-                            <button
-                              type="button"
-                              onClick={saveLogo}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-                            >
-                              Simpan Perubahan
-                            </button>
+                          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 pt-3 border-t border-gray-100">
                             <button
                               type="button"
                               onClick={cancelEditing}
-                              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
+                              className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
                             >
                               Batal
+                            </button>
+                            <button
+                              type="button"
+                              onClick={saveLogo}
+                              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+                            >
+                              Simpan Perubahan
                             </button>
                           </div>
                         </div>
