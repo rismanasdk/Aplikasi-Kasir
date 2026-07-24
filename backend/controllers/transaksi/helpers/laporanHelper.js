@@ -11,14 +11,28 @@ import { AI_SERVICE_URL, buildAiUrl, fetchWithTimeout, parseAiServiceResponse } 
 
 const getOmzetKeterangan = (nomorTransaksi) => `Omzet penjualan: ${nomorTransaksi}`;
 
+const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+const getJakartaDateParts = (date) => {
+  const utcMs = date.getTime();
+  const jakartaMs = utcMs + JAKARTA_OFFSET_MS;
+  const jakartaDate = new Date(jakartaMs);
+  return {
+    year: jakartaDate.getUTCFullYear(),
+    month: jakartaDate.getUTCMonth(),
+    day: jakartaDate.getUTCDate(),
+  };
+};
+
 export const addTransaksiToLaporan = async (transaksi) => {
   try {
     const tanggal = transaksi.tanggal_transaksi
       ? new Date(transaksi.tanggal_transaksi)
       : new Date();
 
-    const startBulan = new Date(tanggal.getFullYear(), tanggal.getMonth(), 1, 0, 0, 0, 0);
-    const endBulan = new Date(tanggal.getFullYear(), tanggal.getMonth() + 1, 0, 23, 59, 59, 999);
+    const { year, month } = getJakartaDateParts(tanggal);
+    const startBulan = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+    const endBulan = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
     const branchId = transaksi.branch_id;
 
     if (!branchId) {
