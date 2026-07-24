@@ -27,15 +27,15 @@ router.get("/", passport.authenticate("google", { scope: ["profile", "email"] })
 // Step 2: Callback — langsung generate token dan kirim ke frontend via URL
 router.get(
   "/callback",
-  passport.authenticate("google", { failureRedirect: `${FRONTEND_URL}/#/login?error=google_failed` }),
+  passport.authenticate("google", { failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
   (req, res) => {
     try {
       const token = buildAuthToken(req.user);
       // Token dikirim langsung via hash route untuk static SPA hosting fallback
-      res.redirect(`${FRONTEND_URL}/#/login-success?token=${encodeURIComponent(token)}`);
+      res.redirect(`${FRONTEND_URL}/login-success?token=${encodeURIComponent(token)}`);
     } catch (err) {
       console.error("Error building token:", err);
-      res.redirect(`${FRONTEND_URL}/#/login?error=token_failed`);
+      res.redirect(`${FRONTEND_URL}/login?error=token_failed`);
     }
   }
 );
