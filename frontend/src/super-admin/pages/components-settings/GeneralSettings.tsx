@@ -117,7 +117,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Informasi Toko</h2>
+        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Informasi Toko</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nama Toko</label>
@@ -173,11 +173,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             ></textarea>
           </div>
           <div className="sm:col-span-2">
-            <label className="text-lg font-medium text-gray-900 mb-4">Logo Toko</label>
+            <label className="block text-base sm:text-lg font-medium text-gray-900 mb-4">Logo Toko</label>
             
             {isEditingLogo ? (
               <div className="space-y-4">
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-shrink-0">
                     {logoUrl ? (
                       <img 
@@ -192,7 +192,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     )}
                   </div>
                   
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -203,7 +203,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     <button
                       type="button"
                       onClick={triggerFileInput}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Pilih Gambar
                     </button>
@@ -213,25 +213,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                   </div>
                 </div>
                 
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleLogoSave}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     Simpan
                   </button>
                   <button
                     type="button"
                     onClick={handleLogoCancel}
-                    className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    className="flex-1 sm:flex-none px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
                   >
                     Batal
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-shrink-0">
                   {formData.storeLogo ? (
                     <img 
@@ -245,11 +245,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     </div>
                   )}
                 </div>
-                <div>
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setIsEditingLogo(true)}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {formData.storeLogo ? 'Ganti Logo' : 'Tambah Logo'}
                   </button>
@@ -261,7 +261,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                         setSelectedFile(null);
                         handleLogoChange('');
                       }}
-                      className="ml-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       Hapus
                     </button>
@@ -281,11 +281,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       </div>
       
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Gambar Profile User Default</h2>
+        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Gambar Profile User Default</h2>
         
         {isEditingDefaultProfile ? (
           <div className="space-y-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-shrink-0">
                 {defaultProfilePreview ? (
                   <img 
@@ -300,7 +300,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 )}
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <input
                   type="file"
                   ref={defaultProfileFileInputRef}
@@ -311,7 +311,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 <button
                   type="button"
                   onClick={triggerDefaultProfileFileInput}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Pilih Gambar
                 </button>
@@ -321,25 +321,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
               </div>
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleDefaultProfileSave}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Simpan
               </button>
               <button
                 type="button"
                 onClick={handleDefaultProfileCancel}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Batal
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-shrink-0">
               {defaultProfilePictureUrl ? (
                 <img 
@@ -353,11 +353,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 </div>
               )}
             </div>
-            <div>
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setIsEditingDefaultProfile(true)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {defaultProfilePictureUrl ? 'Ganti Gambar' : 'Tambah Gambar'}
               </button>
@@ -368,7 +368,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     setDefaultProfilePreview('');
                     onDefaultProfilePictureChange(new File([], ''));
                   }}
-                  className="ml-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   Hapus
                 </button>
