@@ -27,15 +27,24 @@ router.get("/", passport.authenticate("google", { scope: ["profile", "email"] })
 // Step 2: Callback — langsung generate token dan kirim ke frontend via URL
 router.get(
   "/callback",
-  passport.authenticate("google", { failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
+  (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Callback hit, code:`, req.query.code?.slice(0, 15));
+    next();
+  },
+  (req, res, next) => {
+    passport.authenticate("google", (err, user, info) => {
+      if (err) {
+        console.error("Google OAuth detail error:", err.oauthError?.data || err.message);
+        return res.redirect(`${FRONTEND_URL}/login?error=google_failed`);
+      }
+      if (!user) return res.redirect(`${FRONTEND_URL}/login?error=google_failed`);
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   (req, res) => {
-    try {
-      const token = buildAuthToken(req.user);
-      res.redirect(`${FRONTEND_URL}/login-success?token=${encodeURIComponent(token)}`);
-    } catch (err) {
-      console.error("Error building token:", err);
-      res.redirect(`${FRONTEND_URL}/login?error=token_failed`);
-    }
+    const token = buildAuthToken(req.user);
+    res.redirect(`${FRONTEND_URL}/login-success?token=${encodeURIComponent(token)}`);
   }
 );
 
