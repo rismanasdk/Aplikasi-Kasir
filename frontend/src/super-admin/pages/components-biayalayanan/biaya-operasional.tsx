@@ -146,13 +146,13 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100">
-        <div className="flex justify-between items-center">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
           {activeTab === 'daftar-biaya' && (
-            <button 
-              onClick={openAdd} 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            <button
+              onClick={openAdd}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Kategori</span>
@@ -161,21 +161,21 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
         </div>
       </div>
       
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {activeTab === 'daftar-biaya' && (
           <>
             {categories.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-full mb-6">
-                  <FolderOpen className="w-10 h-10 text-blue-600" />
+              <div className="text-center py-12 sm:py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-full mb-6">
+                  <FolderOpen className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Belum ada kategori</h3>
-                <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Belum ada kategori</h3>
+                <p className="text-sm sm:text-base text-gray-500 mb-6 max-w-sm mx-auto px-4">
                   Mulai dengan menambahkan kategori biaya operasional untuk mengelola pengeluaran Anda
                 </p>
-                <button 
-                  onClick={openAdd} 
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                <button
+                  onClick={openAdd}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   <Plus className="w-5 h-5" />
                   <span>Tambah Kategori Pertama</span>
@@ -187,10 +187,10 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                        <th className="px-6 py-4 text-left">
+                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-left">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Biaya</span>
                         </th>
-                        <th className="px-6 py-4 text-right">
+                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</span>
                         </th>
                       </tr>
@@ -201,7 +201,7 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                           key={c._id} 
                           className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
                           >
-                          <td className="px-6 py-4">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4">
                             <div className="flex items-center">
                               <div>
                                 <div className="text-sm font-semibold text-gray-900">{c.nama}</div>
@@ -209,12 +209,12 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => openEdit(c)}
-                                className="inline-flex items-center justify-center w-9 h-9 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200 group"
+                                className="inline-flex items-center justify-center w-9 h-9 shrink-0 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200 group"
                                 title="Edit"
                               >
                                 <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -222,7 +222,7 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => deleteCategory(c._id)}
-                                className="inline-flex items-center justify-center w-9 h-9 text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200 group"
+                                className="inline-flex items-center justify-center w-9 h-9 shrink-0 text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200 group"
                                 title="Hapus"
                               >
                                 <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -236,8 +236,8 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                 </div>
                 
                 {/* Footer dengan informasi tambahan */}
-                <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                     <span className="text-xs text-gray-500">
                       Menampilkan {categories.length} kategori
                     </span>
@@ -251,21 +251,21 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
 
             {showForm && (
               <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
-                  <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-full overflow-y-auto transform transition-all">
+                  <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                       {editId ? 'Edit Kategori' : 'Tambah Kategori Baru'}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setShowForm(false)}
-                      className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                      className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   
-                  <form onSubmit={submit} className="p-6">
+                  <form onSubmit={submit} className="p-4 sm:p-6">
                     <div className="mb-6">
                       <label htmlFor="nama" className="block text-sm font-medium text-gray-700 mb-2">
                         Nama Kategori
@@ -285,17 +285,17 @@ const BiayaOperasional: React.FC<BiayaOperasionalProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
                       <button
                         type="button"
                         onClick={() => setShowForm(false)}
-                        className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                        className="w-full sm:w-auto px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
                       >
                         Batal
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
                       >
                         {editId ? 'Simpan Perubahan' : 'Tambah Kategori'}
                       </button>

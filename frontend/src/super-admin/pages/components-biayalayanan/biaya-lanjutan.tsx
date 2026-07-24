@@ -30,15 +30,15 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
   roundingMode,
 }) => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Pengaturan Harga Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
         <div className="flex items-center mb-6">
-          <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3"></div>
-          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Biaya</h2>
+          <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3 shrink-0"></div>
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Pengaturan Biaya</h2>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Pajak */}
           <div className="group">
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -123,13 +123,13 @@ const BiayaLanjutan: React.FC<BiayaLanjutanProps> = ({
           <p className="text-xs text-gray-500 mt-2">Pilih cara pembulatan harga final pada perhitungan backend.</p>
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
         <div className="flex items-center mb-6">
-          <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-600 rounded-full mr-3"></div>
-          <h2 className="text-2xl font-bold text-gray-900">Pengaturan Inventaris</h2>
+          <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-600 rounded-full mr-3 shrink-0"></div>
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Pengaturan Inventaris</h2>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="group">
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
               Peringatan Stok Rendah

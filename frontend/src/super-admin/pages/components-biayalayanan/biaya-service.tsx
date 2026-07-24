@@ -241,18 +241,18 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
     <>
       <div className="space-y-6">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Biaya Layanan</h2>
-            <p className="text-gray-600 mt-1">Kelola persentase biaya layanan</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Biaya Layanan</h2>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola persentase biaya layanan</p>
           </div>
           
-          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+          <div className="flex items-center">
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
               disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 flex items-center disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50"
             >
               <Plus className="h-5 w-5 mr-2" />
               Tambah Biaya Layanan
@@ -262,7 +262,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
 
         {/* Content Section */}
         {data.length === 0 ? (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg mb-6">
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 sm:p-6 rounded-lg mb-6">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -270,8 +270,8 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
                 </svg>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-yellow-800">Belum ada data biaya layanan</h3>
-                <p className="text-yellow-700 mt-2">
+                <h3 className="text-base sm:text-lg font-medium text-yellow-800">Belum ada data biaya layanan</h3>
+                <p className="text-sm sm:text-base text-yellow-700 mt-2">
                   Silakan tambahkan biaya layanan menggunakan tombol "Tambah Biaya Layanan" di atas.
                 </p>
               </div>
@@ -279,64 +279,66 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
           </div>
         ) : (
           <div className="overflow-hidden bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-300">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                    Nama
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Persen
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Deskripsi
-                  </th>
-                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {data.map((item, index) => (
-                    <tr 
-                    key={item._id} 
-                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
-                    >
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                      {item.nama}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {item.persen}%
-                    </td>
-                    <td className="px-3 py-4 text-sm text-gray-500">
-                      {item.deskripsi}
-                    </td>
-                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(item)}
-                          disabled={saving || !item._id}
-                          className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteItem(item._id)}
-                          disabled={saving || !item._id}
-                          className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
-                          title="Hapus"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-300">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 whitespace-nowrap">
+                      Nama
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      Persen
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      Deskripsi
+                    </th>
+                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      Aksi
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {data.map((item, index) => (
+                      <tr 
+                      key={item._id} 
+                      className={`${index % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}
+                      >
+                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                        {item.nama}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {item.persen}%
+                      </td>
+                      <td className="px-3 py-4 text-sm text-gray-500 min-w-[160px]">
+                        {item.deskripsi}
+                      </td>
+                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(item)}
+                            disabled={saving || !item._id}
+                            className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 hover:border-blue-600 transition-all duration-200"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteItem(item._id)}
+                            disabled={saving || !item._id}
+                            className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-red-600 hover:text-white hover:bg-red-600 rounded-lg border border-red-200 hover:border-red-600 transition-all duration-200"
+                            title="Hapus"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -344,7 +346,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
       {/* Modal Tambah Biaya Layanan */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
             {/* Background overlay */}
             <div 
               className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -359,10 +361,10 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
             ></div>
 
             {/* Modal container */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="relative inline-block w-full max-w-lg max-h-full overflow-y-auto align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:align-middle">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Tambah Biaya Layanan Baru</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Tambah Biaya Layanan Baru</h3>
                   <button
                     type="button"
                     onClick={() => {
@@ -373,7 +375,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
                         deskripsi: ''
                       });
                     }}
-                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -425,7 +427,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
                     />
                   </div>
                   
-                  <div className="flex space-x-3 pt-4">
+                  <div className="flex flex-col-reverse sm:flex-row gap-3 sm:space-x-3 pt-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -459,7 +461,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
       {/* Modal Edit Biaya Layanan */}
       {showEditModal && editingItem && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex min-h-screen items-center justify-center p-4 text-center">
             {/* Background overlay */}
             <div 
               className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -470,17 +472,17 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
             ></div>
 
             {/* Modal container */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="relative inline-block w-full max-w-lg max-h-full overflow-y-auto align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:align-middle">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Edit Biaya Layanan</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Edit Biaya Layanan</h3>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setEditingItem(null);
                     }}
-                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -532,7 +534,7 @@ const BiayaService: React.FC<BiayaServiceProps> = ({ refreshTrigger }) => {
                     />
                   </div>
                   
-                  <div className="flex space-x-3 pt-4">
+                  <div className="flex flex-col-reverse sm:flex-row gap-3 sm:space-x-3 pt-4">
                     <button
                       type="button"
                       onClick={() => {

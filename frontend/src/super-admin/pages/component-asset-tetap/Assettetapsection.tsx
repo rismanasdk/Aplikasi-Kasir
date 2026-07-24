@@ -268,11 +268,11 @@ export default function AsetTetapSection({
             </div>
           </div>
 
-          <button
+         <button
             type="submit"
             disabled={assetSubmitLoading}
-            className="bg-slate-700 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-md transition duration-300 disabled:opacity-50 flex items-center"
-          >
+            className="w-full sm:w-auto flex items-center justify-center bg-slate-700 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-md transition duration-300 disabled:opacity-50"
+            >
             {assetSubmitLoading ? (
               <>
                 <span className="mr-2 animate-spin">●</span>
