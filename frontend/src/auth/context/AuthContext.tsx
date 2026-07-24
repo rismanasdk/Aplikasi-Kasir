@@ -100,6 +100,29 @@ function getUserId(user: UserProfile | null | undefined): string {
   return user?._id || user?.id || '';
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const payload = parts[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const normalized = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=');
+    const decoded = typeof window !== 'undefined' && typeof window.atob === 'function'
+      ? window.atob(normalized)
+      : Buffer.from(normalized, 'base64').toString('utf8');
+
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch (error) {
+    console.warn('Failed to decode JWT payload:', error);
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [auth, setAuth] = useState<AuthSession | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -455,10 +478,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setIsLoading(true);
       setStoredToken(token);
-      const authSession = await fetchCurrentUser();
+
+      let authSession = null as AuthSession | null;
+      try {
+        authSession = await fetchCurrentUser();
+      } catch (error) {
+        console.warn('fetchCurrentUser failed for Google token, falling back to token payload:', error);
+      }
+
       if (!authSession) {
+        const decodedPayload = decodeJwtPayload(token);
+        if (decodedPayload) {
+          const roleValue = decodedPayload.role;
+          const roleCode = typeof roleValue === 'string'
+            ? roleValue
+            : (roleValue as { code?: string | null; name?: string | null } | undefined)?.code || (roleValue as { code?: string | null; name?: string | null } | undefined)?.name || '';
+
+          const fallbackSession: AuthSession = {
+            user: {
+              id: String(decodedPayload.id || decodedPayload._id || ''),
+              _id: String(decodedPayload.id || decodedPayload._id || ''),
+              nama_lengkap: String(decodedPayload.nama_lengkap || decodedPayload.username || 'Google User'),
+              username: String(decodedPayload.username || ''),
+              email: String(decodedPayload.email || ''),
+              status: String(decodedPayload.status || 'active'),
+              role: roleCode,
+              profilePicture: String(decodedPayload.profilePicture || '')
+            },
+            role: {
+              id: null,
+              code: roleCode,
+              name: roleCode || 'user'
+            },
+            branch: {
+              id: null,
+              name: null
+            },
+            permissions: []
+          };
+
+          setAuthSession(fallbackSession, token);
+          return fallbackSession;
+        }
+
         throw new Error('Gagal memuat data pengguna setelah login Google');
       }
+
       return authSession;
     } catch (error) {
       console.error('Error handling Google token:', error);

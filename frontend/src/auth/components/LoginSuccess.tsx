@@ -38,7 +38,9 @@ export default function LoginSuccess() {
         }
 
         const roleCode = authSession.role?.code || authSession.user?.role;
-        if (roleCode === 'admin') {
+        if (roleCode === 'super-admin') {
+          navigate('/super-admin/dashboard');
+        } else if (roleCode === 'admin') {
           navigate('/admin/dashboard');
         } else if (roleCode === 'manajer') {
           navigate('/meneger/dashboard');
@@ -48,7 +50,7 @@ export default function LoginSuccess() {
           navigate('/kasir/dashboard');
         } else if (roleCode === 'security') {
           navigate('/security/dashboard');
-        } else {
+        } else if (roleCode === 'user') {
           navigate('/');
         }
       } catch (err) {
