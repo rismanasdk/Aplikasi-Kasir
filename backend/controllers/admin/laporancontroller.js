@@ -462,13 +462,14 @@ export const getDaftarBulanLaporan = async (req, res) => {
 
     const daftarBulan = laporan.map((lap) => {
       const date = new Date(lap.periode.start);
-      const namaBulan = date.toLocaleString("id-ID", { month: "long" });
-      const tahun = date.getFullYear();
+      const namaBulan = date.toLocaleString("id-ID", { month: "long", timeZone: "UTC" });
+      const tahun = date.getUTCFullYear();
+      const bulan = date.getUTCMonth() + 1;
 
       return {
         id: lap._id,
         nama_bulan: `${namaBulan} ${tahun}`,
-        bulan: date.getMonth() + 1,
+        bulan,
         tahun,
         createdAt: lap.createdAt,
       };
