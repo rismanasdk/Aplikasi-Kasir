@@ -44,28 +44,28 @@ export default function TambahModalForm({
 }: TambahModalFormProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-          <Package className="h-5 w-5 mr-2 text-gray-600" />
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 sm:p-6 border-b border-gray-200">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+          <Package className="h-5 w-5 mr-2 text-gray-600 shrink-0" />
           Tambah Modal
         </h2>
         <p className="text-sm text-gray-600 mt-1">Tambahkan modal baru ke sistem</p>
       </div>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {submitSuccess && (
-          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm sm:text-base">
             Modal Berhasil Ditambahkan!
           </div>
         )}
 
         {submitError && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm sm:text-base">
             {submitError}
           </div>
         )}
 
         <form onSubmit={onSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-gray-700 mb-2" htmlFor="jumlah">
                 Nominal Modal (Rp)
@@ -101,51 +101,53 @@ export default function TambahModalForm({
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitLoading}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 disabled:opacity-50"
-          >
-            {submitLoading ? 'Menyimpan...' : 'Tambah Modal'}
-          </button>
-          <button
-            type="button"
-            onClick={onOpenWithdrawModal}
-            className="ml-3 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md transition duration-300"
-          >
-            <Wallet className="h-4 w-4" />
-            Ambil Modal
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0">
+            <button
+              type="submit"
+              disabled={submitLoading}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 disabled:opacity-50"
+            >
+              {submitLoading ? 'Menyimpan...' : 'Tambah Modal'}
+            </button>
+            <button
+              type="button"
+              onClick={onOpenWithdrawModal}
+              className="w-full sm:w-auto sm:ml-3 inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+              <Wallet className="h-4 w-4" />
+              Ambil Modal
+            </button>
+          </div>
         </form>
       </div>
 
       {isWithdrawModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+          <div className="w-full max-w-md max-h-full overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-4 sm:px-5 py-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Ambil Modal</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Ambil Modal</h3>
                 <p className="text-sm text-gray-500">Nominal akan mengurangi kas dan tercatat otomatis.</p>
               </div>
               <button
                 type="button"
                 onClick={onCloseWithdrawModal}
-                className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                className="shrink-0 rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
                 aria-label="Tutup modal"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={onWithdrawSubmit} className="p-5">
+            <form onSubmit={onWithdrawSubmit} className="p-4 sm:p-5">
               {withdrawSuccess && (
-                <div className="mb-4 rounded bg-green-100 p-3 text-green-700">
+                <div className="mb-4 rounded bg-green-100 p-3 text-green-700 text-sm sm:text-base">
                   Modal berhasil diambil.
                 </div>
               )}
 
               {withdrawError && (
-                <div className="mb-4 rounded bg-red-100 p-3 text-red-700">
+                <div className="mb-4 rounded bg-red-100 p-3 text-red-700 text-sm sm:text-base">
                   {withdrawError}
                 </div>
               )}
@@ -184,18 +186,18 @@ export default function TambahModalForm({
                 />
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={onCloseWithdrawModal}
-                  className="rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={withdrawLoading}
-                  className="rounded-md bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-700 disabled:opacity-50"
+                  className="w-full sm:w-auto rounded-md bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-700 disabled:opacity-50"
                 >
                   {withdrawLoading ? 'Memproses...' : 'Ambil Modal'}
                 </button>
