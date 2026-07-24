@@ -11,6 +11,20 @@ import Settings from "../../models/settings.js";
 import { buildAiUrl, fetchWithTimeout, parseAiServiceResponse } from "../../services/aiService.js";
 import { buildBranchFilter } from "../../utils/rbacHelper.js";
 
+const JAKARTA_OFFSET_MINUTES = 7 * 60;
+
+const parseJakartaDateRange = (dateString) => {
+  const parts = String(dateString).split("-").map((p) => Number(p));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+  const [year, month, day] = parts;
+  const startUtc = Date.UTC(year, month - 1, day, 0, 0, 0, 0) - JAKARTA_OFFSET_MINUTES * 60 * 1000;
+  const endUtc = Date.UTC(year, month - 1, day, 23, 59, 59, 999) - JAKARTA_OFFSET_MINUTES * 60 * 1000;
+  return {
+    start: new Date(startUtc),
+    end: new Date(endUtc),
+  };
+};
+
 export const getAllLaporan = async (req, res) => {
   try {
     const laporan = await Laporan.find(buildBranchFilter(req.user)).sort({ createdAt: -1 });
@@ -28,13 +42,16 @@ export const getLaporanByPeriode = async (req, res) => {
       return res.status(400).json({ message: "Harap sertakan parameter start dan end" });
     }
 
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const startDateRange = parseJakartaDateRange(start);
+    const endDateRange = parseJakartaDateRange(end);
+    if (!startDateRange || !endDateRange) {
+      return res.status(400).json({ message: "Format tanggal salah. Gunakan YYYY-MM-DD." });
+    }
 
     const laporan = await Laporan.find({
       ...buildBranchFilter(req.user),
-      "periode.start": { $lte: endDate },
-      "periode.end": { $gte: startDate }
+      "periode.start": { $lte: endDateRange.end },
+      "periode.end": { $gte: startDateRange.start }
     }).sort({ "periode.start": -1 });
 
     if (!laporan || laporan.length === 0) {
@@ -82,8 +99,14 @@ export const getRingkasanPenjualan = async (req, res) => {
       return res.status(400).json({ message: "Harap sertakan query params 'start' dan 'end' dalam format YYYY-MM-DD" });
     }
 
-    const startDate = new Date(String(start) + 'T00:00:00.000Z');
-    const endDate = new Date(String(end) + 'T23:59:59.999Z');
+    const startDateRange = parseJakartaDateRange(start);
+    const endDateRange = parseJakartaDateRange(end);
+    if (!startDateRange || !endDateRange) {
+      return res.status(400).json({ message: "Format tanggal salah. Gunakan YYYY-MM-DD." });
+    }
+
+    const startDate = startDateRange.start;
+    const endDate = endDateRange.end;
 
     // Pipeline menggunakan $facet untuk efisiensi: pendapatan dan item-level agregasi
     const branchFilter = buildBranchFilter(req.user);
@@ -260,8 +283,14 @@ export const getDetailLaba = async (req, res) => {
     const { start, end } = req.query;
     if (!start || !end) return res.status(400).json({ message: "Harap sertakan start dan end" });
 
-    const startDate = new Date(String(start) + 'T00:00:00.000Z');
-    const endDate = new Date(String(end) + 'T23:59:59.999Z');
+    const startDateRange = parseJakartaDateRange(start);
+    const endDateRange = parseJakartaDateRange(end);
+    if (!startDateRange || !endDateRange) {
+      return res.status(400).json({ message: "Format tanggal salah. Gunakan YYYY-MM-DD." });
+    }
+
+    const startDate = startDateRange.start;
+    const endDate = endDateRange.end;
 
     // Aggregate transaksi per day (produk, total_hpp, total_pendapatan)
     const branchFilter = buildBranchFilter(req.user);
@@ -352,8 +381,14 @@ export const getRekapMetodePembayaranRealtime = async (req, res) => {
     const { start, end } = req.query;
     if (!start || !end) return res.status(400).json({ message: "Harap sertakan start dan end" });
 
-    const startDate = new Date(String(start) + 'T00:00:00.000Z');
-    const endDate = new Date(String(end) + 'T23:59:59.999Z');
+    const startDateRange = parseJakartaDateRange(start);
+    const endDateRange = parseJakartaDateRange(end);
+    if (!startDateRange || !endDateRange) {
+      return res.status(400).json({ message: "Format tanggal salah. Gunakan YYYY-MM-DD." });
+    }
+
+    const startDate = startDateRange.start;
+    const endDate = endDateRange.end;
 
     const agg = await Transaksi.aggregate([
       { $match: { status: 'selesai', tanggal_transaksi: { $gte: startDate, $lte: endDate } } },
@@ -459,21 +494,30 @@ export const getLaba = async (req, res) => {
 export const getDaftarBulanLaporan = async (req, res) => {
   try {
     const laporan = await Laporan.find(buildBranchFilter(req.user)).sort({ "periode.start": -1 });
+    const seen = new Set();
+    const opsiJakarta = { timeZone: "Asia/Jakarta" };
 
-    const daftarBulan = laporan.map((lap) => {
+    const daftarBulan = laporan.reduce((acc, lap) => {
       const date = new Date(lap.periode.start);
-      const namaBulan = date.toLocaleString("id-ID", { month: "long", timeZone: "UTC" });
-      const tahun = date.getUTCFullYear();
-      const bulan = date.getUTCMonth() + 1;
+      const tahun = Number(date.toLocaleString("id-ID", { ...opsiJakarta, year: "numeric" }));
+      const bulan = Number(date.toLocaleString("en-US", { ...opsiJakarta, month: "numeric" }));
+      const key = `${tahun}-${String(bulan).padStart(2, "0")}`;
 
-      return {
+      if (seen.has(key)) {
+        return acc;
+      }
+      seen.add(key);
+
+      const namaBulan = date.toLocaleString("id-ID", { ...opsiJakarta, month: "long" });
+      acc.push({
         id: lap._id,
         nama_bulan: `${namaBulan} ${tahun}`,
         bulan,
         tahun,
         createdAt: lap.createdAt,
-      };
-    });
+      });
+      return acc;
+    }, []);
 
     res.json({ daftar_bulan: daftarBulan });
   } catch (err) {
