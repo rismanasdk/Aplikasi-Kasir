@@ -8,7 +8,7 @@ interface OmzetData {
   minggu_lalu?: number;
   bulan_ini: number;
   bulan_lalu?: number;
-  tahun_ini?: number;
+  tahun_ini: number;
   tahun_lalu?: number;
   detail_hari: {
     tanggal: string;
@@ -20,6 +20,10 @@ interface OmzetData {
   }[];
   detail_bulan: {
     tanggal: string;
+    omzet: number;
+  }[];
+  detail_tahun: {
+    bulan: string;
     omzet: number;
   }[];
 }
@@ -54,16 +58,25 @@ const OmzetCards: React.FC<OmzetCardsProps> = ({ omzetData, formatRupiah }) => {
     return omzetData.detail_bulan.slice(0, 30).reduce((sum, item) => sum + item.omzet, 0);
   };
 
+  // Dapatkan data tahun lalu untuk perbandingan
+  // Asumsi: detail_tahun berisi 24 entri (12 bulan tahun lalu + 12 bulan tahun ini)
+  const getLastYearOmzet = () => {
+    if (!omzetData || !omzetData.detail_tahun || omzetData.detail_tahun.length < 24) return 0;
+    return omzetData.detail_tahun.slice(0, 12).reduce((sum, item) => sum + item.omzet, 0);
+  };
+
   const yesterdayOmzet = getYesterdayOmzet();
   const lastWeekOmzet = omzetData?.minggu_lalu ?? getLastWeekOmzet();
   const lastMonthOmzet = omzetData?.bulan_lalu ?? getLastMonthOmzet();
+  const lastYearOmzet = omzetData?.tahun_lalu ?? getLastYearOmzet();
 
   const dayChange = calculateChange(omzetData?.hari_ini || 0, omzetData?.kemarin ?? yesterdayOmzet);
   const weekChange = calculateChange(omzetData?.minggu_ini || 0, lastWeekOmzet);
   const monthChange = calculateChange(omzetData?.bulan_ini || 0, lastMonthOmzet);
+  const yearChange = calculateChange(omzetData?.tahun_ini || 0, lastYearOmzet);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Kartu Hari Ini */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white transform transition-transform hover:scale-105">
         <div className="flex justify-between items-start">
@@ -153,6 +166,37 @@ const OmzetCards: React.FC<OmzetCardsProps> = ({ omzetData, formatRupiah }) => {
               </svg>
             )}
             {Math.abs(monthChange).toFixed(1)}% dari bulan lalu
+          </span>
+        </div>
+      </div>
+
+      {/* Kartu Tahun Ini */}
+      <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-xl shadow-lg text-white transform transition-transform hover:scale-105">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-sm font-medium opacity-80">Omzet Tahun Ini</h3>
+            <p className="text-3xl font-bold mt-2">
+              {omzetData ? formatRupiah(omzetData.tahun_ini) : 'Rp 0'}
+            </p>
+          </div>
+          <div className="p-3 rounded-full bg-orange-400 bg-opacity-30">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center">
+          <span className={`text-xs ${yearChange >= 0 ? 'text-green-100' : 'text-red-100'}`}>
+            {yearChange >= 0 ? (
+              <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            )}
+            {Math.abs(yearChange).toFixed(1)}% dari tahun lalu
           </span>
         </div>
       </div>

@@ -378,21 +378,22 @@ const ModalBahanBaku: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Tambahkan komponen Tabs di sini */}
-        <h1 className="text-2xl font-bold">{pageTitle}</h1>
-      
-      <div className="flex justify-between items-center mb-6">
-        {/* Gunakan variabel pageTitle */}
-      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="p-4 md:p-6">
+      {/* Header: Judul & Tombol */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">{pageTitle}</h1>
         <button 
           onClick={handleButtonClick}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition flex items-center"
+          className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg transition flex items-center justify-center sm:justify-start font-medium shadow-sm"
         >
           <Plus className="h-5 w-5 mr-2" />
-          {/* Gunakan variabel buttonText */}
           {buttonText}
         </button>
+      </div>
+
+      {/* Tabs Navigasi */}
+      <div className="mb-6">
+        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
 
       {/* Tampilkan konten berdasarkan tab yang aktif */}

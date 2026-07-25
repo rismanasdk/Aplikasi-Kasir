@@ -207,11 +207,7 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
         <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-2xl bg-purple-100 text-purple-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-              </div>
+
               <div>
                 <h3 className="text-2xl font-bold text-gray-900">
                   Manajemen Kategori
@@ -300,7 +296,7 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
           ) : (
             // Daftar Kategori
             <>
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">Daftar Kategori</h4>
                   <p className="text-gray-600 mt-1">
@@ -309,11 +305,8 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                 </div>
                 <button
                   onClick={handleAdd}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 flex items-center space-x-2 font-medium"
+                  className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg shadow-purple-500/25 flex items-center justify-center md:justify-start space-x-2 font-medium"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
                   <span>Tambah Kategori</span>
                 </button>
               </div>
@@ -345,9 +338,6 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
               ) : categories.length === 0 ? (
                 <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
                   <div className="p-4 rounded-full bg-gray-100 text-gray-600 inline-flex mb-4">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">Belum Ada Kategori</h3>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto">Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda.</p>
@@ -383,11 +373,6 @@ const ModalCategory: React.FC<ModalCategoryProps> = ({ visible, onClose, onKateg
                           >
                             <td className="px-8 py-5 whitespace-nowrap">
                               <div className="flex items-center space-x-3">
-                                <div className="p-2 rounded-lg bg-purple-100 text-purple-600 group-hover:bg-purple-200 transition-colors">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                  </svg>
-                                </div>
                                 <div>
                                   <div className="text-base font-semibold text-gray-900">
                                     {category.nama}
