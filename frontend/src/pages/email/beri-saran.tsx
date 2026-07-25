@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, CheckCircle, Home, Loader2, Menu, MessageSquare, Send, User } from "lucide-react";
+import { AlertCircle, CheckCircle, Home, Loader2, Menu, Send, User } from "lucide-react";
 import MainLayout from "../../components/MainLayout";
 import Sidebar from "../componentUtama/Sidebar";
 import { API_URL } from "../../config/api";
@@ -136,9 +136,6 @@ export default function BeriSaranPage() {
         <div className="flex-1 overflow-y-auto rounded-2xl bg-white p-4 shadow-md sm:p-6">
           <div className="mx-auto max-w-3xl">
             <div className="mb-6">
-              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                <MessageSquare className="h-6 w-6" />
-              </div>
               <h1 className="text-2xl font-bold text-gray-900">Beri Saran</h1>
               <p className="mt-1 text-sm text-gray-600">
                 Tulis masukanmu karena itu akan sangat membantu.
