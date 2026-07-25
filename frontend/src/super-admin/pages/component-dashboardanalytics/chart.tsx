@@ -187,6 +187,10 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
               return formatRupiah(value);
             }
             return value;
+          },
+          // Sedikit lebih kecil di layar sempit biar label tidak numpuk
+          font: {
+            size: 11
           }
         },
         grid: {
@@ -194,6 +198,14 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
         }
       },
       x: {
+        ticks: {
+          font: {
+            size: 11
+          },
+          maxRotation: 0,
+          autoSkip: true,
+          autoSkipPadding: 8
+        },
         grid: {
           display: false,
         }
@@ -207,7 +219,7 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
 
   // Warna tombol berdasarkan periode yang dipilih
   const getButtonClass = (period: 'hari' | 'minggu' | 'bulan' | 'tahun') => {
-    const baseClass = "px-4 py-2 text-sm rounded-md transition-colors";
+    const baseClass = "px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm rounded-md transition-colors whitespace-nowrap flex-shrink-0";
     
     if (selectedPeriod === period) {
       switch (period) {
@@ -226,10 +238,12 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Grafik Omzet</h2>
-        <div className="flex space-x-2">
+    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-base md:text-lg font-semibold text-gray-800">Grafik Omzet</h2>
+
+        {/* Tombol periode: bisa di-scroll horizontal di mobile agar tidak wrap berantakan */}
+        <div className="flex space-x-2 overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-hide">
           <button
             onClick={() => setSelectedPeriod('hari')}
             className={getButtonClass('hari')}
@@ -258,12 +272,12 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
       </div>
 
       {/* Diagram Garis menggunakan Chart.js */}
-      <div className="h-80">
+      <div className="h-56 sm:h-64 md:h-80">
         <Line data={lineChartData} options={lineChartOptions} />
       </div>
       
       {/* Info tambahan berdasarkan periode yang dipilih */}
-      <div className="mt-4 text-sm text-gray-600">
+      <div className="mt-4 text-xs md:text-sm text-gray-600">
         {selectedPeriod === 'hari' && (
           <p>Grafik menampilkan proyeksi omzet per jam untuk hari ini</p>
         )}

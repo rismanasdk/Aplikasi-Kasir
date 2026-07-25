@@ -105,11 +105,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     <div className="space-y-5">
       {/* Categories Filter */}
       <div className="space-y-2">
-        <div className="px-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-400">
-            Jelajahi Kategori
-          </p>
-        </div>
         
         <div className="relative">
           <div 

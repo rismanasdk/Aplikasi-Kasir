@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  CalendarDays
+  CalendarDays,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
@@ -405,17 +406,18 @@ const StatusPesananPage = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handleViewReceipt = async (pesanan: Pesanan) => {
-    // Fetch kasir data when viewing receipt
-    if (pesanan.kasir_id) {
-      const kasirData = await fetchKasirById(pesanan.kasir_id);
-      setKasir(kasirData);
-    } else {
-      setKasir(null);
-    }
-    
+  const handleViewReceipt = (pesanan: Pesanan) => {
+    // Buka modal langsung, jangan tunggu fetch kasir
     setSelectedPesanan(pesanan);
+    setKasir(null); // reset dulu biar tidak nampilin kasir pesanan sebelumnya
     setIsReceiptModalOpen(true);
+
+    // Fetch data kasir di background, update begitu selesai
+    if (pesanan.kasir_id) {
+      fetchKasirById(pesanan.kasir_id).then((kasirData) => {
+        setKasir(kasirData);
+      });
+    }
   };
 
   // const handlePrintReceipt = () => {
@@ -425,26 +427,26 @@ const StatusPesananPage = () => {
   // Animasi variants
   const backdropVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1 },
+    visible: { opacity: 1, transition: { duration: 0.12 } },
   };
 
   const modalVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.9, y: 20 },
+    hidden: { opacity: 0, scale: 0.96, y: 10 },
     visible: {
       opacity: 1,
       scale: 1,
       y: 0,
       transition: {
-        duration: 0.3,
+        duration: 0.15,
         ease: "easeOut" as const
       }
     },
     exit: {
       opacity: 0,
-      scale: 0.9,
-      y: 20,
+      scale: 0.96,
+      y: 10,
       transition: {
-        duration: 0.2,
+        duration: 0.1,
         ease: "easeIn" as const
       }
     }
@@ -464,11 +466,11 @@ const StatusPesananPage = () => {
               
               <div className="flex-shrink-0 flex items-center">
                 <div className="bg-amber-500 p-2 rounded-xl shadow-md">
-                  <span className="text-white text-xl font-bold">K+</span>
+                  <span className="text-white text-lg sm:text-xl font-bold">K+</span>
                 </div>
                 <div className="ml-3">
-                  <h1 className="text-xl font-bold text-gray-900">KasirPlus</h1>
-                  <p className="text-xs text-gray-500">Point of Sale System</p>
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">KasirPlus</h1>
+                  <p className="text-xs text-gray-500 hidden sm:block">Point of Sale System</p>
                 </div>
               </div>
               
@@ -502,26 +504,24 @@ const StatusPesananPage = () => {
       <div className="flex h-[calc(100vh-120px)] mt-4 gap-4">
         <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
         
-        <div className="flex-1 bg-white rounded-2xl shadow-md p-6 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
+        <div className="flex-1 bg-white rounded-2xl shadow-md p-3 sm:p-6 overflow-y-auto">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Status Pesanan</h1>
-              <p className="text-gray-600">Lihat status dan riwayat pesanan Anda</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Status Pesanan</h1>
+              <p className="text-sm sm:text-base text-gray-600">Lihat status dan riwayat pesanan Anda</p>
             </div>
-            <div className="flex gap-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="relative flex-1 sm:flex-none">
                 <input
                   type="text"
                   placeholder="Cari pesanan..."
-                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full sm:w-64 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Search className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
               </div>
-              <button onClick={fetchPesanan} className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center">
+              <button onClick={fetchPesanan} className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center justify-center text-sm">
                 <RefreshCw className="h-5 w-5 mr-1" />
                 Refresh
               </button>
@@ -530,8 +530,8 @@ const StatusPesananPage = () => {
 
           {/* Pesan Sukses dari Transaksi */}
           {locationState?.message && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               {locationState.message}
@@ -539,56 +539,60 @@ const StatusPesananPage = () => {
           )}
 
           {/* Filter Status dan Tanggal */}
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">Filter Status:</span>
-              <div className="flex flex-wrap gap-2">
-                {["semua", "selesai", "dibatalkan"].map(
-                  (status) => (
-                    <button
-                      key={status}
-                      onClick={() => setFilterStatus(status)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        filterStatus === status
-                          ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
-                          : "bg-white text-gray-700 hover:bg-gray-200 border border-gray-200"
-                      }`}
-                    >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </button>
-                  )
-                )}
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg mb-6">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="text-sm font-medium text-gray-700">Filter Status:</span>
+                <div className="flex flex-wrap gap-2">
+                  {["semua", "selesai", "dibatalkan"].map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => setFilterStatus(status)}
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                          filterStatus === status
+                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
+                            : "bg-white text-gray-700 hover:bg-gray-200 border border-gray-200"
+                        }`}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
               
               {/* Filter Tanggal dan Metode Pembayaran */}
-              <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:ml-auto sm:flex-wrap sm:justify-end">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Tanggal:</span>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Tanggal:</span>
                   <button 
                     onClick={() => setShowDateFilter(!showDateFilter)}
-                    className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                    className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 flex-1 sm:flex-none justify-center sm:justify-start"
                   >
-                    <CalendarDays className="h-4 w-4" />
-                    {filterDate === "hari-ini" && "Hari Ini"}
-                    {filterDate === "kemarin" && "Kemarin"}
-                    {filterDate === "7-hari" && "7 Hari Terakhir"}
-                    {filterDate === "30-hari" && "30 Hari Terakhir"}
-                    {filterDate === "bulan-ini" && "Bulan Ini"}
-                    {filterDate === "bulan-lalu" && "Bulan Lalu"}
-                    {filterDate === "semua" && "Semua Tanggal"}
-                    <Filter className="h-4 w-4" />
+                    <CalendarDays className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {filterDate === "hari-ini" && "Hari Ini"}
+                      {filterDate === "kemarin" && "Kemarin"}
+                      {filterDate === "7-hari" && "7 Hari Terakhir"}
+                      {filterDate === "30-hari" && "30 Hari Terakhir"}
+                      {filterDate === "bulan-ini" && "Bulan Ini"}
+                      {filterDate === "bulan-lalu" && "Bulan Lalu"}
+                      {filterDate === "semua" && "Semua Tanggal"}
+                    </span>
+                    <Filter className="h-4 w-4 flex-shrink-0" />
                   </button>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Metode Pembayaran:</span>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Metode:</span>
                   <button 
                     onClick={() => setShowPaymentFilter(!showPaymentFilter)}
-                    className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                    className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 flex-1 sm:flex-none justify-center sm:justify-start"
                   >
-                    <CreditCard className="h-4 w-4" />
-                    {filterPayment === "semua" ? "Semua Metode" : filterPayment}
-                    <Filter className="h-4 w-4" />
+                    <CreditCard className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{filterPayment === "semua" ? "Semua Metode" : filterPayment}</span>
+                    <Filter className="h-4 w-4 flex-shrink-0" />
                   </button>
                 </div>
               </div>
@@ -613,7 +617,7 @@ const StatusPesananPage = () => {
                         setFilterDate(option.value);
                         setShowDateFilter(false);
                       }}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                         filterDate === option.value
                           ? "bg-amber-500 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -635,7 +639,7 @@ const StatusPesananPage = () => {
                       setFilterPayment("semua");
                       setShowPaymentFilter(false);
                     }}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                       filterPayment === "semua"
                         ? "bg-amber-500 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -650,7 +654,7 @@ const StatusPesananPage = () => {
                         setFilterPayment(method);
                         setShowPaymentFilter(false);
                       }}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                         filterPayment === method
                           ? "bg-amber-500 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -664,21 +668,19 @@ const StatusPesananPage = () => {
             )}
           </div>
 
-          
-
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
             </div>
           ) : searchedPesanan.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            <div className="text-center py-12 px-4">
+              <div className="text-5xl sm:text-6xl mb-4">📝</div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
                 {filterDate === "hari-ini" && filterStatus === "semua" && searchTerm === ""
                   ? "Tidak Ada Transaksi Hari Ini" 
                   : "Tidak Ada Pesanan"}
               </h3>
-              <p className="text-gray-500">
+              <p className="text-sm sm:text-base text-gray-500">
                 {filterDate === "hari-ini" && filterStatus === "semua" && searchTerm === ""
                   ? "Belum ada transaksi pada hari ini" 
                   : "Tidak ada pesanan yang sesuai dengan filter"}
@@ -687,7 +689,74 @@ const StatusPesananPage = () => {
           ) : (
             /* Daftar Pesanan */
             <>
-              <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              {/* ===== CARD LIST — tampil di mobile & tablet, disembunyikan di md ke atas ===== */}
+              <div className="md:hidden space-y-3">
+                {currentItems.map((pesanan) => (
+                  <div
+                    key={pesanan.order_id}
+                    className="border border-gray-200 rounded-xl p-4 shadow-sm bg-white"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center text-sm text-gray-700">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium">{formatTanggal(pesanan.createdAt).split(',')[0]}</div>
+                          <div className="text-xs text-gray-500">{formatTanggal(pesanan.createdAt).split(',')[1]}</div>
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full flex-shrink-0 ${getStatusColor(pesanan.status)}`}>
+                        <div className="flex items-center">
+                          {getStatusIcon(pesanan.status)}
+                          <span className="ml-1 capitalize">{pesanan.status}</span>
+                        </div>
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-gray-900 mb-3">
+                      {pesanan.nama_barang && pesanan.nama_barang.length > 0 ? (
+                        <div className="space-y-1">
+                          {pesanan.nama_barang.slice(0, 2).map((item, index) => (
+                            <div key={`${pesanan.order_id}-item-${index}`} className="flex justify-between gap-2">
+                              <span className="font-medium truncate">{item.nama_barang}</span>
+                              <span className="text-gray-500 text-xs whitespace-nowrap">
+                                {item.jumlah} x {formatCurrency(item.harga_satuan)}
+                              </span>
+                            </div>
+                          ))}
+                          {pesanan.nama_barang.length > 2 && (
+                            <div className="text-xs text-gray-500 italic">
+                              +{pesanan.nama_barang.length - 2} item lainnya
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 text-sm">Tidak ada item</div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                      <div>
+                        <div className="flex items-center text-xs text-gray-500 mb-1">
+                          <CreditCard className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                          {pesanan.metode_pembayaran}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(pesanan.total_harga)}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleViewReceipt(pesanan)}
+                        className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center transition-colors text-sm"
+                      >
+                        <span>Lihat Struk</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ===== TABEL — disembunyikan di mobile, tampil dari md ke atas ===== */}
+              <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr key="table-header">
@@ -773,15 +842,15 @@ const StatusPesananPage = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+                  <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                     Menampilkan <span className="font-medium">{indexOfFirstItem + 1}</span> hingga{" "}
                     <span className="font-medium">
                       {Math.min(indexOfLastItem, searchedPesanan.length)}
                     </span>{" "}
                     dari <span className="font-medium">{searchedPesanan.length}</span> hasil
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center sm:justify-end space-x-2">
                     <button
                       onClick={prevPage}
                       disabled={currentPage === 1}
@@ -794,7 +863,7 @@ const StatusPesananPage = () => {
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1 overflow-x-auto max-w-[160px] sm:max-w-none">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -811,7 +880,7 @@ const StatusPesananPage = () => {
                           <button
                             key={pageNum}
                             onClick={() => paginate(pageNum)}
-                            className={`px-3 py-1 rounded-md ${
+                            className={`px-3 py-1 rounded-md flex-shrink-0 ${
                               currentPage === pageNum
                                 ? "bg-amber-500 text-white"
                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -856,48 +925,48 @@ const StatusPesananPage = () => {
             />
             
             <motion.div
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4"
               variants={modalVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
               <div 
-                className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-2 text-white">
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-2 text-white flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <h1 className="text-lg font-bold">Riwayat Pesanan</h1>
+                        <h1 className="text-base sm:text-lg font-bold">Riwayat Pesanan</h1>
                       </div>
                     </div>
                     <button 
                       onClick={() => setIsReceiptModalOpen(false)}
                       className="p-2 rounded-full hover:bg-white/20 transition-colors"
                     >
-                      <X className="w-6 h-6" />
+                      <X className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg p-6 print:w-full print:shadow-none print:mt-0">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+                  <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg p-4 sm:p-6 print:w-full print:shadow-none print:mt-0">
                     {/* Header dari API */}
-                    <div className="text-center mb-4 whitespace-pre-line">
+                    <div className="text-center mb-4 whitespace-pre-line text-sm sm:text-base">
                       {settings.receiptHeader}
                     </div>
                     
-                    <h2 className="text-xl font-bold text-center mb-2">STRUK PEMBELIAN</h2>
-                    <p className="text-center text-sm text-gray-600 mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-center mb-2">STRUK PEMBELIAN</h2>
+                    <p className="text-center text-xs sm:text-sm text-gray-600 mb-4 break-all">
                       #{selectedPesanan.order_id}
                     </p>
 
-                    <div className="border-t border-b py-2 mb-4 text-sm">
+                    <div className="border-t border-b py-2 mb-4 text-xs sm:text-sm">
                       <p>
                         <span className="font-semibold">Tanggal:</span>{" "}
                         {formatTanggal(selectedPesanan.createdAt)}
@@ -910,7 +979,7 @@ const StatusPesananPage = () => {
                         <span className="font-semibold">Kasir:</span>{" "}
                         {kasir?.nama || kasir?.username || selectedPesanan.kasir_id || "-"}
                       </p>
-                      <p>
+                      <p className="flex items-center gap-1">
                         <span className="font-semibold">Status:</span>{" "}
                         <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedPesanan.status)}`}>
                           {selectedPesanan.status}
@@ -918,55 +987,57 @@ const StatusPesananPage = () => {
                       </p>
                     </div>
 
-                    <table className="w-full text-sm mb-4">
-                      <thead className="border-b">
-                        <tr>
-                          <th className="text-left py-1">Barang</th>
-                          <th className="text-center py-1">Qty</th>
-                          <th className="text-right py-1">Harga</th>
-                          <th className="text-right py-1">Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedPesanan.nama_barang && selectedPesanan.nama_barang.length > 0 ? (
-                          selectedPesanan.nama_barang.map((item: BarangDibeli, idx: number) => (
-                            <tr key={`${selectedPesanan.order_id}-receipt-item-${idx}`} className="border-b">
-                              <td className="py-1">{item.nama_barang}</td>
-                              <td className="py-1 text-center">{item.jumlah}</td>
-                              <td className="py-1 text-right">
-                                {formatCurrency(item.harga_satuan)}
-                              </td>
-                              <td className="py-1 text-right">
-                                {formatCurrency(item.subtotal)}
+                    <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                      <table className="w-full text-xs sm:text-sm mb-4 min-w-[320px]">
+                        <thead className="border-b">
+                          <tr>
+                            <th className="text-left py-1">Barang</th>
+                            <th className="text-center py-1">Qty</th>
+                            <th className="text-right py-1">Harga</th>
+                            <th className="text-right py-1">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedPesanan.nama_barang && selectedPesanan.nama_barang.length > 0 ? (
+                            selectedPesanan.nama_barang.map((item: BarangDibeli, idx: number) => (
+                              <tr key={`${selectedPesanan.order_id}-receipt-item-${idx}`} className="border-b">
+                                <td className="py-1">{item.nama_barang}</td>
+                                <td className="py-1 text-center">{item.jumlah}</td>
+                                <td className="py-1 text-right">
+                                  {formatCurrency(item.harga_satuan)}
+                                </td>
+                                <td className="py-1 text-right">
+                                  {formatCurrency(item.subtotal)}
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr key="no-items">
+                              <td colSpan={4} className="py-2 text-center text-gray-500">
+                                Tidak ada data barang
                               </td>
                             </tr>
-                          ))
-                        ) : (
-                          <tr key="no-items">
-                            <td colSpan={4} className="py-2 text-center text-gray-500">
-                              Tidak ada data barang
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
                     {/* Garis pembatas di atas subtotal */}
                     <div className="border-t border-gray-300 my-3"></div>
 
-                    <div className="flex justify-between items-center text-sm mb-2">
+                    <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                       <span>Subtotal</span>
                       <span>{formatCurrency(calculateSubtotalFromItems(selectedPesanan.nama_barang))}</span>
                     </div>
 
                     {totalBiayaLayanan > 0 && (
-                      <div className="flex justify-between items-center text-sm mb-2">
+                      <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                         <span>Biaya Layanan ({totalBiayaLayanan}%)</span>
                         <span>{formatCurrency(calculateBiayaLayanan(calculateSubtotalFromItems(selectedPesanan.nama_barang), totalBiayaLayanan))}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center text-lg font-bold mb-6">
+                    <div className="flex justify-between items-center text-base sm:text-lg font-bold mb-6">
                       <span>Total Pembayaran</span>
                       <span className="text-green-600">
                         {formatCurrency(
@@ -977,14 +1048,14 @@ const StatusPesananPage = () => {
                     </div>
 
                     {/* Footer dari API */}
-                    <div className="text-center mt-6 whitespace-pre-line text-sm">
+                    <div className="text-center mt-6 whitespace-pre-line text-xs sm:text-sm">
                       {settings.receiptFooter}
                     </div>
 
                     <div className="flex gap-3 mt-6 print:hidden">
                       <button
                         onClick={() => setIsReceiptModalOpen(false)}
-                        className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2 text-sm sm:text-base"
                       >
                         Tutup
                       </button>

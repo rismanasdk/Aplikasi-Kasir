@@ -49,10 +49,13 @@ export default function LoginSuccess() {
         const roleCode = authSession.role?.code || authSession.user?.role;
         if (roleCode === 'super-admin') {
           navigate('/super-admin/dashboard');
+          console.log("Navigating to super-admin dashboard");
         } else if (roleCode === 'admin') {
           navigate('/admin/dashboard');
+          console.log("Navigating to admin dashboard");
         } else if (roleCode === 'manajer') {
           navigate('/meneger/dashboard');
+          console.log("Navigating to manajer dashboard");
         } else if (roleCode === 'chef') {
           navigate('/chef/bahan-baku');
         } else if (roleCode === 'kasir') {
@@ -61,6 +64,7 @@ export default function LoginSuccess() {
           navigate('/security/dashboard');
         } else if (roleCode === 'user') {
           navigate('/');
+          console.log("Navigating to user home page");
         }
       } catch (err) {
         console.error("Error processing Google token:", err);
