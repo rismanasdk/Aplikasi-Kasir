@@ -4,27 +4,27 @@ import LoadingSpinner from './../../components/LoadingSpinner';
 import OmzetCards from './cards';
 import OmzetChart from './chart';
 import OmzetTable from './table';
-// import OmzetSummary from './components/OmzetSummary';
 import { exportOmzetToCsv, exportOmzetToExcel, exportOmzetToPdf } from './../utils/OmzetExport';
 import { formatRupiah } from '../../utils/formatRupiah';
 import { API_URL } from './../../config/api';
 import { getStoredToken } from './../../auth/storage';
+import { getSocket } from '../../utils/socket';
 
-  // Interface untuk respons endpoint admin omzet
-  interface ApiOmzetResponse {
-    omzet: {
-      hari_ini: number;
-      kemarin?: number;
-      minggu_ini: number;
-      minggu_lalu?: number;
-      bulan_ini: number;
-      bulan_lalu?: number;
-      tahun_ini?: number;
-      tahun_lalu?: number;
-    };
-  }
+// Interface untuk respons endpoint admin omzet
+interface ApiOmzetResponse {
+  omzet: {
+    hari_ini: number;
+    kemarin?: number;
+    minggu_ini: number;
+    minggu_lalu?: number;
+    bulan_ini: number;
+    bulan_lalu?: number;
+    tahun_ini: number;
+    tahun_lalu?: number;
+  };
+}
 
-// Interface untuk data omzet
+// Interface untuk data omzet — HARUS SAMA dengan cards.tsx & chart.tsx
 interface OmzetData {
   hari_ini: number;
   kemarin?: number;
@@ -32,9 +32,8 @@ interface OmzetData {
   minggu_lalu?: number;
   bulan_ini: number;
   bulan_lalu?: number;
-  tahun_ini?: number;
+  tahun_ini: number;
   tahun_lalu?: number;
-  // Tambahkan data detail untuk chart dan tabel
   detail_hari: {
     tanggal: string;
     omzet: number;
@@ -47,20 +46,26 @@ interface OmzetData {
     tanggal: string;
     omzet: number;
   }[];
+  detail_tahun: {
+    bulan: string;          // ✅ ubah dari 'tanggal' ke 'bulan'
+    omzet: number;
+  }[];
 }
 
 const OmzetPage: React.FC = () => {
   const [omzetData, setOmzetData] = useState<OmzetData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'hari' | 'minggu' | 'bulan'>('hari');
+  const [selectedPeriod, setSelectedPeriod] = useState<'hari' | 'minggu' | 'bulan' | 'tahun'>('hari');
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-  const fetchOmzetData = useCallback(async (showNotification = false) => {
+  const fetchOmzetData = useCallback(async (showNotification = false, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
+      setError(null);
       
-      // Ambil data dari API admin omzet (samakan dengan manager)
       const response = await fetch(`${API_URL}/api/admin/dashboard/omzet`, {
         method: 'GET',
         headers: {
@@ -79,7 +84,6 @@ const OmzetPage: React.FC = () => {
         throw new Error('Data omzet tidak tersedia');
       }
 
-      // Map respons menjadi format OmzetData yang dipakai komponen
       const processedData: OmzetData = {
         hari_ini: data.omzet.hari_ini || 0,
         kemarin: data.omzet.kemarin || 0,
@@ -87,11 +91,12 @@ const OmzetPage: React.FC = () => {
         minggu_lalu: data.omzet.minggu_lalu || 0,
         bulan_ini: data.omzet.bulan_ini || 0,
         bulan_lalu: data.omzet.bulan_lalu || 0,
-        tahun_ini: data.omzet.tahun_ini || 0,
+        tahun_ini: data.omzet.tahun_ini || 0,   // ✅ jangan lupa tahun_ini!
         tahun_lalu: data.omzet.tahun_lalu || 0,
         detail_hari: [],
         detail_minggu: [],
-        detail_bulan: []
+        detail_bulan: [],
+        detail_tahun: [],
       };
       setOmzetData(processedData);
       
@@ -101,29 +106,65 @@ const OmzetPage: React.FC = () => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat mengambil data omzet';
-      setError(errorMessage);
+      if (!silent) {
+        setError(errorMessage);
+      } else {
+        console.warn('Gagal memperbarui omzet realtime:', errorMessage);
+      }
       
       if (showNotification) {
         setNotification({message: 'Gagal memperbarui data', type: 'error'});
         setTimeout(() => setNotification(null), 3000);
       }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  }, []); // PERBAIKAN: Hapus selectedPeriod dari dependency array karena tidak digunakan dalam fungsi
-
-  // Jika kelak ingin detail per-hari/minggu/bulan, bisa panggil endpoint laporan
-  // Untuk sekarang gunakan nilai agregat dari endpoint admin omzet
+  }, []);
 
   useEffect(() => {
     fetchOmzetData();
+  }, [fetchOmzetData]);
+
+  useEffect(() => {
+    let intervalId: number | undefined;
+
+    const refreshOmzetRealtime = () => {
+      fetchOmzetData(false, true);
+    };
+
+    try {
+      const socket = getSocket();
+      socket.on('dashboard:omzet-updated', refreshOmzetRealtime);
+      socket.on('statusUpdated', refreshOmzetRealtime);
+
+      intervalId = window.setInterval(refreshOmzetRealtime, 30000);
+
+      return () => {
+        socket.off('dashboard:omzet-updated', refreshOmzetRealtime);
+        socket.off('statusUpdated', refreshOmzetRealtime);
+        if (intervalId) {
+          window.clearInterval(intervalId);
+        }
+      };
+    } catch (socketError) {
+      console.warn('Socket init failed in DashboardAnalytics:', (socketError as Error).message);
+      intervalId = window.setInterval(refreshOmzetRealtime, 30000);
+
+      return () => {
+        if (intervalId) {
+          window.clearInterval(intervalId);
+        }
+      };
+    }
   }, [fetchOmzetData]);
 
   if (loading) {
     return (
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800">Dashboard Admin</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">Grafik Omzet</h1>
           <p className="text-gray-600">Analisis performa omzet toko</p>
         </div>
         <LoadingSpinner />
@@ -154,7 +195,6 @@ const OmzetPage: React.FC = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 px-4 py-2 rounded-md shadow-lg z-50 ${
           notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
@@ -165,7 +205,7 @@ const OmzetPage: React.FC = () => {
 
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Grafik Omzet</h1>
           <p className="text-gray-600 mt-1">Analisis performa omzet toko</p>
         </div>
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
@@ -199,13 +239,11 @@ const OmzetPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Kartu Statistik */}
       <OmzetCards 
         omzetData={omzetData} 
         formatRupiah={formatRupiah} 
       />
 
-      {/* Grafik Omzet */}
       <OmzetChart 
         omzetData={omzetData} 
         selectedPeriod={selectedPeriod}
@@ -213,18 +251,10 @@ const OmzetPage: React.FC = () => {
         formatRupiah={formatRupiah}
       />
 
-      {/* Tabel Detail Omzet */}
       <OmzetTable 
         omzetData={omzetData} 
         formatRupiah={formatRupiah} 
       />
-
-      {/* Ringkasan */}
-      {/* <OmzetSummary 
-        omzetData={omzetData}
-        formatRupiah={formatRupiah}
-      /> */}
-      
     </div>
   );
 };
