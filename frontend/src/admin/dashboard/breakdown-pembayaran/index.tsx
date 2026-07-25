@@ -30,9 +30,36 @@ const PaymentDetailTable: React.FC<PaymentDetailTableProps> = ({
   getPaymentIcon 
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Detail Pembayaran</h2>
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 border">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Detail Pembayaran</h2>
+
+      {/* ===== CARD LIST — tampil di mobile & tablet ===== */}
+      <div className="md:hidden space-y-2">
+        {data.map((item, index) => (
+          <div 
+            key={item.name} 
+            className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50"
+          >
+            <div className="flex items-center min-w-0">
+              <div 
+                className="w-3 h-3 rounded-full mr-3 flex-shrink-0" 
+                style={{ backgroundColor: colors[index % colors.length] }}
+              ></div>
+              <div className="flex items-center min-w-0">
+                {getPaymentIcon(item.name)}
+                <span className="ml-2 text-sm font-medium text-gray-900 truncate">{item.name}</span>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0 ml-2">
+              <div className="text-sm font-semibold text-gray-900">{formatRupiah(item.value)}</div>
+              <div className="text-xs text-gray-500">{item.percentage.toFixed(1)}%</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ===== TABEL — tampil dari md ke atas ===== */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -213,35 +240,43 @@ const BreakdownPembayaran: React.FC = () => {
 
   // Dapatkan icon berdasarkan metode pembayaran
   const getPaymentIcon = (method: string): React.ReactNode => {
-    if (method.includes('Virtual Account')) return <Landmark className="h-5 w-5 text-blue-500" />;
-    if (method.includes('E-Wallet')) return <Wallet className="h-5 w-5 text-green-500" />;
-    if (method.includes('Tunai')) return <TrendingUp className="h-5 w-5 text-yellow-500" />;
-    if (method.includes('Kartu Kredit')) return <CreditCard className="h-5 w-5 text-purple-500" />;
-    return <CreditCard className="h-5 w-5 text-gray-500" />;
+    if (method.includes('Virtual Account')) return <Landmark className="h-5 w-5 text-blue-500 flex-shrink-0" />;
+    if (method.includes('E-Wallet')) return <Wallet className="h-5 w-5 text-green-500 flex-shrink-0" />;
+    if (method.includes('Tunai')) return <TrendingUp className="h-5 w-5 text-yellow-500 flex-shrink-0" />;
+    if (method.includes('Kartu Kredit')) return <CreditCard className="h-5 w-5 text-purple-500 flex-shrink-0" />;
+    return <CreditCard className="h-5 w-5 text-gray-500 flex-shrink-0" />;
   };
 
   // Warna untuk setiap metode pembayaran
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
+  // Header + filter bulan, dipakai berulang di semua state (loading/error/empty/normal)
+  const HeaderFilter = () => (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
+        <p className="text-sm sm:text-base text-gray-600">Analisis metode pembayaran yang digunakan</p>
+      </div>
+      <div className="sm:ml-auto">
+        <label className="text-xs sm:text-sm text-gray-700 mr-2">Pilih Bulan:</label>
+        <select 
+          value={selectedBulan} 
+          onChange={handleBulanChange} 
+          className="px-3 py-2 border rounded-md text-sm w-full sm:w-auto mt-1 sm:mt-0"
+        >
+          {daftarBulan.map(b => (
+            <option key={b.id} value={b.id}>{b.nama_bulan}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-              <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
-            </div>
-            <div className="ml-auto">
-              <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
-              <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
-                {daftarBulan.map(b => (
-                  <option key={b.id} value={b.id}>{b.nama_bulan}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        
-        <div className="flex justify-center items-center h-96">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+        <HeaderFilter />
+        <div className="flex justify-center items-center h-64 sm:h-96">
           <LoadingSpinner />
         </div>
       </div>
@@ -250,28 +285,14 @@ const BreakdownPembayaran: React.FC = () => {
 
   if (error) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-            <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
-          </div>
-          <div className="ml-auto">
-            <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
-            <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
-              {daftarBulan.map(b => (
-                <option key={b.id} value={b.id}>{b.nama_bulan}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+        <HeaderFilter />
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" />
             <div className="text-red-700">
-              <p className="font-medium">Error</p>
-              <p className="text-sm">Gagal memuat data: {error}</p>
+              <p className="font-medium text-sm sm:text-base">Error</p>
+              <p className="text-xs sm:text-sm">Gagal memuat data: {error}</p>
             </div>
           </div>
         </div>
@@ -281,24 +302,10 @@ const BreakdownPembayaran: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-            <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
-          </div>
-          <div className="ml-auto">
-            <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
-            <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
-              {daftarBulan.map(b => (
-                <option key={b.id} value={b.id}>{b.nama_bulan}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+        <HeaderFilter />
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <p className="text-blue-700">Tidak ada data pembayaran yang tersedia.</p>
+          <p className="text-sm sm:text-base text-blue-700">Tidak ada data pembayaran yang tersedia.</p>
         </div>
       </div>
     );
@@ -314,39 +321,27 @@ const BreakdownPembayaran: React.FC = () => {
     percentage: total > 0 ? (value / total) * 100 : 0
   }));
 
-  // Custom label renderer untuk pie chart
+  // Custom label renderer untuk pie chart — hanya persentase, dibuat singkat biar tidak tabrakan di layar sempit
   const renderLabel: PieLabel = (props) => {
-    // Menggunakan unknown untuk type assertion yang aman
-    const { name, percent } = props as unknown as { name: string; percent: number };
-    const percentage = percent * 100; // Recharts menyediakan percent sebagai desimal (0-1)
-    return `${name}: ${percentage.toFixed(1)}%`;
+    const { percent } = props as unknown as { name: string; percent: number };
+    const percentage = percent * 100;
+    return `${percentage.toFixed(0)}%`;
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Breakdown Pembayaran</h1>
-          <p className="text-gray-600">Analisis metode pembayaran yang digunakan</p>
-        </div>
-        <div className="ml-auto">
-          <label className="text-sm text-gray-700 mr-2">Pilih Bulan:</label>
-          <select value={selectedBulan} onChange={handleBulanChange} className="px-3 py-2 border rounded-md">
-            {daftarBulan.map(b => (
-              <option key={b.id} value={b.id}>{b.nama_bulan}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      <HeaderFilter />
       
-      <div className="bg-white rounded-lg shadow-md p-6 border">
-        <h2 className="text-xl font-semibold text-gray-800">Total Pembayaran: {formatRupiah(total)}</h2>
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 border">
+        <h2 className="text-base sm:text-xl font-semibold text-gray-800">
+          Total Pembayaran: <span className="block sm:inline">{formatRupiah(total)}</span>
+        </h2>
       </div>
       
       {/* Pie Chart */}
-      <div className="bg-white rounded-lg shadow-md p-6 border">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Distribusi Pembayaran</h2>
-        <div className="h-80">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 border">
+        <h2 className="text-base sm:text-xl font-semibold text-gray-800 mb-4">Distribusi Pembayaran</h2>
+        <div className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -354,7 +349,7 @@ const BreakdownPembayaran: React.FC = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={80}
+                outerRadius="70%"
                 fill="#8884d8"
                 dataKey="value"
                 label={renderLabel}
@@ -364,7 +359,10 @@ const BreakdownPembayaran: React.FC = () => {
                 ))}
               </Pie>
               <Tooltip formatter={(value) => formatRupiah(Number(value))} />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ fontSize: '12px' }}
+                formatter={(value) => value}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>

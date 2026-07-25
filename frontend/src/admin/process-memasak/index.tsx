@@ -107,9 +107,6 @@ const ProcessMemasak = () => {
     const endIndex = startIndex + pagination.limit;
     const paginatedData = filteredData.slice(startIndex, endIndex);
 
-    // State `productions` tidak lagi diperlukan, kita bisa langsung menggunakan `paginatedData` di render
-    // Tapi untuk menjaga kode tetap bersih, kita bisa membuat state baru jika perlu
-    // atau langsung memproses di dalam return. Untuk sekarang, kita akan buat state baru.
     setProductions(paginatedData);
   }, [allProductions, filters, pagination.currentPage, pagination.limit]); // Dependency array
 
@@ -231,7 +228,8 @@ const ProcessMemasak = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* ==================== DESKTOP VIEW (Tabel) ==================== */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full table-auto">
           <thead className="bg-gray-50">
             <tr>
@@ -245,7 +243,7 @@ const ProcessMemasak = () => {
                 Jumlah Diproses
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Status & Aksi
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Waktu Mulai
@@ -277,12 +275,35 @@ const ProcessMemasak = () => {
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                   {prod.jumlah_diproses} {prod.bahan_baku_id?.satuan || ''}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap">
+                
+                {/* STATUS & AKSI DIGABUNG */}
+                <td className="px-4 py-4">
                   <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(prod.status)}`}>
                     {getStatusIcon(prod.status)}
                     <span className="ml-1 capitalize">{prod.status}</span>
                   </div>
+                  
+                  {/* Tombol muncul hanya jika Pending */}
+                  {prod.status === 'pending' && (
+                    <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={() => alert('Approve untuk: ' + prod.bahan_baku_id?.nama)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors"
+                      >
+                        <CheckCircle size={14} />
+                        Approve
+                      </button>
+                      <button 
+                        onClick={() => alert('Tolak untuk: ' + prod.bahan_baku_id?.nama)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium rounded-md transition-colors border border-red-200"
+                      >
+                        <XCircle size={14} />
+                        Tolak
+                      </button>
+                    </div>
+                  )}
                 </td>
+
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                   {prod.waktu_mulai ? new Date(prod.waktu_mulai).toLocaleString('id-ID') : '-'}
                 </td>
@@ -290,6 +311,71 @@ const ProcessMemasak = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ==================== MOBILE VIEW (Kartu) ==================== */}
+      <div className="md:hidden space-y-4">
+        {productions.map((prod, index) => (
+          <div key={prod._id || index} className={`border rounded-xl p-4 shadow-sm ${
+            index % 2 === 0 ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-200'
+          }`}>
+            {/* Header Kartu: Nama & Status */}
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1 mr-3">
+                <h3 className="text-sm font-bold text-gray-900">
+                  {prod.bahan_baku_id?.nama || 'Bahan baku tidak ditemukan'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {prod.bahan_baku_id?.kategori || '-'}
+                </p>
+              </div>
+              
+              {/* Status & Aksi Digabung di pojok kanan */}
+              <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(prod.status)}`}>
+                  {getStatusIcon(prod.status)}
+                  <span className="ml-1 capitalize">{prod.status}</span>
+                </div>
+                
+                {/* Tombol muncul hanya jika Pending */}
+                {prod.status === 'pending' && (
+                  <div className="flex gap-1.5">
+                    <button 
+                      onClick={() => alert('Approve untuk: ' + prod.bahan_baku_id?.nama)}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      <CheckCircle size={14} />
+                      Approve
+                    </button>
+                    <button 
+                      onClick={() => alert('Tolak untuk: ' + prod.bahan_baku_id?.nama)}
+                      className="flex items-center gap-1 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium rounded-lg transition-colors border border-red-200"
+                    >
+                      <XCircle size={14} />
+                      Tolak
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Detail Kartu */}
+            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+              <div>
+                <p className="text-xs text-gray-500">Chef</p>
+                <p className="font-medium text-gray-800">{prod.chef_id?.nama_lengkap || 'Unknown'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Jumlah Diproses</p>
+                <p className="font-medium text-gray-800">{prod.jumlah_diproses} {prod.bahan_baku_id?.satuan || ''}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500">Waktu Mulai</p>
+                <p className="font-medium text-gray-800">{prod.waktu_mulai ? new Date(prod.waktu_mulai).toLocaleString('id-ID') : '-'}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* <!-- DIUBAH --> Pagination Section */}

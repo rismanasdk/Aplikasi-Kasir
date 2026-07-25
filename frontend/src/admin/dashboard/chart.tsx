@@ -30,6 +30,7 @@ interface OmzetData {
   hari_ini: number;
   minggu_ini: number;
   bulan_ini: number;
+  tahun_ini: number;
   detail_hari: {
     tanggal: string;
     omzet: number;
@@ -42,12 +43,16 @@ interface OmzetData {
     tanggal: string;
     omzet: number;
   }[];
+  detail_tahun: {
+    bulan: string;
+    omzet: number;
+  }[];
 }
 
 interface OmzetChartProps {
   omzetData: OmzetData | null;
-  selectedPeriod: 'hari' | 'minggu' | 'bulan';
-  setSelectedPeriod: (period: 'hari' | 'minggu' | 'bulan') => void;
+  selectedPeriod: 'hari' | 'minggu' | 'bulan' | 'tahun';
+  setSelectedPeriod: (period: 'hari' | 'minggu' | 'bulan' | 'tahun') => void;
   formatRupiah: (amount: number) => string;
 }
 
@@ -104,6 +109,24 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
             omzetData.bulan_ini * 0.5,
             omzetData.bulan_ini * 0.75,
             omzetData.bulan_ini
+          ]
+        };
+      case 'tahun':
+        return {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+          values: [
+            omzetData.tahun_ini * 0.08,
+            omzetData.tahun_ini * 0.15,
+            omzetData.tahun_ini * 0.25,
+            omzetData.tahun_ini * 0.4,
+            omzetData.tahun_ini * 0.6,
+            omzetData.tahun_ini * 0.8,
+            omzetData.tahun_ini * 0.9,
+            omzetData.tahun_ini * 0.95,
+            omzetData.tahun_ini * 0.98,
+            omzetData.tahun_ini * 0.99,
+            omzetData.tahun_ini * 0.995,
+            omzetData.tahun_ini
           ]
         };
       default:
@@ -164,6 +187,10 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
               return formatRupiah(value);
             }
             return value;
+          },
+          // Sedikit lebih kecil di layar sempit biar label tidak numpuk
+          font: {
+            size: 11
           }
         },
         grid: {
@@ -171,6 +198,14 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
         }
       },
       x: {
+        ticks: {
+          font: {
+            size: 11
+          },
+          maxRotation: 0,
+          autoSkip: true,
+          autoSkipPadding: 8
+        },
         grid: {
           display: false,
         }
@@ -183,8 +218,8 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
   };
 
   // Warna tombol berdasarkan periode yang dipilih
-  const getButtonClass = (period: 'hari' | 'minggu' | 'bulan') => {
-    const baseClass = "px-4 py-2 text-sm rounded-md transition-colors";
+  const getButtonClass = (period: 'hari' | 'minggu' | 'bulan' | 'tahun') => {
+    const baseClass = "px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm rounded-md transition-colors whitespace-nowrap flex-shrink-0";
     
     if (selectedPeriod === period) {
       switch (period) {
@@ -194,6 +229,8 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
           return `${baseClass} bg-green-500 text-white shadow-md`;
         case 'bulan':
           return `${baseClass} bg-purple-500 text-white shadow-md`;
+        case 'tahun':
+          return `${baseClass} bg-red-500 text-white shadow-md`;
       }
     } else {
       return `${baseClass} bg-gray-100 text-gray-700 hover:bg-gray-200`;
@@ -201,10 +238,12 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Grafik Omzet</h2>
-        <div className="flex space-x-2">
+    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-base md:text-lg font-semibold text-gray-800">Grafik Omzet</h2>
+
+        {/* Tombol periode: bisa di-scroll horizontal di mobile agar tidak wrap berantakan */}
+        <div className="flex space-x-2 overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-hide">
           <button
             onClick={() => setSelectedPeriod('hari')}
             className={getButtonClass('hari')}
@@ -223,16 +262,22 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
           >
             Bulan Ini
           </button>
+          <button
+            onClick={() => setSelectedPeriod('tahun')}
+            className={getButtonClass('tahun')}
+          >
+            Tahun Ini
+          </button>
         </div>
       </div>
 
       {/* Diagram Garis menggunakan Chart.js */}
-      <div className="h-80">
+      <div className="h-56 sm:h-64 md:h-80">
         <Line data={lineChartData} options={lineChartOptions} />
       </div>
       
       {/* Info tambahan berdasarkan periode yang dipilih */}
-      <div className="mt-4 text-sm text-gray-600">
+      <div className="mt-4 text-xs md:text-sm text-gray-600">
         {selectedPeriod === 'hari' && (
           <p>Grafik menampilkan proyeksi omzet per jam untuk hari ini</p>
         )}
@@ -241,6 +286,9 @@ const OmzetChart: React.FC<OmzetChartProps> = ({
         )}
         {selectedPeriod === 'bulan' && (
           <p>Grafik menampilkan proyeksi omzet per minggu untuk bulan ini</p>
+        )}
+        {selectedPeriod === 'tahun' && (
+          <p>Grafik menampilkan proyeksi omzet per bulan untuk tahun ini</p>
         )}
       </div>
     </div>

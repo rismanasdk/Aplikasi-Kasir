@@ -710,7 +710,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
 };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       {actionLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <LoadingSpinner />
@@ -718,15 +718,15 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Daftar Barang</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Daftar Barang</h1>
             </div>
-            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
-              <div className="flex gap-2">
+            <div className="mt-2 md:mt-0 flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col xs:flex-row gap-2">
                 <select
-                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full"
+                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm"
                   value={kategoriFilter}
                   onChange={(e) => setKategoriFilter(e.target.value)}
                   disabled={actionLoading}
@@ -741,7 +741,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
                 <input
                   type="text"
                   placeholder="Cari barang..."
-                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full"
+                  className="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   disabled={actionLoading}
@@ -750,7 +750,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowCategoryModal(true)}
-                  className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center"
+                  className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center text-sm w-full sm:w-auto"
                   disabled={actionLoading}
                 >
                   Kategori
@@ -760,19 +760,19 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
           </div>
 
           {serverError ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 px-2">
               <div className="flex justify-center mb-4">
                 <img 
                   src="/images/nostokbarang.jpg" 
                   alt="Server Error" 
-                  className="w-64 h-64 object-cover rounded-lg shadow-lg"
+                  className="w-40 h-40 sm:w-64 sm:h-64 object-cover rounded-lg shadow-lg"
                 />
               </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Server Tidak Dapat Dihubungi</h3>
-              <p className="text-gray-500 mb-4">Tidak dapat mengambil data barang. Silakan periksa koneksi server atau coba lagi nanti.</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Server Tidak Dapat Dihubungi</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-4">Tidak dapat mengambil data barang. Silakan periksa koneksi server atau coba lagi nanti.</p>
               <button
                 onClick={fetchBarang}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 Coba Lagi
               </button>
@@ -796,8 +796,8 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
               />
               
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6">
-                  <div className="text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-6">
+                  <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     Menampilkan <span className="font-semibold text-gray-900">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredBarang.length)}</span> dari{' '}
                     <span className="font-semibold text-gray-900">{filteredBarang.length}</span> barang
                   </div>
@@ -806,7 +806,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
                     <button
                       onClick={prevPage}
                       disabled={currentPage === 1}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl font-medium text-xs sm:text-sm transition-all ${
                         currentPage === 1 
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                           : 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:scale-105'
@@ -816,7 +816,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
                       <span className="hidden sm:inline">Sebelumnya</span>
                     </button>
                     
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 overflow-x-auto max-w-[140px] sm:max-w-none">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -833,7 +833,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
                           <button
                             key={pageNum}
                             onClick={() => paginate(pageNum)}
-                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                            className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-lg text-sm font-medium transition-all ${
                               currentPage === pageNum 
                                 ? 'bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow-md scale-105' 
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -848,7 +848,7 @@ const handleCreateProduction = async (productionData: ProductionFormData) => {
                     <button
                       onClick={nextPage}
                       disabled={currentPage === totalPages}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl font-medium text-xs sm:text-sm transition-all ${
                         currentPage === totalPages 
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                           : 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:scale-105'

@@ -194,9 +194,9 @@ const TopBarang: React.FC = () => {
   // Komponen Progress Bar
   const ProgressBar: React.FC<{ percentage: number; color: string }> = ({ percentage, color }) => {
     return (
-      <div className="w-full bg-gray-200 rounded-full h-3">
+      <div className="w-full bg-gray-200 rounded-full h-2.5 sm:h-3">
         <div 
-          className={`h-3 rounded-full ${color}`}
+          className={`h-2.5 sm:h-3 rounded-full ${color}`}
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
@@ -217,13 +217,13 @@ const TopBarang: React.FC = () => {
   const getRankingIcon = (index: number) => {
     switch(index) {
       case 0:
-        return <Crown className="h-6 w-6 text-yellow-500" />;
+        return <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />;
       case 1:
-        return <Medal className="h-6 w-6 text-gray-400" />;
+        return <Medal className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />;
       case 2:
-        return <Award className="h-6 w-6 text-amber-700" />;
+        return <Award className="h-5 w-5 sm:h-6 sm:w-6 text-amber-700" />;
       default:
-        return <Star className="h-5 w-5 text-gray-500" />;
+        return <Star className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />;
     }
   };
 
@@ -247,8 +247,8 @@ const TopBarang: React.FC = () => {
 
   if (loading || loadingProduk) {
     return (
-      <div className="p-6">
-        <div className="flex justify-center items-center h-96">
+      <div className="p-3 sm:p-6">
+        <div className="flex justify-center items-center h-64 sm:h-96">
           <LoadingSpinner />
         </div>
       </div>
@@ -257,12 +257,12 @@ const TopBarang: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="text-red-700">
-              <p className="font-medium">Error</p>
-              <p className="text-sm">Gagal memuat data: {error}</p>
+              <p className="font-medium text-sm sm:text-base">Error</p>
+              <p className="text-xs sm:text-sm">Gagal memuat data: {error}</p>
             </div>
           </div>
         </div>
@@ -271,48 +271,48 @@ const TopBarang: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Top 5 Barang Terlaris</h1>
-        <p className="text-gray-600">Analisis produk paling populer berdasarkan pendapatan</p>
+    <div className="p-3 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Top 5 Barang Terlaris</h1>
+        <p className="text-sm sm:text-base text-gray-600">Analisis produk paling populer berdasarkan pendapatan</p>
       </div>
 
       {/* Statistik Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Barang Terjual</h3>
-          <p className="text-2xl font-bold text-blue-600">{formatAngka(totalPenjualan)}</p>
-          <p className="text-xs text-gray-500 mt-1">Periode: saat ini</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Total Barang Terjual</h3>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600">{formatAngka(totalPenjualan)}</p>
+          <p className="text-xs text-gray-500 mt-1">Periode: Bulan Ini</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Jenis Barang</h3>
-          <p className="text-2xl font-bold text-green-600">{data.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Periode: saat ini</p>
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Jenis Barang</h3>
+          <p className="text-xl sm:text-2xl font-bold text-green-600">{data.length}</p>
+          <p className="text-xs text-gray-500 mt-1">Periode: Bulan Ini</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Pendapatan</h3>
-          <p className="text-2xl font-bold text-purple-600">
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Total Pendapatan</h3>
+          <p className="text-xl sm:text-2xl font-bold text-purple-600">
             {formatRupiah(totalPendapatan)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Periode: saat ini</p>
+          <p className="text-xs text-gray-500 mt-1">Periode: Bulan Ini</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Daftar Barang Terlaris - Diperluas ke kanan */}
         <div className="bg-white rounded-lg shadow lg:col-span-2">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">Ranking 5 Barang Terlaris</h2>
-            <p className="text-sm text-gray-500">Berdasarkan pendapatan tertinggi</p>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800">Ranking 5 Barang Terlaris</h2>
+            <p className="text-xs sm:text-sm text-gray-500">Berdasarkan pendapatan tertinggi</p>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {data.length === 0 ? (
-              <p className="text-gray-500 text-center">Tidak ada data barang untuk periode ini</p>
+              <p className="text-gray-500 text-center text-sm">Tidak ada data barang untuk periode ini</p>
             ) : (
-              <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                 {/* Kolom Kiri - Daftar Ranking */}
                 <div className="lg:w-1/2">
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {data.map((barang, index) => {
                       const totalPendapatanProduk = data.reduce((sum, item) => sum + item.pendapatan, 0);
                       const percentage = totalPendapatanProduk > 0 ? (barang.pendapatan / totalPendapatanProduk) * 100 : 0;
@@ -323,38 +323,38 @@ const TopBarang: React.FC = () => {
                       return (
                         <div 
                               key={barang._id || `${barang.nama_produk}-${index}`} 
-                          className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                          className={`flex items-center p-2.5 sm:p-3 rounded-lg cursor-pointer transition-colors ${
                             isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
                           }`}
                           onClick={() => setSelectedProduct(barang)}
                         >
-                          <div className="mr-3">
+                          <div className="mr-2 sm:mr-3 flex-shrink-0">
                             {getRankingIcon(index)}
                           </div>
                           {gambarUrl ? (
                             <img 
                               src={gambarUrl} 
                               alt={barang.nama_produk}
-                              className="h-10 w-10 rounded-full object-cover mr-3"
+                              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mr-2 sm:mr-3 flex-shrink-0"
                             />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                              <span className="text-xs text-gray-500">No Img</span>
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-200 flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                              <span className="text-[9px] sm:text-xs text-gray-500">No Img</span>
                             </div>
                           )}
-                          <div className="flex-1">
-                            <div className="flex items-center mb-1">
-                              <span className="text-sm font-medium text-gray-900 mr-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center mb-1">
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 sm:mr-2 truncate">
                                 {barang.nama_produk}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-500 whitespace-nowrap">
                                 ({formatAngka(barang.jumlah_terjual)} terjual)
                               </span>
                             </div>
                             <ProgressBar percentage={percentage} color={color} />
                           </div>
-                          <div className="ml-4 text-right">
-                            <span className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 sm:ml-4 text-right flex-shrink-0">
+                            <span className="text-xs sm:text-sm font-medium text-gray-900 block">
                               {formatRupiah(barang.pendapatan)}
                             </span>
                             <div className="text-xs text-gray-500">
@@ -370,67 +370,67 @@ const TopBarang: React.FC = () => {
                 {/* Kolom Kanan - Detail Produk Terpilih */}
                 <div className="lg:w-1/2">
                   {selectedProduct ? (
-                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                    <div className="bg-gray-50 rounded-lg p-4 sm:p-5 border border-gray-200">
                       <div className="flex items-start mb-4">
                         {getProdukImage(selectedProduct.nama_produk) ? (
                           <img 
                             src={getProdukImage(selectedProduct.nama_produk) || ''} 
                             alt={selectedProduct.nama_produk}
-                            className="h-16 w-16 rounded-lg object-cover mr-4"
+                            className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg object-cover mr-3 sm:mr-4 flex-shrink-0"
                           />
                         ) : (
-                          <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center mr-4">
+                          <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg bg-gray-200 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
                             <span className="text-xs text-gray-500">No Img</span>
                           </div>
                         )}
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{selectedProduct.nama_produk}</h3>
-                          <p className="text-sm text-gray-500">Kategori: {getProdukKategori(selectedProduct.nama_produk)}</p>
+                        <div className="min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{selectedProduct.nama_produk}</h3>
+                          <p className="text-xs sm:text-sm text-gray-500">Kategori: {getProdukKategori(selectedProduct.nama_produk)}</p>
                           <div className="flex items-center mt-1">
                             {getRankingIcon(data.findIndex(p => p._id === selectedProduct._id))}
-                            <span className="ml-2 text-sm font-medium text-gray-700">
+                            <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
                               Peringkat #{data.findIndex(p => p._id === selectedProduct._id) + 1}
                             </span>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                        <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm">
                           <div className="flex items-center text-blue-600 mb-1">
-                            <Package className="h-4 w-4 mr-1" />
-                            <span className="text-xs font-medium">Jumlah Terjual</span>
+                            <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="text-[11px] sm:text-xs font-medium">Jumlah Terjual</span>
                           </div>
-                          <p className="text-lg font-bold text-gray-900">{formatAngka(selectedProduct.jumlah_terjual)} unit</p>
+                          <p className="text-sm sm:text-lg font-bold text-gray-900">{formatAngka(selectedProduct.jumlah_terjual)} unit</p>
                         </div>
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                        <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm">
                           <div className="flex items-center text-purple-600 mb-1">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            <span className="text-xs font-medium">Harga Jual</span>
+                            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="text-[11px] sm:text-xs font-medium">Harga Jual</span>
                           </div>
-                          <p className="text-lg font-bold text-gray-900">
+                          <p className="text-sm sm:text-lg font-bold text-gray-900">
                             {formatRupiah(selectedProduct.harga_jual ?? getProdukHargaJual(selectedProduct.nama_produk))}
                           </p>
                         </div>
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                        <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm">
                           <div className="flex items-center text-green-600 mb-1">
-                            <TrendingUp className="h-4 w-4 mr-1" />
-                            <span className="text-xs font-medium">Pendapatan</span>
+                            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="text-[11px] sm:text-xs font-medium">Pendapatan</span>
                           </div>
-                          <p className="text-lg font-bold text-gray-900">
+                          <p className="text-sm sm:text-lg font-bold text-gray-900">
                             {formatRupiah(selectedProduct.pendapatan)}
                           </p>
                         </div>
-                        <div className={`bg-white p-3 rounded-lg shadow-sm ${
+                        <div className={`bg-white p-2.5 sm:p-3 rounded-lg shadow-sm ${
                           selectedProduct.laba_kotor >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'
                         }`}>
                           <div className={`flex items-center mb-1 ${
                             selectedProduct.laba_kotor >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            <BarChart3 className="h-4 w-4 mr-1" />
-                            <span className="text-xs font-medium">Laba Kotor</span>
+                            <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="text-[11px] sm:text-xs font-medium">Laba Kotor</span>
                           </div>
-                          <p className={`text-lg font-bold ${
+                          <p className={`text-sm sm:text-lg font-bold ${
                             selectedProduct.laba_kotor >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {formatRupiah(selectedProduct.laba_kotor)}
@@ -438,18 +438,18 @@ const TopBarang: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Analisis HPP</h4>
+                      <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm mb-4">
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Analisis HPP</h4>
                         <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-xs sm:text-sm">
                             <span className="text-gray-600">HPP per Porsi</span>
                             <span className="font-medium">{formatRupiah(selectedProduct.hpp_per_porsi)}</span>
                           </div>
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-xs sm:text-sm">
                             <span className="text-gray-600">Total HPP</span>
                             <span className="font-medium">{formatRupiah(selectedProduct.hpp_total)}</span>
                           </div>
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-xs sm:text-sm">
                             <span className="text-gray-600">Margin</span>
                             <span className={`font-medium ${
                               selectedProduct.laba_kotor >= 0 ? 'text-green-600' : 'text-red-600'
@@ -464,9 +464,9 @@ const TopBarang: React.FC = () => {
 
                     </div>
                   ) : (
-                    <div className="bg-gray-50 rounded-lg p-8 text-center border border-gray-200">
-                      <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500">Pilih produk untuk melihat detail analisis</p>
+                    <div className="bg-gray-50 rounded-lg p-6 sm:p-8 text-center border border-gray-200">
+                      <PieChart className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-sm sm:text-base text-gray-500">Pilih produk untuk melihat detail analisis</p>
                     </div>
                   )}
                 </div>
@@ -476,13 +476,63 @@ const TopBarang: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabel Detail */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden mt-6">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Detail 5 Barang Terlaris</h2>
-          <p className="text-sm text-gray-500">Berdasarkan pendapatan tertinggi</p>
+      {/* Detail 5 Barang Terlaris */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden mt-4 sm:mt-6">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Detail 5 Barang Terlaris</h2>
+          <p className="text-xs sm:text-sm text-gray-500">Berdasarkan pendapatan tertinggi</p>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* ===== CARD LIST — tampil di mobile & tablet ===== */}
+        <div className="md:hidden p-4 space-y-3">
+          {data.map((barang, index) => {
+            const gambarUrl = getProdukImage(barang.nama_produk);
+            return (
+              <div
+                key={barang._id || `${barang.nama_produk}-${index}`}
+                className={`rounded-lg p-3 border border-gray-200 ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-amber-50'
+                }`}
+              >
+                <div className="flex items-center mb-3">
+                  <div className="mr-3 flex-shrink-0">
+                    {getRankingIcon(index)}
+                  </div>
+                  {gambarUrl ? (
+                    <img 
+                      src={gambarUrl} 
+                      alt={barang.nama_produk}
+                      className="h-10 w-10 rounded-full object-cover mr-3 flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 flex-shrink-0">
+                      <span className="text-[9px] text-gray-500">No Img</span>
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">{barang.nama_produk}</div>
+                    <div className="text-xs text-gray-500">{formatAngka(barang.jumlah_terjual)} unit terjual</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-500">Pendapatan</div>
+                    <div className="font-medium text-gray-900">{formatRupiah(barang.pendapatan)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Laba Kotor</div>
+                    <div className={`font-medium ${barang.laba_kotor >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatRupiah(barang.laba_kotor)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ===== TABEL — tampil dari md ke atas ===== */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

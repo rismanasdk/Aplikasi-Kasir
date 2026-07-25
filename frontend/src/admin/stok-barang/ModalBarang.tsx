@@ -63,37 +63,32 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
 }) => {
   const [useBahanBaku, setUseBahanBaku] = useState(false);
   const [isNamaReadOnly, setIsNamaReadOnly] = useState(false);
-  const [isStokReadOnly, setIsStokReadOnly] = useState(false); // Tambahkan kembali state ini
+  const [isStokReadOnly, setIsStokReadOnly] = useState(false);
   const [isHargaBeliReadOnly, setIsHargaBeliReadOnly] = useState(false);
   const [isHargaJualReadOnly, setIsHargaJualReadOnly] = useState(false);
   
-  // Gunakan ref untuk menyimpan nilai formData terbaru tanpa menyebabkan re-render
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
 
-  // Gunakan margin dari formData, bukan state lokal
   const margin = formData?.margin || 30;
 
   useEffect(() => {
-    // Reset semua state readonly saat modal dibuka
     if (visible) {
-      // Jika sedang edit dan ada data bahan baku, set readonly yang sesuai
       if (isEditing && formDataRef.current && formDataRef.current.bahanBaku && formDataRef.current.bahanBaku.length > 0) {
         setUseBahanBaku(true);
         setIsNamaReadOnly(true);
-        setIsStokReadOnly(true); // Tambahkan kembali
+        setIsStokReadOnly(true);
         setIsHargaBeliReadOnly(true);
         setIsHargaJualReadOnly(true);
       } else {
-        // Jika modal baru dibuka atau tidak ada bahan baku, reset semua
         setUseBahanBaku(false);
         setIsNamaReadOnly(false);
-        setIsStokReadOnly(false); // Tambahkan kembali
+        setIsStokReadOnly(false);
         setIsHargaBeliReadOnly(false);
         setIsHargaJualReadOnly(false);
       }
     }
-  }, [visible, isEditing]); // Hanya depend pada visible dan isEditing
+  }, [visible, isEditing]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -104,7 +99,6 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
   const handleMarginChange = (value: string) => {
     const marginValue = parseFloat(value);
     if (!isNaN(marginValue)) {
-      // Update margin di formData
       onInputChange("margin", marginValue);
       
       if (formData?.hargaBeli && !isNaN(parseFloat(formData.hargaBeli))) {
@@ -118,7 +112,6 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Perbaikan: Pastikan bahanBaku dikirim saat update
     if (isEditing && formData.bahanBaku && formData.bahanBaku.length > 0) {
       // Jika menggunakan bahan baku, pastikan data bahan baku dikirim
     }
@@ -129,30 +122,29 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      {/* Modal dengan ukuran yang lebih besar dan scroll */}
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-          <h3 className="text-xl font-bold text-gray-800">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
             {isEditing ? "Edit Barang" : "Tambah Barang Baru"}
           </h3>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         
         {/* Konten dengan scroll */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Layout 2 kolom untuk menghemat ruang */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Kode Barang - Selalu bisa diisi */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            {/* Layout 2 kolom -> 1 kolom di mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Kode Barang */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Kode Barang
@@ -162,14 +154,14 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                     type="text"
                     value={formData?.kode || ""}
                     onChange={(e) => onInputChange("kode", e.target.value)}
-                    className="flex-1 px-3 py-2.5 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                    className="flex-1 min-w-0 px-3 py-2.5 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
                     placeholder="Kode"
                     required
                   />
                   <button
                     type="button"
                     onClick={onGenerateCode}
-                    className="px-3 py-2.5 bg-blue-100 text-blue-700 rounded-r-lg hover:bg-blue-200 transition-colors text-sm border border-blue-200"
+                    className="px-3 py-2.5 bg-blue-100 text-blue-700 rounded-r-lg hover:bg-blue-200 transition-colors text-sm border border-blue-200 flex-shrink-0"
                     title="Generate kode acak"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +171,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                 </div>
               </div>
 
-              {/* Nama Barang - Readonly jika menggunakan bahan baku */}
+              {/* Nama Barang */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Barang
@@ -207,7 +199,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                 </div>
               </div>
 
-              {/* Kategori - Selalu putih */}
+              {/* Kategori */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Kategori
@@ -227,7 +219,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                 </select>
               </div>
 
-              {/* Stok - Readonly jika menggunakan bahan baku */}
+              {/* Stok */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Stok
@@ -256,11 +248,11 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
             </div>
 
 
-            {/* Section: Harga - Layout 3 kolom */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            {/* Section: Harga - Layout 3 kolom -> 1 kolom di mobile */}
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Informasi Harga</h4>
-              <div className="grid grid-cols-3 gap-4">
-                {/* Harga Beli - Readonly jika menggunakan bahan baku */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Harga Beli */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                   Harga Beli
@@ -290,7 +282,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                   </div>
                 </div>
 
-                {/* Margin - Selalu bisa diisi */}
+                {/* Margin */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Margin (%)
@@ -347,7 +339,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                   </div>
                 </div>
 
-                {/* Harga Jual - Readonly jika menggunakan bahan baku */}
+                {/* Harga Jual */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                   Harga Jual
@@ -379,9 +371,9 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
               </div>
             </div>
 
-            {/* Diskon - Selalu bisa diisi */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between">
+            {/* Diskon */}
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -417,28 +409,28 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
               {formData?.useDiscount && formData?.hargaJual && !isNaN(parseFloat(formData.hargaJual)) && (
                 <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">Harga Jual:</span>
-                    <span className="text-sm font-medium text-gray-800">Rp {parseFloat(formData.hargaJual).toLocaleString("id-ID")}</span>
+                    <span className="text-xs sm:text-sm text-gray-600">Harga Jual:</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-800">Rp {parseFloat(formData.hargaJual).toLocaleString("id-ID")}</span>
                   </div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">Diskon ({globalDiscount}%):</span>
-                    <span className="text-sm font-medium text-red-600">- Rp {Math.round(parseFloat(formData.hargaJual) * (globalDiscount / 100)).toLocaleString("id-ID")}</span>
+                    <span className="text-xs sm:text-sm text-gray-600">Diskon ({globalDiscount}%):</span>
+                    <span className="text-xs sm:text-sm font-medium text-red-600">- Rp {Math.round(parseFloat(formData.hargaJual) * (globalDiscount / 100)).toLocaleString("id-ID")}</span>
                   </div>
                   <div className="border-t border-green-300 mt-2 pt-2 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Harga Akhir (estimasi):</span>
-                    <span className="text-base font-bold text-green-700">Rp {Math.round(parseFloat(formData.hargaJual) * (1 - globalDiscount / 100)).toLocaleString("id-ID")}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-700">Harga Akhir (estimasi):</span>
+                    <span className="text-sm sm:text-base font-bold text-green-700">Rp {Math.round(parseFloat(formData.hargaJual) * (1 - globalDiscount / 100)).toLocaleString("id-ID")}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Section: Gambar Barang - Selalu bisa diisi */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            {/* Section: Gambar Barang */}
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Gambar Barang
               </label>
-              <div className="flex items-start space-x-4">
-                <div className="flex-1">
+              <div className="flex flex-col xs:flex-row items-start gap-4">
+                <div className="flex-1 w-full">
                   <input
                     type="file"
                     accept="image/*"
@@ -454,7 +446,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                       <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-gray-700 truncate max-w-full px-2">
                         {formData?.gambar ? formData.gambar.name : "Pilih gambar"}
                       </span>
                     </div>
@@ -462,7 +454,7 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
                 </div>
                 
                 {formData?.gambar && (
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 mx-auto xs:mx-0">
                     <div className="relative group">
                       <img
                         src={URL.createObjectURL(formData.gambar)}
@@ -487,18 +479,18 @@ const ModalBarang: React.FC<ModalBarangProps> = ({
         </div>
         
         {/* Footer - Tombol Aksi */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 flex-shrink-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex flex-col-reverse xs:flex-row justify-end gap-2 xs:gap-3 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-300"
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-300 w-full xs:w-auto"
           >
             Batal
           </button>
           <button
             type="submit"
             onClick={handleSubmit}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full xs:w-auto"
           >
             {loading ? "Menyimpan..." : isEditing ? "Update" : "Simpan"}
           </button>

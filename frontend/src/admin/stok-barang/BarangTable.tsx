@@ -25,26 +25,6 @@ const formatCurrency = (value: number | string | null | undefined): string => {
   return `Rp ${formatNumber(numValue)}`;
 };
 
-// Komponen ikon status barang (pending/publish) - DEPRECATED: Diganti dengan toggle switch
-// const StatusBarangIcon: React.FC<{ status?: string }> = ({ status }) => {
-//   const statusLower = status?.toLowerCase() || "pending";
-  
-//   if (statusLower === "publish") {
-//     return <CheckCircle className="w-5 h-5 text-green-500" />;
-//   } else {
-//     return <AlertCircle className="w-5 h-5 text-orange-500" />;
-//   }
-// };
-
-// const getStatusBarangClass = (status?: string): string => {
-//   const statusLower = status?.toLowerCase() || "pending";
-//   if (statusLower === "publish") {
-//     return "bg-green-50 text-green-700 border border-green-200";
-//   } else {
-//     return "bg-orange-50 text-orange-700 border border-orange-200";
-//   }
-// };
-
 // Fungsi untuk mendapatkan warna progress bar
 const getProgressBarColor = (stok: number, stokMinimal: number = 5) => {
   if (stok <= 0) return "bg-red-500";
@@ -54,7 +34,6 @@ const getProgressBarColor = (stok: number, stokMinimal: number = 5) => {
 
 // Fungsi untuk menghitung lebar progress bar
 const getProgressBarWidth = (stok: number, stokAwal?: number) => {
-  // Jika tidak ada stok awal, gunakan stok minimal sebagai acuan
   const referenceStock = stokAwal || 50;
   return `${Math.min(100, (stok / referenceStock) * 100)}%`;
 };
@@ -87,30 +66,23 @@ const BarangTable: React.FC<BarangTableProps> = ({
 
   const getImageUrl = (gambarUrl?: string): string | null => {
     if (!gambarUrl) return null;
-    
-    // Jika URL sudah lengkap (http/https), gunakan langsung
     if (gambarUrl.startsWith('http://') || gambarUrl.startsWith('https://')) {
       return gambarUrl;
     }
-    
-    // Jika URL relative, tambahkan base URL
     return `${API_URL}${gambarUrl.startsWith('/') ? '' : '/'}${gambarUrl}`;
   };
 
   const getBahanBakuInfo = (barang: Barang): BahanBakuItem | null => {
-    // Cek apakah barang memiliki data bahan baku langsung
-   if (barang.bahanBaku && barang.bahanBaku.length > 0) {
+    if (barang.bahanBaku && barang.bahanBaku.length > 0) {
       return {
         nama_produk: barang.nama,
         total_porsi: barang.bahanBaku.reduce((sum, produk) => 
           sum + (produk.bahan?.reduce((bahanSum, bahan) => bahanSum + (bahan.jumlah || 0), 0) || 0), 0
         ),
-        // Perbaikan: Gunakan harga beli yang sudah modal per porsi
         modal_per_porsi: barang.hargaBeli || 0,
         bahan: barang.bahanBaku.flatMap(produk => produk.bahan || [])
       };
     }
-    // Cari di daftar bahan baku global
     if (bahanBakuList.length === 0) return null;
     
     const matchingBahan = bahanBakuList.find(item => 
@@ -136,50 +108,203 @@ const BarangTable: React.FC<BarangTableProps> = ({
     return "bg-blue-100 text-blue-700";
   };
 
+  const getMarginLabel = (margin?: number): string => {
+    if (!margin) return '-';
+    return margin < 20 ? 'Rendah' : margin < 30 ? 'Normal' : margin < 50 ? 'Bagus' : 'Tinggi';
+  };
+
+  const getRowAccent = (item: Barang): string => {
+    if (item.status === "habis") return "border-l-red-500 bg-red-50/70";
+    if (item.status === "hampir habis") return "border-l-yellow-500 bg-yellow-50/70";
+    if (item.status === "aman") return "border-l-green-500 bg-green-50/70";
+    return "border-l-gray-200";
+  };
+
+  if (data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-12 text-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <Package className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium">Tidak ada data barang</p>
+            <p className="text-gray-400 text-sm mt-1">Data barang akan muncul di sini</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50/80 backdrop-blur-sm">
-            <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Gambar
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Kode
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Nama Barang
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Kategori
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Harga Beli
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Margin
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Harga Jual
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Harga Final
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Stok
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Status Barang
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                Aksi
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {data.length > 0 ? (
-              data.map((item, index) => {
+    <>
+      {/* ===== CARD LIST — tampil di mobile & tablet ===== */}
+      <div className="md:hidden space-y-3">
+        {data.map((item, index) => {
+          const imageUrl = getImageUrl(item.gambarUrl);
+          const progressBarColor = getProgressBarColor(item.stok, item.stokMinimal || 5);
+          const progressBarWidth = getProgressBarWidth(item.stok, item.stok_awal);
+
+          return (
+            <div
+              key={item._id || `card-${index}-${Date.now()}`}
+              className={`bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 p-4 ${getRowAccent(item)}`}
+            >
+              {/* Header: gambar + nama + kode */}
+              <div className="flex items-start gap-3 mb-3">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={item.nama || "gambar barang"}
+                    className="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "https://via.placeholder.com/48?text=No+Img";
+                      target.classList.add("object-contain", "p-1", "bg-gray-100");
+                    }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-14 h-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gray-400 text-[10px] text-center">No Image</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate" title={item.nama || "-"}>
+                    {safeValue(item.nama, "-")}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-xs font-mono font-medium text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                      {safeValue(item.kode, "-")}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      {safeValue(item.kategori, "-")}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => item._id && onUpdateStatus(item._id, item.statusBarang === "publish" ? "pending" : "publish")}
+                  className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    item.statusBarang === "publish"
+                      ? "bg-green-100 text-green-800 border border-green-300"
+                      : "bg-orange-100 text-orange-800 border border-orange-300"
+                  }`}
+                >
+                  {item.statusBarang === "publish" ? "Published" : "Pending"}
+                </button>
+              </div>
+
+              {/* Info harga */}
+              <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-[10px] text-gray-500 mb-0.5">Harga Beli</div>
+                  <div className="text-xs font-medium text-gray-700">{formatCurrency(safeValue(item.hargaBeli, 0))}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-[10px] text-gray-500 mb-0.5">Margin</div>
+                  <div className={`text-xs font-semibold ${getMarginColor(item.margin)}`}>
+                    {item.margin !== undefined ? `${item.margin}%` : '-'}
+                  </div>
+                  {item.margin !== undefined && (
+                    <div className={`text-[9px] px-1.5 py-0.5 rounded-full inline-block mt-0.5 ${getMarginBadge(item.margin)}`}>
+                      {getMarginLabel(item.margin)}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-[10px] text-gray-500 mb-0.5">Harga Jual</div>
+                  <div className="text-xs font-medium text-gray-700">{formatCurrency(safeValue(item.hargaJual, 0))}</div>
+                </div>
+              </div>
+
+              {/* Harga final + stok */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-semibold text-green-700 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
+                  Final: {formatCurrency(safeValue(item.hargaFinal, 0))}
+                </div>
+                <div className="text-right flex-1 ml-3 max-w-[45%]">
+                  <div className="flex items-center justify-end gap-1 mb-1">
+                    <span className="text-xs text-gray-500">Stok:</span>
+                    <span className="text-sm font-semibold text-gray-900">{safeValue(item.stok, 0)}</span>
+                  </div>
+                  {item.stok !== undefined && (
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                      <div 
+                        className={`h-1.5 rounded-full transition-all duration-500 ${progressBarColor}`}
+                        style={{ width: progressBarWidth }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Aksi */}
+              <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                <button
+                  onClick={() => item._id && onEdit(item._id)}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all duration-200"
+                  disabled={!item._id}
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => item._id && onDelete(item._id)}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-all duration-200"
+                  disabled={!item._id}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hapus
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ===== TABEL — tampil dari md ke atas ===== */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50/80 backdrop-blur-sm">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Gambar
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Kode
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Nama Barang
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Kategori
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Harga Beli
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Margin
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Harga Jual
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Harga Final
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Stok
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Status Barang
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {data.map((item, index) => {
                 const imageUrl = getImageUrl(item.gambarUrl);
                 const stokAvail = item.status === "aman";
                 const isLowStock = item.status === "hampir habis";
@@ -237,18 +362,6 @@ const BarangTable: React.FC<BarangTableProps> = ({
                         <div className="text-sm font-medium text-gray-900 truncate" title={item.nama || "-"}>
                           {safeValue(item.nama, "-")}
                         </div>
-                        {/* {isLowStock && (
-                          <div className="text-xs text-yellow-600 mt-1 flex items-center">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Stok hampir habis!
-                          </div>
-                        )}
-                        {isOutOfStock && (
-                          <div className="text-xs text-red-600 mt-1 flex items-center">
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Stok habis!
-                          </div>
-                        )} */}
                       </div>
                     </td>
 
@@ -264,7 +377,6 @@ const BarangTable: React.FC<BarangTableProps> = ({
                       </div>
                       {bahanBakuInfo && (
                         <div className="text-xs text-green-600 mt-1">
-                          {/* ✓ Dari bahan baku */}
                         </div>
                       )}
                     </td>
@@ -276,9 +388,7 @@ const BarangTable: React.FC<BarangTableProps> = ({
                         </div>
                         {item.margin && (
                           <div className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${getMarginBadge(item.margin)}`}>
-                            {item.margin < 20 ? 'Rendah' : 
-                             item.margin < 30 ? 'Normal' : 
-                             item.margin < 50 ? 'Bagus' : 'Tinggi'}
+                            {getMarginLabel(item.margin)}
                           </div>
                         )}
                       </div>
@@ -302,7 +412,6 @@ const BarangTable: React.FC<BarangTableProps> = ({
                           {safeValue(item.stok, 0)}
                         </div>
                         <div className="text-xs text-gray-500 text-center">
-                          {/* Peringatan: <div className="text-yellow-500">{safeValue(item.stokMinimal, 5)}</div> */}
                         </div>
                         {item.stok !== undefined && (
                           <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
@@ -353,24 +462,12 @@ const BarangTable: React.FC<BarangTableProps> = ({
                     </td>
                   </tr>
                 );
-              })
-            ) : (
-              <tr>
-                <td colSpan={11} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                      <Package className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 font-medium">Tidak ada data barang</p>
-                    <p className="text-gray-400 text-sm mt-1">Data barang akan muncul di sini</p>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
