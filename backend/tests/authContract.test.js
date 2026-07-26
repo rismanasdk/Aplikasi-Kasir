@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import { buildAuthMePayload } from "../auth/authContract.js";
+import { getDefaultRolePermissions } from "../middleware/authorization.js";
 import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.js";
 
 test("buildAuthMePayload returns role, branch, and permissions in a normalized shape", () => {
@@ -66,4 +67,11 @@ test("buildBranchFilter matches ObjectId-like branch values and keeps Pusat fall
   assert.equal(filter.$or[0].$or[1].branch_id, branchId);
   assert.ok(filter.$or[0].$or[2].branch_id instanceof mongoose.Types.ObjectId);
   assert.equal(filter.$or[0].$or[2].branch_id.toString(), branchId);
+});
+
+test("chef role includes stock view and stock adjust permissions", () => {
+  const permissions = getDefaultRolePermissions("chef");
+
+  assert.ok(permissions.includes("stock.view"));
+  assert.ok(permissions.includes("stock.adjust"));
 });
