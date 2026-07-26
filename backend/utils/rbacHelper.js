@@ -25,9 +25,23 @@ export const buildBranchFilter = (user, resourceBranchIdField = "branch_id") => 
   }
 
   if (user.branch_id) {
-    return {
+    const branchQuery = {
       [resourceBranchIdField]: user.branch_id,
     };
+
+    // Historical records without branch_id should still be visible to users
+    // assigned to the central 'Pusat' branch.
+    if (String(user.branchName || "").toLowerCase() === "pusat") {
+      return {
+        $or: [
+          branchQuery,
+          { [resourceBranchIdField]: null },
+          { [resourceBranchIdField]: { $exists: false } },
+        ],
+      };
+    }
+
+    return branchQuery;
   }
 
   return {

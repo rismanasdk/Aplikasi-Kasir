@@ -17,11 +17,17 @@ export const getDashboard = async (req, res) => {
       ...buildBranchFilter(req.user)
     });
 
+    
+    const getRangeTotal = (transactions, start, end) => transactions
+      .filter(t => t.tanggal_transaksi >= start && t.tanggal_transaksi <= end)
+      .reduce((sum, t) => sum + (Number(t.total_harga) || 0), 0);
+
+
     // Ringkasan penjualan (jumlah transaksi selesai bulan ini)
     const totalTransaksi = transaksiSelesai.length;
 
     // Omset penjualan bulan ini
-    const totalOmset = transaksiSelesai.reduce((sum, trx) => sum + (trx.total_harga || 0), 0);
+    const totalOmset = getRangeTotal(transaksiSelesai, startOfMonth, endOfMonth);
 
     // Hitung barang terlaris untuk bulan ini
     const barangCounter = {};
