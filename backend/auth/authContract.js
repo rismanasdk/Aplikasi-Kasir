@@ -1,5 +1,20 @@
 import { PERMISSIONS } from "./../shared/permissionRegistry.js";
 
+const normalizeRoleCode = (user, role) => {
+  const rawCode = role?.code || user?.role || role?.nama || null;
+  if (!rawCode) return null;
+
+  const normalized = String(rawCode).trim().toLowerCase();
+  const legacyMap = {
+    "super-admin": "super_admin",
+    super_admin: "super_admin",
+    manajer: "manager",
+    manager: "manager",
+  };
+
+  return legacyMap[normalized] || normalized;
+};
+
 export const buildAuthMePayload = (user, role, branch) => {
   const permissions = (role?.permissions || [])
     .map((permission) => {
@@ -20,7 +35,7 @@ export const buildAuthMePayload = (user, role, branch) => {
     },
     role: {
       id: role?._id?.toString?.() || role?.id || null,
-      code: role?.code || null,
+      code: normalizeRoleCode(user, role),
       name: role?.nama || null,
     },
     branch: {

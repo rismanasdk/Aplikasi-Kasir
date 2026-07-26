@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import mongoose from "mongoose";
 import { buildAuthMePayload } from "../auth/authContract.js";
-import { validateAndInjectBranch } from "../utils/rbacHelper.js";
+import { buildBranchFilter, validateAndInjectBranch } from "../utils/rbacHelper.js";
 
 test("buildAuthMePayload returns role, branch, and permissions in a normalized shape", () => {
   const user = {
@@ -51,4 +52,18 @@ test("validateAndInjectBranch overwrites branch overrides with the authenticated
   assert.equal(result.isValid, true);
   assert.equal(req.body.branch_id, "branch-1");
   assert.equal(result.branchId, "branch-1");
+});
+
+test("buildBranchFilter matches ObjectId-like branch values and keeps Pusat fallback", () => {
+  const branchId = "507f1f77bcf86cd799439011";
+  const filter = buildBranchFilter({ branch_id: branchId, branchName: "Pusat", permissions: [] });
+
+  assert.ok(filter.$or);
+  assert.equal(filter.$or.length, 3);
+  assert.ok(filter.$or[0].$or);
+  assert.equal(filter.$or[0].$or.length, 3);
+  assert.equal(filter.$or[0].$or[0].branch_id, branchId);
+  assert.equal(filter.$or[0].$or[1].branch_id, branchId);
+  assert.ok(filter.$or[0].$or[2].branch_id instanceof mongoose.Types.ObjectId);
+  assert.equal(filter.$or[0].$or[2].branch_id.toString(), branchId);
 });

@@ -3,6 +3,7 @@
  * 
  * Gunakan fungsi-fungsi ini di controller untuk membangun query yang sesuai dengan branch user
  */
+import mongoose from "mongoose";
 import { PERMISSIONS } from "./../shared/permissionRegistry.js";
 
 /**
@@ -16,6 +17,26 @@ import { PERMISSIONS } from "./../shared/permissionRegistry.js";
  * const filter = buildBranchFilter(req.user);
  * const transactions = await Transaksi.find(filter);
  */
+const buildBranchIdMatchQueries = (branchIdValue, resourceBranchIdField) => {
+  const queries = [];
+
+  if (branchIdValue == null || branchIdValue === "") {
+    return queries;
+  }
+
+  const branchIdString = String(branchIdValue);
+  queries.push({ [resourceBranchIdField]: branchIdValue });
+  queries.push({ [resourceBranchIdField]: branchIdString });
+
+  try {
+    queries.push({ [resourceBranchIdField]: new mongoose.Types.ObjectId(branchIdString) });
+  } catch {
+    // Ignore invalid ObjectId strings and fall back to the plain string match above.
+  }
+
+  return queries;
+};
+
 export const buildBranchFilter = (user, resourceBranchIdField = "branch_id") => {
   const permissionCodes = Array.isArray(user?.permissions) ? user.permissions : [];
   const hasGlobalAccess = permissionCodes.includes(PERMISSIONS.BRANCH_GLOBAL) || permissionCodes.includes(PERMISSIONS.BRANCH_SWITCH);
@@ -24,10 +45,12 @@ export const buildBranchFilter = (user, resourceBranchIdField = "branch_id") => 
     return {};
   }
 
-  if (user.branch_id) {
-    const branchQuery = {
-      [resourceBranchIdField]: user.branch_id,
-    };
+  const branchIdQueries = buildBranchIdMatchQueries(user?.branch_id, resourceBranchIdField);
+
+  if (branchIdQueries.length > 0) {
+    const branchQuery = branchIdQueries.length === 1
+      ? branchIdQueries[0]
+      : { $or: branchIdQueries };
 
     // Historical records without branch_id should still be visible to users
     // assigned to the central 'Pusat' branch.
@@ -65,8 +88,19 @@ export const canAccessBranch = (user, resourceBranchId) => {
     return true;
   }
 
-  if (user.branch_id && resourceBranchId && user.branch_id.toString() === resourceBranchId.toString()) {
-    return true;
+  if (user.branch_id && resourceBranchId) {
+    const normalizedUserBranchId = String(user.branch_id);
+    const normalizedResourceBranchId = String(resourceBranchId);
+
+    try {
+      if (new mongoose.Types.ObjectId(normalizedUserBranchId).equals(new mongoose.Types.ObjectId(normalizedResourceBranchId))) {
+        return true;
+      }
+    } catch {
+      if (normalizedUserBranchId === normalizedResourceBranchId) {
+        return true;
+      }
+    }
   }
 
   return false;
