@@ -16,6 +16,11 @@ const LEGACY_ROLE_TO_RBAC_CODE = {
   user: "user",
 };
 
+export const getDefaultRolePermissions = (roleCode) => {
+  const normalized = String(roleCode || "").trim().toLowerCase();
+  return DEFAULT_ROLE_PERMISSIONS[normalized] || [];
+};
+
 const DEFAULT_ROLE_PERMISSIONS = {
   super_admin: PERMISSION_LIST,
   admin: [
@@ -81,6 +86,8 @@ const DEFAULT_ROLE_PERMISSIONS = {
     PERMISSIONS.TRANSACTION_READ,
     PERMISSIONS.PRODUCT_READ,
     PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.STOCK_ADJUST,
+    PERMISSIONS.BRANCH_VIEW,
   ],
   security: [
     PERMISSIONS.SECURITY_VIEW,
