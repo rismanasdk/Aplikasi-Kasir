@@ -3,6 +3,7 @@ import App from "./App";
 import { AuthProvider } from "./auth/context/AuthContext";
 import { API_URL } from "./config/api";
 import { getStoredToken, getStoredAuth } from "./auth/storage";
+import { trackPageView } from "./utils/analytics";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 const Root: React.FC = () => {
@@ -64,6 +65,7 @@ const Root: React.FC = () => {
     };
 
     getStoreSettings();
+    trackPageView(window.location.pathname);
 
     return () => {
       window.clearTimeout(fallbackTimer);

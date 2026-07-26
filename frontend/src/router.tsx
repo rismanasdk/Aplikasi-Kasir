@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; 
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"; 
 import ProtectedRoute from "./auth/ProtectedRoute";
 import AuthOnlyRoute from "./auth/AuthOnlyRoute";
 import AuthGuard from "./auth/AuthGuard";
@@ -50,6 +51,7 @@ import BeriSaranPage from "./pages/email/beri-saran";
 
 // Import tipe Barang
 import type { Barang } from "./admin/stok-barang";
+import { trackPageView } from "./utils/analytics";
 
 // Definisi tipe untuk props router
 interface RouterProps {
@@ -60,6 +62,7 @@ interface RouterProps {
 const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
   return (
       <Router>
+        <RouteTracker />
         <Routes>
           {/* Halaman default - bisa diakses tanpa login */}
           <Route path="/" element={<DashboardRedirect dataBarang={dataBarang} />} />
@@ -191,6 +194,16 @@ const AppRouter = ({ dataBarang, setDataBarang }: RouterProps) => {
         </Routes>
       </Router>
   );
+};
+
+const RouteTracker = () => {
+  const location = useLocation();
+
+  React.useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  return null;
 };
 
 export default AppRouter;
