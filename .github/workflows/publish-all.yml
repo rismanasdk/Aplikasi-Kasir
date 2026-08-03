@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Aplikasi-Kasir/frontend
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Aplikasi-Kasir/backend
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
