@@ -1,7 +1,10 @@
 {
-  "name": "frontend",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@rismanasdk/frontend",
+  "private": false,
+  "version": "1.0.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

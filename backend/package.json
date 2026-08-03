@@ -1,6 +1,10 @@
 {
-  "name": "backend",
+  "name": "@rismanasdk/backend",
   "version": "1.0.0",
+  "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "dev": "nodemon bootstrap.js",
     "start": "node bootstrap.js",
